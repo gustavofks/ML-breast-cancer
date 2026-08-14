@@ -1,0 +1,23 @@
+# Ambiente: Python 3.11
+# Instalacao: pip install -r requirements.txt
+
+# Manipulacao e analise de dados
+pandas==3.0.5
+numpy==2.4.6
+
+# Machine Learning
+scikit-learn==1.9.0
+
+# Visualizacao
+matplotlib==3.11.1
+seaborn==0.13.2
+
+# Explicabilidade
+shap==0.51.0
+
+# Notebooks
+jupyterlab==4.6.3
+ipykernel==7.3.0
+
+# Testes
+pytest==9.1.1

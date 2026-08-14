@@ -216,3 +216,15 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# ---------------------------------------------------------------------------
+# Tech Challenge - projeto
+# ---------------------------------------------------------------------------
+# Documentos internos de planejamento (nao fazem parte da entrega)
+docs/superpowers/
+
+# Material de apoio da disciplina (instrucoes do desafio, referencias)
+docs/referencias/
+
+# Dataset extra de imagens (grande demais para o repositorio; ver README)
+data/raw/cbis-ddsm/

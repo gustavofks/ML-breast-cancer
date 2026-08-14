@@ -161,8 +161,124 @@ multicolinearidade — quantificada na seção 3.
 
 ## 3. Estratégias de pré-processamento
 
-*A ser preenchida na Fase 3: limpeza aplicada, conversão de variáveis, pipeline de
-pré-processamento, análise de correlação e multicolinearidade, separação treino/teste.*
+Código correspondente: [`src/preprocessing.py`](../src/preprocessing.py)
+
+### 3.1 Limpeza aplicada
+
+| Problema | Tratamento | Justificativa |
+|---|---|---|
+| Coluna `Unnamed: 32`, totalmente nula | Removida | Artefato da vírgula final no cabeçalho do CSV, não é dado faltante |
+| Coluna `id` | Removida | Identificador do paciente, sem relação causal com o diagnóstico |
+| Alvo `diagnosis` categórico (`M`/`B`) | Codificado como M = 1, B = 0 | Maligno é a classe positiva: é o evento a detectar |
+| Outliers nas medidas morfológicas | **Preservados** | São casos malignos extremos reais, não erros de medição |
+| Valores ausentes | Nenhum na base | Imputador de mediana mantido no pipeline por robustez |
+
+A decisão de preservar outliers merece destaque: em uma base clínica, os valores extremos são
+frequentemente os casos mais graves. Removê-los melhoraria as métricas de forma enganosa,
+eliminando justamente as pacientes que o sistema mais precisa identificar.
+
+### 3.2 Conversão de variáveis
+
+As 30 features preditoras já são numéricas contínuas e não exigem codificação — não há variáveis
+categóricas entre elas. A única variável categórica da base é o alvo, convertido para binário na
+etapa de limpeza (`src/data.py`).
+
+O que essas variáveis exigem não é codificação, e sim **padronização**, pela diferença de escala
+descrita na seção 2.3.
+
+### 3.3 Pipeline de pré-processamento
+
+```
+Pipeline
+  ├── preprocessor
+  │     ├── SimpleImputer(strategy="median")   # defensivo
+  │     └── StandardScaler()                   # média 0, desvio padrão 1
+  └── estimator                                # modelo da vez
+```
+
+**Por que o scaler fica dentro do pipeline.** Se fosse ajustado sobre a base completa antes da
+separação treino/teste, a média e o desvio usados na transformação carregariam informação do
+conjunto de teste — vazamento de dados (*data leakage*). O efeito é uma métrica otimista que não se
+sustenta em produção. Dentro do `Pipeline`, o scaler é reajustado a cada fold da validação cruzada,
+usando apenas os dados de treino daquele fold.
+
+Efeito prático da padronização, no conjunto de treino:
+
+| Feature | Média antes | Desvio antes | Média depois | Desvio depois |
+|---|---|---|---|---|
+| `area_worst` | 890,57 | 582,35 | 0 | 1 |
+| `fractal_dimension_se` | 0,00377 | 0,00263 | 0 | 1 |
+
+O imputador de mediana é preventivo: a base atual não tem valores ausentes, mas o pipeline
+permanece válido caso novos dados cheguem incompletos, e a mediana é robusta à assimetria
+observada na seção 2.3.
+
+### 3.4 Análise de correlação
+
+![Correlação entre as features](../results/figures/05_correlacao.png)
+
+O mapa é dominado por correlações positivas: praticamente todas as features medem aspectos do
+tamanho e da irregularidade do mesmo núcleo celular. As poucas correlações negativas relevantes
+envolvem `fractal_dimension_mean`, que se comporta de forma inversa às medidas de tamanho.
+
+**Multicolinearidade.** Existem **21 pares de features com correlação acima de 0,9**, e os extremos
+são quase perfeitos:
+
+| Par | Correlação |
+|---|---|
+| `radius_mean` × `perimeter_mean` | 0,998 |
+| `radius_worst` × `perimeter_worst` | 0,994 |
+| `radius_mean` × `area_mean` | 0,987 |
+| `perimeter_mean` × `area_mean` | 0,987 |
+| `radius_worst` × `area_worst` | 0,984 |
+
+Isso não é acaso estatístico, é **geometria**: em uma forma aproximadamente circular, perímetro e
+área são funções diretas do raio. As três variáveis medem a mesma grandeza em unidades diferentes.
+
+Consequências por família de modelo:
+
+- **Regressão logística** — a capacidade preditiva não é prejudicada, mas os coeficientes
+  individuais ficam instáveis: o peso se distribui de forma arbitrária entre variáveis redundantes.
+  A regularização L2 (padrão do scikit-learn) atenua o problema ao distribuir o peso de maneira
+  estável, mas a *interpretação* de cada coeficiente isolado exige cautela.
+- **KNN** — a mesma informação é contada várias vezes no cálculo da distância, dando peso excessivo
+  à dimensão "tamanho do núcleo".
+- **Random Forest** — robusta na predição, mas a importância nativa fica diluída: features
+  redundantes dividem o crédito entre si e nenhuma parece tão relevante quanto de fato é. Esse é um
+  dos motivos para complementar a análise com SHAP na seção 5.
+
+**Decisão: nenhuma feature foi removida.** Com 569 amostras e 30 features, a base não sofre de alta
+dimensionalidade, e a regularização já lida com a redundância. Seleção manual introduziria uma
+escolha arbitrária sem ganho esperado de desempenho. A multicolinearidade fica registrada para
+orientar a leitura dos coeficientes.
+
+**Correlação com o alvo:**
+
+![Correlação com o diagnóstico](../results/figures/06_correlacao_alvo.png)
+
+Como o alvo é binário, a correlação de Pearson equivale ao coeficiente ponto-bisserial. O ranking
+reproduz quase exatamente o do *d* de Cohen — `concave points_worst` (0,79), `perimeter_worst`
+(0,78) e `concave points_mean` (0,78) no topo. Duas métricas independentes chegando ao mesmo
+resultado reforçam o achado.
+
+Nenhuma feature isolada chega perto de correlação 1 com o diagnóstico: **não existe atalho de
+variável única**, a classificação depende da combinação de várias medidas.
+
+### 3.5 Separação treino/teste
+
+Divisão de 80/20 com `stratify=y` e `random_state=42`:
+
+| Conjunto | Amostras | Benigno | Maligno | Proporção maligno |
+|---|---|---|---|---|
+| Treino | 455 | 285 | 170 | 37,4% |
+| Teste | 114 | 72 | 42 | 36,8% |
+| *Base completa* | *569* | *357* | *212* | *37,3%* |
+
+A estratificação mantém a proporção original nos dois conjuntos. Sem ela, a variação em uma base
+deste tamanho poderia tornar o conjunto de teste não representativo.
+
+O conjunto de teste permanece intocado até a avaliação final: toda a comparação entre modelos é
+feita por validação cruzada estratificada de 5 folds **dentro do conjunto de treino**.
 
 ---
 

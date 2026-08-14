@@ -13,6 +13,7 @@ from pathlib import Path
 
 import matplotlib
 import matplotlib.pyplot as plt
+from matplotlib.colors import LinearSegmentedColormap
 import numpy as np
 import pandas as pd
 
@@ -31,6 +32,14 @@ SURFACE = "#fcfcfb"
 INK = "#1a1a19"
 INK_MUTED = "#6b6b68"
 GRID = "#e4e4e0"
+
+# Escala divergente para correlacao: azul (negativa) - cinza neutro (zero) -
+# vermelho (positiva). O ponto medio precisa ser neutro para que "sem
+# correlacao" nao seja lido como uma categoria propria.
+DIVERGING_CMAP = LinearSegmentedColormap.from_list(
+    "correlacao",
+    ["#184f95", "#2a78d6", "#f0efec", "#e34948", "#8f2020"],
+)
 
 # Sufixos que agrupam as 30 features em tres blocos de 10 medidas.
 FEATURE_GROUPS = ("mean", "se", "worst")
@@ -133,6 +142,44 @@ def separation_ranking(X: pd.DataFrame, y: pd.Series) -> pd.DataFrame:
     )
     return ranking.reindex(
         ranking["cohens_d"].abs().sort_values(ascending=False).index
+    ).reset_index(drop=True)
+
+
+# ---------------------------------------------------------------------------
+# Correlacao
+# ---------------------------------------------------------------------------
+def correlation_matrix(X: pd.DataFrame) -> pd.DataFrame:
+    """Matriz de correlacao de Pearson entre as features."""
+    return X.corr(method="pearson")
+
+
+def highly_correlated_pairs(X: pd.DataFrame, threshold: float = 0.9) -> pd.DataFrame:
+    """Lista os pares de features com correlacao absoluta acima do limiar.
+
+    Cada par aparece uma unica vez (apenas o triangulo superior da matriz).
+    """
+    corr = correlation_matrix(X)
+    mask = np.triu(np.ones(corr.shape, dtype=bool), k=1)
+
+    pares = [
+        {"feature_a": corr.index[i], "feature_b": corr.columns[j], "correlacao": round(corr.iat[i, j], 4)}
+        for i, j in zip(*np.where(mask & (corr.abs() > threshold).to_numpy()))
+    ]
+    resultado = pd.DataFrame(pares, columns=["feature_a", "feature_b", "correlacao"])
+    return resultado.sort_values("correlacao", key=abs, ascending=False).reset_index(drop=True)
+
+
+def correlation_with_target(X: pd.DataFrame, y: pd.Series) -> pd.DataFrame:
+    """Correlacao de cada feature com o alvo binario, ordenada por magnitude.
+
+    Com um alvo 0/1, a correlacao de Pearson equivale ao coeficiente
+    ponto-bisserial: mede o quanto a feature cresce junto com a probabilidade de
+    o tumor ser maligno.
+    """
+    corr = X.corrwith(y).round(4)
+    resultado = pd.DataFrame({"feature": corr.index, "correlacao": corr.to_numpy()})
+    return resultado.reindex(
+        resultado["correlacao"].abs().sort_values(ascending=False).index
     ).reset_index(drop=True)
 
 
@@ -245,6 +292,54 @@ def plot_boxplots_by_class(
 
     fig.suptitle(title, fontsize=13, y=1.0)
     fig.tight_layout()
+    return _save(fig, filename)
+
+
+def plot_correlation_heatmap(
+    X: pd.DataFrame,
+    filename: str = "05_correlacao.png",
+) -> Path:
+    """Mapa de calor da correlacao de Pearson entre as 30 features.
+
+    Usa escala divergente (azul para negativo, cinza no zero, vermelho para
+    positivo) porque correlacao tem polaridade: o sinal importa tanto quanto a
+    magnitude, e o zero e um ponto de referencia com significado proprio.
+    """
+    corr = correlation_matrix(X)
+
+    fig, ax = plt.subplots(figsize=(11, 9.2))
+    image = ax.imshow(corr, cmap=DIVERGING_CMAP, vmin=-1, vmax=1)
+
+    ax.set_xticks(range(len(corr)), corr.columns, rotation=90, fontsize=7)
+    ax.set_yticks(range(len(corr)), corr.index, fontsize=7)
+    ax.grid(visible=False)
+    ax.set_title("Correlação de Pearson entre as features", pad=14)
+
+    colorbar = fig.colorbar(image, ax=ax, shrink=0.72, pad=0.02)
+    colorbar.set_label("coeficiente de correlação", fontsize=9)
+    colorbar.outline.set_visible(False)
+    return _save(fig, filename)
+
+
+def plot_target_correlation(
+    X: pd.DataFrame,
+    y: pd.Series,
+    top_n: int = 15,
+    filename: str = "06_correlacao_alvo.png",
+) -> Path:
+    """Barras com as features mais correlacionadas ao diagnostico."""
+    corr = correlation_with_target(X, y).head(top_n).iloc[::-1]
+
+    fig, ax = plt.subplots(figsize=(7.5, 0.36 * top_n + 1.4))
+    ax.barh(corr["feature"], corr["correlacao"], color=COLOR_MALIGNO, height=0.62)
+    for feature, valor in zip(corr["feature"], corr["correlacao"]):
+        ax.text(valor + 0.008, feature, f"{valor:.2f}", va="center", fontsize=8, color=INK)
+
+    ax.set_title(f"Top {top_n} features por correlação com o diagnóstico")
+    ax.set_xlabel("correlação de Pearson com o alvo  ·  positivo = associado a malignidade")
+    ax.set_xlim(0, corr["correlacao"].max() * 1.12)
+    ax.grid(axis="y", visible=False)
+    ax.spines[["top", "right", "left"]].set_visible(False)
     return _save(fig, filename)
 
 

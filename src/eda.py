@@ -11,78 +11,26 @@ from __future__ import annotations
 
 from pathlib import Path
 
-import matplotlib
-import matplotlib.pyplot as plt
-from matplotlib.colors import LinearSegmentedColormap
 import numpy as np
 import pandas as pd
+import matplotlib.pyplot as plt
 
 from src import config
-
-# ---------------------------------------------------------------------------
-# Estilo visual
-# ---------------------------------------------------------------------------
-# Paleta categorica de duas classes, validada para daltonismo
-# (separacao protanopia dE 24.7, muito acima do minimo de 8).
-COLOR_BENIGNO = "#2a78d6"
-COLOR_MALIGNO = "#eb6834"
-CLASS_COLORS = {0: COLOR_BENIGNO, 1: COLOR_MALIGNO}
-
-SURFACE = "#fcfcfb"
-INK = "#1a1a19"
-INK_MUTED = "#6b6b68"
-GRID = "#e4e4e0"
-
-# Escala divergente para correlacao: azul (negativa) - cinza neutro (zero) -
-# vermelho (positiva). O ponto medio precisa ser neutro para que "sem
-# correlacao" nao seja lido como uma categoria propria.
-DIVERGING_CMAP = LinearSegmentedColormap.from_list(
-    "correlacao",
-    ["#184f95", "#2a78d6", "#f0efec", "#e34948", "#8f2020"],
+from src.plotting import (
+    CLASS_COLORS,
+    COLOR_BENIGNO,
+    COLOR_MALIGNO,
+    DIVERGING_CMAP,
+    GRID,
+    INK,
+    INK_MUTED,
+    SURFACE,
+    apply_style,
+    save_figure,
 )
 
 # Sufixos que agrupam as 30 features em tres blocos de 10 medidas.
 FEATURE_GROUPS = ("mean", "se", "worst")
-
-
-def apply_style() -> None:
-    """Aplica o estilo visual padrao do projeto ao matplotlib."""
-    matplotlib.rcParams.update(
-        {
-            "figure.facecolor": SURFACE,
-            "axes.facecolor": SURFACE,
-            "savefig.facecolor": SURFACE,
-            "axes.edgecolor": GRID,
-            "axes.labelcolor": INK,
-            "axes.titlecolor": INK,
-            "axes.titlesize": 12,
-            "axes.titleweight": "normal",
-            "axes.labelsize": 9,
-            "axes.grid": True,
-            "axes.axisbelow": True,
-            "grid.color": GRID,
-            "grid.linewidth": 0.8,
-            "text.color": INK,
-            "xtick.color": INK_MUTED,
-            "ytick.color": INK_MUTED,
-            "xtick.labelsize": 8,
-            "ytick.labelsize": 8,
-            "legend.frameon": False,
-            "legend.fontsize": 9,
-            "lines.linewidth": 2.0,
-            "figure.dpi": 110,
-            "savefig.dpi": 150,
-            "savefig.bbox": "tight",
-        }
-    )
-
-
-def _save(fig: plt.Figure, filename: str) -> Path:
-    """Grava a figura em `results/figures/` e devolve o caminho."""
-    config.ensure_output_dirs()
-    path = config.FIGURES_DIR / filename
-    fig.savefig(path)
-    return path
 
 
 def feature_group(X: pd.DataFrame, suffix: str) -> list[str]:
@@ -212,7 +160,7 @@ def plot_class_balance(y: pd.Series, filename: str = "01_balanceamento_classes.p
     ax.set_ylim(0, balance["amostras"].max() * 1.18)
     ax.grid(axis="x", visible=False)
     ax.spines[["top", "right", "left"]].set_visible(False)
-    return _save(fig, filename)
+    return save_figure(fig, filename)
 
 
 def plot_feature_distributions(
@@ -248,7 +196,7 @@ def plot_feature_distributions(
     fig.legend(handles, labels, loc="upper right", ncols=2)
     fig.suptitle(title, fontsize=13, y=1.0)
     fig.tight_layout()
-    return _save(fig, filename)
+    return save_figure(fig, filename)
 
 
 def plot_boxplots_by_class(
@@ -292,7 +240,7 @@ def plot_boxplots_by_class(
 
     fig.suptitle(title, fontsize=13, y=1.0)
     fig.tight_layout()
-    return _save(fig, filename)
+    return save_figure(fig, filename)
 
 
 def plot_correlation_heatmap(
@@ -318,7 +266,7 @@ def plot_correlation_heatmap(
     colorbar = fig.colorbar(image, ax=ax, shrink=0.72, pad=0.02)
     colorbar.set_label("coeficiente de correlação", fontsize=9)
     colorbar.outline.set_visible(False)
-    return _save(fig, filename)
+    return save_figure(fig, filename)
 
 
 def plot_target_correlation(
@@ -340,7 +288,7 @@ def plot_target_correlation(
     ax.set_xlim(0, corr["correlacao"].max() * 1.12)
     ax.grid(axis="y", visible=False)
     ax.spines[["top", "right", "left"]].set_visible(False)
-    return _save(fig, filename)
+    return save_figure(fig, filename)
 
 
 def plot_separation_ranking(
@@ -362,4 +310,4 @@ def plot_separation_ranking(
     ax.set_xlim(0, ranking["cohens_d"].max() * 1.12)
     ax.grid(axis="y", visible=False)
     ax.spines[["top", "right", "left"]].set_visible(False)
-    return _save(fig, filename)
+    return save_figure(fig, filename)

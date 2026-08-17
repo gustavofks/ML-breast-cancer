@@ -1,0 +1,168 @@
+{
+  "dataset": {
+    "nome": "Breast Cancer Wisconsin (Diagnostic)",
+    "amostras": 569,
+    "features": 30,
+    "benignos": 357,
+    "malignos": 212,
+    "treino": 455,
+    "teste": 114
+  },
+  "modelo_escolhido": "Regressão Logística",
+  "metrica_de_selecao": "f1",
+  "validacao_cruzada": [
+    {
+      "modelo": "Regressão Logística",
+      "accuracy": 0.9736,
+      "accuracy_std": 0.0149,
+      "precision": 0.9771,
+      "precision_std": 0.028,
+      "recall": 0.9529,
+      "recall_std": 0.0399,
+      "f1": 0.964,
+      "f1_std": 0.0207,
+      "roc_auc": 0.9958,
+      "roc_auc_std": 0.0047
+    },
+    {
+      "modelo": "KNN",
+      "accuracy": 0.9648,
+      "accuracy_std": 0.0189,
+      "precision": 0.9875,
+      "precision_std": 0.025,
+      "recall": 0.9176,
+      "recall_std": 0.0343,
+      "f1": 0.951,
+      "f1_std": 0.0263,
+      "roc_auc": 0.9871,
+      "roc_auc_std": 0.0136
+    },
+    {
+      "modelo": "Random Forest",
+      "accuracy": 0.9604,
+      "accuracy_std": 0.0164,
+      "precision": 0.9584,
+      "precision_std": 0.0221,
+      "recall": 0.9353,
+      "recall_std": 0.039,
+      "f1": 0.9461,
+      "f1_std": 0.0226,
+      "roc_auc": 0.988,
+      "roc_auc_std": 0.0073
+    }
+  ],
+  "hiperparametros": [
+    {
+      "modelo": "Regressão Logística",
+      "melhores_parametros": {
+        "C": 1.0
+      },
+      "f1_validacao": 0.964
+    },
+    {
+      "modelo": "KNN",
+      "melhores_parametros": {
+        "n_neighbors": 3,
+        "weights": "uniform"
+      },
+      "f1_validacao": 0.9633
+    },
+    {
+      "modelo": "Random Forest",
+      "melhores_parametros": {
+        "max_depth": 6,
+        "min_samples_leaf": 1,
+        "n_estimators": 200
+      },
+      "f1_validacao": 0.9516
+    }
+  ],
+  "teste": [
+    {
+      "modelo": "Regressão Logística",
+      "accuracy": 0.9649,
+      "precision": 0.975,
+      "recall": 0.9286,
+      "f1": 0.9512,
+      "roc_auc": 0.996,
+      "verdadeiros_negativos": 71,
+      "falsos_positivos": 1,
+      "falsos_negativos": 3,
+      "verdadeiros_positivos": 39
+    },
+    {
+      "modelo": "Random Forest",
+      "accuracy": 0.9649,
+      "precision": 1.0,
+      "recall": 0.9048,
+      "f1": 0.95,
+      "roc_auc": 0.9947,
+      "verdadeiros_negativos": 72,
+      "falsos_positivos": 0,
+      "falsos_negativos": 4,
+      "verdadeiros_positivos": 38
+    },
+    {
+      "modelo": "KNN",
+      "accuracy": 0.9386,
+      "precision": 0.973,
+      "recall": 0.8571,
+      "f1": 0.9114,
+      "roc_auc": 0.9825,
+      "verdadeiros_negativos": 71,
+      "falsos_positivos": 1,
+      "falsos_negativos": 6,
+      "verdadeiros_positivos": 36
+    }
+  ],
+  "limiares": [
+    {
+      "limiar": 0.2,
+      "recall": 0.9762,
+      "precisao": 0.9111,
+      "f1": 0.9425,
+      "falsos_negativos": 1,
+      "falsos_positivos": 4
+    },
+    {
+      "limiar": 0.3,
+      "recall": 0.9762,
+      "precisao": 0.9762,
+      "f1": 0.9762,
+      "falsos_negativos": 1,
+      "falsos_positivos": 1
+    },
+    {
+      "limiar": 0.4,
+      "recall": 0.9524,
+      "precisao": 0.9756,
+      "f1": 0.9639,
+      "falsos_negativos": 2,
+      "falsos_positivos": 1
+    },
+    {
+      "limiar": 0.5,
+      "recall": 0.9286,
+      "precisao": 0.975,
+      "f1": 0.9512,
+      "falsos_negativos": 3,
+      "falsos_positivos": 1
+    },
+    {
+      "limiar": 0.6,
+      "recall": 0.9048,
+      "precisao": 1.0,
+      "f1": 0.95,
+      "falsos_negativos": 4,
+      "falsos_positivos": 0
+    },
+    {
+      "limiar": 0.7,
+      "recall": 0.9048,
+      "precisao": 1.0,
+      "f1": 0.95,
+      "falsos_negativos": 4,
+      "falsos_positivos": 0
+    }
+  ]
+}

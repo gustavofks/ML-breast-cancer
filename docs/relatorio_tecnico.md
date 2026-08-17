@@ -284,15 +284,163 @@ feita por validação cruzada estratificada de 5 folds **dentro do conjunto de t
 
 ## 4. Modelos utilizados e justificativa
 
-*A ser preenchida na Fase 4: modelos escolhidos, motivo de cada escolha, protocolo de validação
-cruzada, escolha e justificativa da métrica prioritária.*
+Código correspondente: [`src/models.py`](../src/models.py) ·
+Notebook: [`notebooks/02_modeling_evaluation.ipynb`](../notebooks/02_modeling_evaluation.ipynb)
+
+### 4.1 Modelos escolhidos
+
+Foram avaliadas três técnicas com fundamentos distintos, para que a comparação seja informativa e
+não apenas uma variação do mesmo viés:
+
+| Modelo | Como decide | Por que foi incluído |
+|---|---|---|
+| **Regressão Logística** | combinação linear das features passada por uma sigmoide | baseline interpretável — cada coeficiente indica quanto uma medida empurra a previsão, o que é essencial em contexto clínico |
+| **KNN** | classe majoritária entre os *k* casos mais parecidos | não paramétrico, não assume forma da fronteira de decisão; depende fortemente de escala, o que evidencia o efeito da padronização |
+| **Random Forest** | votação de muitas árvores treinadas em amostras diferentes | captura relações não lineares e interações entre medidas; fornece importância de variáveis nativa |
+
+Todos são `Pipeline` completos (pré-processamento + estimador), o que garante que a padronização
+seja reajustada dentro de cada fold da validação cruzada.
+
+### 4.2 Escolha da métrica
+
+O problema é clínico e assimétrico: **os dois tipos de erro não custam a mesma coisa.**
+
+| Erro | Significado clínico | Consequência |
+|---|---|---|
+| **Falso negativo** | tumor maligno classificado como benigno | paciente vai para casa sem tratamento; o diagnóstico atrasa |
+| **Falso positivo** | tumor benigno classificado como maligno | exames adicionais, ansiedade, custo |
+
+Um falso negativo é incomparavelmente mais grave. Por isso a **métrica prioritária é o recall da
+classe maligna** — a fração de tumores malignos que o modelo consegue capturar.
+
+Duas ressalvas definem o protocolo adotado:
+
+- **A acurácia não decide.** Com 62,7% de casos benignos, um classificador que respondesse "benigno"
+  sempre atingiria 62,7% de acurácia com recall zero. A acurácia é reportada, nunca isolada.
+- **Recall puro também não decide a escolha do modelo.** Otimizar apenas recall premiaria um
+  classificador que chama quase tudo de maligno — recall 100%, precisão baixa, inútil na triagem.
+  Por isso a *seleção* do modelo usa **F1** (média harmônica entre precisão e recall), e o recall é
+  otimizado depois, pelo ajuste do limiar de decisão (seção 5.4).
+
+### 4.3 Protocolo de validação
+
+- Divisão estratificada 80/20, com o conjunto de teste **intocado** até a avaliação final
+- Comparação entre modelos por **validação cruzada estratificada de 5 folds dentro do treino**
+- Ajuste de hiperparâmetros por busca em grade pequena, otimizando F1 na mesma validação cruzada
+- Semente fixa (`random_state=42`) em todas as etapas, para reprodutibilidade
+
+Resultados da validação cruzada (conjunto de treino, 455 amostras):
+
+| Modelo | Acurácia | Precisão | Recall | F1 | AUC |
+|---|---|---|---|---|---|
+| **Regressão Logística** | 0,974 | 0,977 | **0,953** | **0,964** | 0,996 |
+| KNN | 0,965 | 0,988 | 0,918 | 0,951 | 0,987 |
+| Random Forest | 0,960 | 0,958 | 0,935 | 0,946 | 0,988 |
+
+A regressão logística lidera em F1 e recall, com desvio padrão baixo entre os folds — resultado
+estável, não fruto de uma partição favorável. O KNN tem a maior precisão (0,988) e o menor recall
+(0,918): é conservador, erra pouco quando afirma "maligno", mas deixa passar mais casos malignos.
+Para este problema, é a troca errada.
+
+**Um modelo linear vencendo dois não lineares é informativo:** indica que, após a padronização, as
+classes são quase linearmente separáveis no espaço das 30 features. Isso é coerente com a análise
+exploratória, que mostrou várias medidas fortemente deslocadas entre os grupos e nenhuma interação
+complexa aparente.
+
+Ajuste de hiperparâmetros:
+
+| Modelo | Melhores parâmetros | F1 na validação |
+|---|---|---|
+| Regressão Logística | `C = 1,0` | 0,964 |
+| KNN | `n_neighbors = 3`, `weights = uniform` | 0,963 |
+| Random Forest | `max_depth = 6`, `min_samples_leaf = 1`, `n_estimators = 200` | 0,952 |
+
+O ajuste altera pouco: a regressão logística já estava no `C` padrão; o KNN melhora ao reduzir *k*
+de 5 para 3; a Random Forest melhora ao limitar a profundidade, sinal de leve sobreajuste. Nenhum
+ganho muda a ordem entre os modelos, o que reforça que a diferença vem da natureza de cada
+algoritmo, e não de configuração.
+
+**Modelo escolhido: Regressão Logística.**
 
 ---
 
 ## 5. Resultados e interpretação
 
-*A ser preenchida nas Fases 4 e 5: métricas no conjunto de teste, matriz de confusão, curva ROC,
-comparação entre modelos, feature importance, SHAP e interpretação clínica dos resultados.*
+### 5.1 Desempenho no conjunto de teste
+
+Primeiro e único uso dos 114 casos separados no início.
+
+![Comparação dos modelos](../results/figures/09_comparacao_modelos.png)
+
+| Modelo | Acurácia | Precisão | Recall | F1 | AUC | Falsos negativos |
+|---|---|---|---|---|---|---|
+| **Regressão Logística** | 0,965 | 0,975 | **0,929** | **0,951** | **0,996** | **3** |
+| Random Forest | 0,965 | 1,000 | 0,905 | 0,950 | 0,995 | 4 |
+| KNN | 0,939 | 0,973 | 0,857 | 0,911 | 0,983 | 6 |
+
+O desempenho no teste confirma o da validação cruzada, sem queda relevante — não há sinal de
+sobreajuste.
+
+A Random Forest alcança precisão perfeita (nenhum falso positivo), mas com 4 falsos negativos.
+**Trocar um falso positivo por um falso negativo é um mau negócio neste contexto:** o primeiro custa
+um exame adicional, o segundo custa um diagnóstico perdido.
+
+### 5.2 Matriz de confusão
+
+![Matriz de confusão](../results/figures/07_matriz_confusao.png)
+
+O modelo escolhido acerta 110 dos 114 casos:
+
+| Quadrante | Casos | Leitura clínica |
+|---|---|---|
+| Verdadeiros negativos | 71 | tumores benignos corretamente identificados |
+| Verdadeiros positivos | 39 | tumores malignos corretamente identificados |
+| Falsos positivos | 1 | uma paciente encaminhada a exames adicionais desnecessários |
+| **Falsos negativos** | **3** | **três tumores malignos classificados como benignos** |
+
+Os três falsos negativos são o número que importa. Com recall de 0,929, o modelo deixa passar cerca
+de 1 em cada 14 tumores malignos — bom para um sistema de apoio, **inaceitável para decisão
+autônoma**.
+
+### 5.3 Curvas ROC
+
+![Curvas ROC](../results/figures/08_curvas_roc.png)
+
+As três curvas ficam próximas do canto superior esquerdo, com AUC entre 0,983 e 0,996. A AUC mede a
+capacidade de ordenar corretamente os casos por risco, independentemente do limiar.
+
+AUC de 0,996 combinada a recall de 0,929 no limiar padrão revela algo importante: **o modelo separa
+bem as classes; o que está mal calibrado é o corte.**
+
+### 5.4 Ajuste do limiar de decisão
+
+![Efeito do limiar](../results/figures/10_limiar_decisao.png)
+
+O limiar de 0,5 é apenas a convenção do `predict()`, não uma escolha clínica. Baixá-lo para **0,30**
+melhora todas as métricas simultaneamente:
+
+| Limiar | Recall | Precisão | F1 | Falsos negativos | Falsos positivos |
+|---|---|---|---|---|---|
+| 0,50 (padrão) | 0,929 | 0,975 | 0,951 | 3 | 1 |
+| **0,30** | **0,976** | **0,976** | **0,976** | **1** | 1 |
+
+Em termos clínicos: duas pacientes a mais com tumor maligno seriam corretamente sinalizadas, sem
+aumento de exames desnecessários.
+
+Duas ressalvas honestas sobre esse resultado:
+
+1. **O conjunto de teste tem 114 casos.** Uma diferença de dois falsos negativos é estatisticamente
+   frágil e pode não se repetir em outra amostra. O limiar ideal deveria ser calibrado por validação
+   cruzada no treino, e não escolhido observando o teste — caso contrário, ajusta-se ao próprio
+   conjunto de avaliação.
+2. **A direção do ajuste é defensável independentemente do valor exato.** Como o custo de um falso
+   negativo é muito maior que o de um falso positivo, um limiar abaixo de 0,5 é a escolha racional
+   para triagem, ainda que o ótimo preciso varie.
+
+### 5.5 Explicabilidade
+
+*A ser preenchida na Fase 5: coeficientes da regressão logística, importância por permutação, SHAP
+e interpretação clínica das previsões individuais.*
 
 ---
 

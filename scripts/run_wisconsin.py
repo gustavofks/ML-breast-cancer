@@ -22,7 +22,7 @@ matplotlib.use("Agg")  # backend sem janela: o script roda em terminal
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from src import config, eda, evaluation, explain, models, plotting  # noqa: E402
+from src import config, eda, evaluation, explain, models, plotting, report  # noqa: E402
 from src.data import load_dataset  # noqa: E402
 from src.preprocessing import split_data, split_summary  # noqa: E402
 
@@ -31,11 +31,11 @@ def main() -> None:
     plotting.apply_style()
     config.ensure_output_dirs()
 
-    print("1/7  Carregando e limpando os dados...")
+    print("1/8  Carregando e limpando os dados...")
     X, y = load_dataset()
     print(f"      {X.shape[0]} amostras, {X.shape[1]} features")
 
-    print("2/7  Análise exploratória...")
+    print("2/8  Análise exploratória...")
     eda.plot_class_balance(y)
     eda.plot_feature_distributions(
         X, y, eda.feature_group(X, "mean"),
@@ -51,17 +51,17 @@ def main() -> None:
     eda.plot_correlation_heatmap(X)
     eda.plot_target_correlation(X, y)
 
-    print("3/7  Separando treino e teste (estratificado)...")
+    print("3/8  Separando treino e teste (estratificado)...")
     X_train, X_test, y_train, y_test = split_data(X, y)
     print(split_summary(y_train, y_test).to_string(index=False))
 
-    print("4/7  Validação cruzada e ajuste de hiperparâmetros...")
+    print("4/8  Validação cruzada e ajuste de hiperparâmetros...")
     cv_results = models.cross_validate_models(models.get_models(), X_train, y_train)
     modelos_ajustados, grade = models.tune_models(models.get_models(), X_train, y_train)
     melhor = models.select_best(cv_results)
     print(f"      Melhor modelo por {models.SELECTION_METRIC}: {melhor}")
 
-    print("5/7  Avaliando no conjunto de teste...")
+    print("5/8  Avaliando no conjunto de teste...")
     resultados_teste = evaluation.evaluate_all(modelos_ajustados, X_test, y_test)
     print(resultados_teste[["modelo", "accuracy", "recall", "f1", "roc_auc", "falsos_negativos"]].to_string(index=False))
 
@@ -72,7 +72,7 @@ def main() -> None:
     evaluation.plot_threshold_tradeoff(modelo_final, X_test, y_test, melhor)
     limiares = evaluation.threshold_analysis(modelo_final, X_test, y_test)
 
-    print("6/7  Explicabilidade...")
+    print("6/8  Explicabilidade...")
     coeficientes = explain.linear_coefficients(modelo_final, list(X.columns))
     permutacao = explain.permutation_scores(modelo_final, X_test, y_test)
     explain.plot_coefficients(coeficientes)
@@ -94,7 +94,7 @@ def main() -> None:
         "14_shap_caso_falso_negativo.png",
     )
 
-    print("7/7  Gravando métricas...")
+    print("7/8  Gravando métricas...")
     caminho = evaluation.save_metrics(
         {
             "dataset": {
@@ -121,7 +121,13 @@ def main() -> None:
         }
     )
     print(f"      {caminho}")
+
+    print("8/8  Gerando relatório HTML...")
+    pagina = report.build_report()
+    print(f"      {pagina}")
+
     print(f"\nConcluído. Figuras em {config.FIGURES_DIR}")
+    print(f"Abra o relatório no navegador: {config.REPORT_FILE}")
 
 
 if __name__ == "__main__":

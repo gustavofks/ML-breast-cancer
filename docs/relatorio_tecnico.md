@@ -439,8 +439,109 @@ Duas ressalvas honestas sobre esse resultado:
 
 ### 5.5 Explicabilidade
 
-*A ser preenchida na Fase 5: coeficientes da regressão logística, importância por permutação, SHAP
-e interpretação clínica das previsões individuais.*
+Código correspondente: [`src/explain.py`](../src/explain.py)
+
+Um sistema de apoio ao diagnóstico que não explica sua previsão não é utilizável na prática: o
+médico precisa poder concordar ou discordar com base no raciocínio, não apenas no número. Foram
+aplicadas três técnicas complementares:
+
+| Técnica | O que responde | Limitação |
+|---|---|---|
+| **Coeficientes** | direção e força de cada medida no modelo linear | sofre com multicolinearidade; só vale para modelos lineares |
+| **Importância por permutação** | quanto o desempenho piora sem aquela medida | agnóstica ao modelo, mas apenas global |
+| **SHAP** | quanto cada medida contribuiu para *esta* paciente | custo computacional maior |
+
+#### Coeficientes da regressão logística
+
+![Coeficientes](../results/figures/11_coeficientes.png)
+
+| Feature | Coeficiente | Razão de chances |
+|---|---|---|
+| `texture_worst` | +1,434 | 4,20 |
+| `radius_se` | +1,233 | 3,43 |
+| `symmetry_worst` | +1,061 | 2,89 |
+| `concave points_mean` | +0,953 | 2,59 |
+| `concavity_worst` | +0,911 | 2,49 |
+
+Como as features estão padronizadas, os coeficientes são comparáveis entre si e a razão de chances
+tem leitura direta: um aumento de um desvio padrão em `texture_worst` multiplica por ~4,2 a chance
+de o tumor ser maligno, mantidas as demais medidas constantes.
+
+**Um resultado aparentemente contraditório merece explicação.** O maior coeficiente é
+`texture_worst`, e não `concave points_worst`, que liderava tanto o *d* de Cohen quanto a correlação
+com o alvo. A causa é a multicolinearidade documentada na seção 3.4: `concave points_worst` é
+altamente correlacionada com várias outras medidas de tamanho e contorno, e a regularização L2
+distribui o peso entre todas elas, de modo que nenhuma recebe isoladamente um coeficiente grande.
+`texture_worst`, por ser relativamente independente das demais, carrega informação que nenhuma outra
+feature fornece — e por isso recebe peso alto.
+
+A lição de interpretação: **coeficiente alto significa "informação única e útil ao modelo", não
+"medida mais importante clinicamente".** Coeficientes isolados não bastam.
+
+#### Importância por permutação
+
+![Importância por permutação](../results/figures/12_importancia_permutacao.png)
+
+| Feature | Queda média em recall | Desvio |
+|---|---|---|
+| `texture_worst` | 0,0540 | 0,0212 |
+| `concavity_worst` | 0,0421 | 0,0243 |
+| `symmetry_worst` | 0,0278 | 0,0185 |
+| `concave points_worst` | 0,0262 | 0,0188 |
+| `radius_worst` | 0,0040 | 0,0205 |
+
+A permutação mede o impacto real sobre o desempenho: embaralhar `texture_worst` derruba o recall em
+5,4 pontos percentuais. Depois das quatro primeiras features, a queda cai a praticamente zero — **o
+modelo se apoia em poucas medidas**, e as demais são redundantes ou irrelevantes.
+
+A métrica usada foi o recall, e não a acurácia. A escolha importa: uma feature pode ser importante
+para a acurácia geral e irrelevante para detectar casos malignos, que é o objetivo aqui.
+
+Ressalva: o desvio padrão é grande em relação à queda média, consequência dos 114 casos de teste. Os
+rankings devem ser lidos como indicativos, não como ordem precisa.
+
+#### SHAP — visão global
+
+![SHAP beeswarm](../results/figures/13_shap_beeswarm.png)
+
+Cada ponto é uma paciente. A posição horizontal mostra o quanto aquela medida empurrou a previsão
+para maligno (direita) ou benigno (esquerda); a cor indica se o valor era alto (vermelho) ou baixo
+(azul).
+
+O padrão é consistente e clinicamente coerente: para quase todas as features do topo, **valores
+altos empurram para maligno**. Núcleos maiores, mais irregulares e com contorno mais reentrante
+aumentam a probabilidade prevista de malignidade — exatamente o que a literatura médica descreve.
+
+A exceção é `compactness_se`, cujo padrão se inverte. Trata-se de efeito de compensação estatística
+entre variáveis correlacionadas, não de achado clínico — o tipo de resultado que exige cautela antes
+de virar afirmação médica.
+
+#### SHAP — um caso individual
+
+![SHAP de um falso negativo](../results/figures/14_shap_caso_falso_negativo.png)
+
+Este é um dos três tumores malignos classificados como benignos. A decomposição mostra exatamente
+por que o modelo errou: **praticamente todas as medidas desta paciente estão abaixo da média** da
+base — `texture_worst` a −0,83 desvios padrão, `texture_mean` a −0,85, `symmetry_worst` a −0,52,
+`area_worst` a −0,13. Cada uma empurrou a previsão para "benigno".
+
+Em linguagem clínica: é um tumor maligno cujos núcleos celulares têm morfologia pouco
+característica. **O modelo não cometeu um erro aleatório** — viu um caso que genuinamente se parece
+com os benignos nas 30 medidas disponíveis.
+
+Duas implicações diretas para o uso na prática:
+
+1. **O modelo não substitui o médico.** Existem tumores malignos morfologicamente discretos, e
+   nenhum ajuste de hiperparâmetro resolve isso: a informação necessária não está nas features.
+2. **A explicação é acionável.** Um médico que vê esta decomposição sabe que a previsão "benigno" se
+   apoia em medidas fracas, sem nenhum sinal forte em contrário. Isso é qualitativamente diferente
+   de um caso benigno com evidência robusta, e justifica exames complementares.
+
+#### Convergência das três técnicas
+
+`texture_worst`, `concavity_worst`, `symmetry_worst` e `concave points` aparecem no topo das três
+análises, obtidas por caminhos matematicamente independentes. A concordância aumenta a confiança de
+que o modelo aprendeu sinal real, e não artefato da partição de dados.
 
 ---
 

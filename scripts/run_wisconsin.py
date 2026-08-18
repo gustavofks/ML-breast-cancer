@@ -16,12 +16,13 @@ import sys
 from pathlib import Path
 
 import matplotlib
+import numpy as np
 
 matplotlib.use("Agg")  # backend sem janela: o script roda em terminal
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from src import config, eda, evaluation, models, plotting  # noqa: E402
+from src import config, eda, evaluation, explain, models, plotting  # noqa: E402
 from src.data import load_dataset  # noqa: E402
 from src.preprocessing import split_data, split_summary  # noqa: E402
 
@@ -30,11 +31,11 @@ def main() -> None:
     plotting.apply_style()
     config.ensure_output_dirs()
 
-    print("1/6  Carregando e limpando os dados...")
+    print("1/7  Carregando e limpando os dados...")
     X, y = load_dataset()
     print(f"      {X.shape[0]} amostras, {X.shape[1]} features")
 
-    print("2/6  Análise exploratória...")
+    print("2/7  Análise exploratória...")
     eda.plot_class_balance(y)
     eda.plot_feature_distributions(
         X, y, eda.feature_group(X, "mean"),
@@ -50,17 +51,17 @@ def main() -> None:
     eda.plot_correlation_heatmap(X)
     eda.plot_target_correlation(X, y)
 
-    print("3/6  Separando treino e teste (estratificado)...")
+    print("3/7  Separando treino e teste (estratificado)...")
     X_train, X_test, y_train, y_test = split_data(X, y)
     print(split_summary(y_train, y_test).to_string(index=False))
 
-    print("4/6  Validação cruzada e ajuste de hiperparâmetros...")
+    print("4/7  Validação cruzada e ajuste de hiperparâmetros...")
     cv_results = models.cross_validate_models(models.get_models(), X_train, y_train)
     modelos_ajustados, grade = models.tune_models(models.get_models(), X_train, y_train)
     melhor = models.select_best(cv_results)
     print(f"      Melhor modelo por {models.SELECTION_METRIC}: {melhor}")
 
-    print("5/6  Avaliando no conjunto de teste...")
+    print("5/7  Avaliando no conjunto de teste...")
     resultados_teste = evaluation.evaluate_all(modelos_ajustados, X_test, y_test)
     print(resultados_teste[["modelo", "accuracy", "recall", "f1", "roc_auc", "falsos_negativos"]].to_string(index=False))
 
@@ -71,7 +72,29 @@ def main() -> None:
     evaluation.plot_threshold_tradeoff(modelo_final, X_test, y_test, melhor)
     limiares = evaluation.threshold_analysis(modelo_final, X_test, y_test)
 
-    print("6/6  Gravando métricas...")
+    print("6/7  Explicabilidade...")
+    coeficientes = explain.linear_coefficients(modelo_final, list(X.columns))
+    permutacao = explain.permutation_scores(modelo_final, X_test, y_test)
+    explain.plot_coefficients(coeficientes)
+    explain.plot_permutation_importance(permutacao)
+
+    explicacao = explain.shap_explanation(modelo_final, X_train, X_test)
+    explain.plot_shap_beeswarm(explicacao)
+    shap_global = explain.shap_importance(explicacao)
+
+    # Um falso negativo e o caso mais instrutivo para o relatorio: mostra por que
+    # o modelo errou justamente onde o erro custa mais caro.
+    previsoes = modelo_final.predict(X_test)
+    falsos_negativos = np.where((y_test.to_numpy() == 1) & (previsoes == 0))[0]
+    caso = int(falsos_negativos[0]) if len(falsos_negativos) else 0
+    explain.plot_shap_waterfall(
+        explicacao,
+        caso,
+        f"SHAP — caso {caso} do teste (tumor maligno não detectado)",
+        "14_shap_caso_falso_negativo.png",
+    )
+
+    print("7/7  Gravando métricas...")
     caminho = evaluation.save_metrics(
         {
             "dataset": {
@@ -89,6 +112,12 @@ def main() -> None:
             "hiperparametros": grade.to_dict(orient="records"),
             "teste": resultados_teste.to_dict(orient="records"),
             "limiares": limiares.to_dict(orient="records"),
+            "explicabilidade": {
+                "coeficientes": coeficientes.head(15).to_dict(orient="records"),
+                "permutacao": permutacao.head(15).to_dict(orient="records"),
+                "shap_global": shap_global.head(15).to_dict(orient="records"),
+                "caso_analisado": caso,
+            },
         }
     )
     print(f"      {caminho}")

@@ -226,5 +226,8 @@ docs/superpowers/
 # Material de apoio da disciplina (instrucoes do desafio, referencias)
 docs/referencias/
 
+# Roteiro pessoal da gravacao do video
+docs/roteiro_video.md
+
 # Dataset extra de imagens (grande demais para o repositorio; ver README)
 data/raw/cbis-ddsm/

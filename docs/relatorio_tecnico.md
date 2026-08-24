@@ -4,8 +4,8 @@
 **Curso:** Pós-graduação em Inteligência Artificial — FIAP
 **Repositório:** https://github.com/gustavofks/ML-breast-cancer
 
-> Documento em construção. Cada seção é fechada ao final da fase correspondente do
-> desenvolvimento; a revisão final e a exportação para PDF ocorrem na Fase 7.
+Código-fonte, notebooks executados e relatório visual acompanham este documento no repositório.
+Todos os números apresentados são reproduzíveis com `python scripts/run_wisconsin.py`.
 
 ---
 
@@ -13,10 +13,10 @@
 
 1. [O problema](#1-o-problema)
 2. [Análise exploratória dos dados](#2-análise-exploratória-dos-dados)
-3. [Estratégias de pré-processamento](#3-estratégias-de-pré-processamento) *(Fase 3)*
-4. [Modelos utilizados e justificativa](#4-modelos-utilizados-e-justificativa) *(Fase 4)*
-5. [Resultados e interpretação](#5-resultados-e-interpretação) *(Fases 4 e 5)*
-6. [Discussão crítica e uso na prática](#6-discussão-crítica-e-uso-na-prática) *(Fase 7)*
+3. [Estratégias de pré-processamento](#3-estratégias-de-pré-processamento)
+4. [Modelos utilizados e justificativa](#4-modelos-utilizados-e-justificativa)
+5. [Resultados e interpretação](#5-resultados-e-interpretação)
+6. [Discussão crítica e uso na prática](#6-discussão-crítica-e-uso-na-prática)
 
 ---
 
@@ -547,5 +547,91 @@ que o modelo aprendeu sinal real, e não artefato da partição de dados.
 
 ## 6. Discussão crítica e uso na prática
 
-*A ser preenchida na Fase 7: limitações da base e do modelo, cenários de uso real, riscos e o papel
-final do médico na decisão.*
+### 6.1 O modelo pode ser usado na prática?
+
+**Sim, como ferramenta de apoio — não como decisor.** O desempenho sustenta essa afirmação: recall
+de 0,929 e AUC de 0,996 no conjunto de teste, sem queda em relação à validação cruzada, com
+explicações coerentes com a morfologia celular descrita na literatura médica. Mas o mesmo conjunto
+de resultados delimita com precisão onde o uso autônomo seria irresponsável.
+
+Três limitações são intransponíveis com esta base:
+
+**1. Origem única e volume pequeno.** São 569 casos de uma única instituição, coletados sob um
+único protocolo. Nada garante que o desempenho se mantenha em outra população, com outro
+equipamento ou outro patologista extraindo as medidas. O conjunto de teste tem 114 casos — a
+diferença entre 3 e 1 falso negativo, que sustenta a recomendação de ajuste do limiar, equivale a
+duas pacientes. É uma base pequena demais para decisões definitivas.
+
+**2. O sistema não parte de dados crus.** As 30 features já são o resultado de uma etapa anterior de
+análise por um especialista, que examinou a imagem da punção e mediu os núcleos celulares. O modelo
+automatiza o *julgamento* a partir das medidas, não a *extração* das medidas. Na prática, isso
+significa que ele não reduz a carga de trabalho especializada — apenas apoia a decisão final. A
+entrega extra deste projeto, com CNN sobre mamografias, ataca justamente essa limitação.
+
+**3. Existem tumores malignos morfologicamente discretos.** A análise SHAP do caso 16 do conjunto de
+teste mostrou um tumor maligno cujas medidas estão quase todas abaixo da média da base. O modelo não
+errou por acaso: viu um caso que genuinamente se parece com os benignos nas variáveis disponíveis.
+Nenhum ajuste de hiperparâmetro resolve isso, porque a informação necessária não está nos dados.
+
+### 6.2 Como o modelo seria usado
+
+Três cenários concretos, em ordem crescente de exigência:
+
+| Cenário | Como funcionaria | Por que agrega valor |
+|---|---|---|
+| **Priorização de fila** | ordenar os casos pendentes pela probabilidade prevista de malignidade | casos de alto risco chegam antes ao especialista; ninguém é excluído da análise |
+| **Segunda opinião** | exibir previsão, probabilidade e explicação SHAP junto ao laudo em elaboração | oferece um contraponto estruturado antes da assinatura |
+| **Sinalização de discordância** | alertar quando modelo e laudo preliminar divergem | atua como rede de segurança contra desatenção, não como substituto do julgamento |
+
+Em todos, **o laudo é assinado por um médico**. O sistema nunca emite diagnóstico, nunca dispensa
+uma paciente e nunca é a última etapa do fluxo.
+
+### 6.3 O limiar de decisão é uma escolha clínica, não técnica
+
+O limiar padrão de 0,5 vem da convenção do `predict()`, não de nenhuma consideração médica. Este
+projeto mostrou que 0,30 reduz os falsos negativos de 3 para 1 sem aumentar os falsos positivos —
+mas o ponto mais importante é outro: **quem deve escolher esse valor é a instituição de saúde, não o
+cientista de dados**, porque a escolha traduz uma decisão de política clínica sobre quantos exames
+adicionais se aceita realizar para não deixar um tumor maligno passar.
+
+O que a análise técnica entrega é a curva de trade-off (seção 5.4), que torna essa decisão informada
+em vez de arbitrária.
+
+### 6.4 Riscos de implantação
+
+- **Excesso de confiança.** Um sistema que acerta 96,5% das vezes pode induzir o profissional a
+  aceitar previsões sem revisar — justamente o efeito que a explicabilidade busca combater ao expor
+  o raciocínio por trás de cada resposta.
+- **Degradação silenciosa.** Mudanças de equipamento, protocolo ou população deslocam a distribuição
+  dos dados sem gerar nenhum erro visível. Uso em produção exigiria monitoramento contínuo das
+  métricas e recalibração periódica.
+- **Interpretação equivocada da importância das variáveis.** Como demonstrado na seção 5.5,
+  `texture_worst` tem o maior coeficiente por ser pouco correlacionada com as demais, não por ser
+  clinicamente mais relevante. Comunicar isso como "a textura é o que mais importa no diagnóstico"
+  seria um erro grave de tradução entre estatística e medicina.
+- **Responsabilidade legal e ética.** Um sistema de apoio ao diagnóstico opera sobre dados sensíveis
+  de saúde e influencia decisões médicas. Implantação real exigiria conformidade com a LGPD,
+  rastreabilidade das previsões e definição explícita de responsabilidade sobre o desfecho.
+
+### 6.5 Próximos passos técnicos
+
+1. **Validação externa** em base de outra instituição — o teste decisivo que esta base não permite.
+2. **Calibração do limiar por validação cruzada no treino**, em vez de observação do conjunto de
+   teste, eliminando o risco de ajuste ao próprio conjunto de avaliação.
+3. **Calibração de probabilidade** (Platt scaling ou isotônica), para que o valor previsto possa ser
+   lido como risco real e não apenas como ordenação.
+4. **Diagnóstico a partir de imagem** com redes neurais convolucionais, removendo a dependência da
+   extração manual de medidas — a entrega extra deste desafio.
+
+### 6.6 Conclusão
+
+O projeto entrega um classificador com desempenho alto, estável e explicável, construído sobre um
+protocolo metodológico defensável: sem vazamento de dados, com separação clara entre treino e teste,
+métrica escolhida pelo custo clínico do erro e três técnicas independentes de explicabilidade
+convergindo nos mesmos achados.
+
+Seu valor prático não está em substituir o julgamento médico, mas em **tornar esse julgamento mais
+rápido e mais informado** — priorizando filas, oferecendo segunda opinião estruturada e sinalizando
+divergências. O caso do tumor maligno não detectado, dissecado pela análise SHAP, é o argumento mais
+concreto a favor dessa posição: existem limites que o dado disponível não permite ultrapassar, e
+reconhecê-los faz parte de entregar o sistema de forma responsável.

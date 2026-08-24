@@ -115,12 +115,32 @@ def permutation_scores(
 # ---------------------------------------------------------------------------
 # SHAP
 # ---------------------------------------------------------------------------
+def shap_available() -> bool:
+    """Informa se o SHAP pode ser importado neste ambiente.
+
+    O SHAP depende do numba, cuja biblioteca compilada e bloqueada por algumas
+    politicas de seguranca do Windows (App Control) e pode faltar em ambientes
+    restritos. Como a explicabilidade global tambem e coberta por coeficientes e
+    importancia por permutacao, o pipeline degrada em vez de falhar.
+    """
+    try:
+        import shap  # noqa: F401
+    except Exception:
+        return False
+    return True
+
+
 def shap_explanation(model: Pipeline, X_train: pd.DataFrame, X_test: pd.DataFrame):
     """Valores SHAP do modelo sobre o conjunto de teste.
 
     `shap.Explainer` escolhe sozinho o algoritmo adequado (linear para regressao
     logistica, arvore para florestas), o que mantem esta funcao valida para
     qualquer modelo do catalogo.
+
+    Raises:
+        ImportError: quando o SHAP nao esta disponivel no ambiente. Use
+            `shap_available()` antes de chamar, se a falha nao puder interromper
+            o fluxo.
     """
     import shap  # import local: SHAP e pesado e so e necessario aqui
 

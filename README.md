@@ -92,6 +92,45 @@ Ambos estão versionados **com as saídas executadas** — podem ser lidos sem r
 pytest
 ```
 
+### Entrega extra: diagnóstico por imagem
+
+O pipeline de visão computacional tem dependências próprias, instaladas à parte para manter a
+instalação principal leve:
+
+```bash
+pip install -r requirements-vision.txt
+```
+
+**Base utilizada: BUSI — Breast Ultrasound Images Dataset** (Al-Dhabyani et al., 2020). São 780
+imagens de ultrassom mamário em três classes: 437 benignas, 210 malignas e 133 normais. Licença
+CC BY 4.0. O enunciado do desafio autoriza explicitamente imagens de mamografia **ou ultrassom**.
+
+A base **não é versionada** (256 MB). Para reproduzir, baixe o `Dataset_BUSI_with_GT` e organize
+em uma pasta por classe — o carregamento descobre as classes sozinho, então a convenção vale para
+qualquer base de imagens:
+
+```
+data/raw/images/
+├── benign/      benign (1).png ...
+├── malignant/   malignant (1).png ...
+└── normal/      normal (1).png ...
+```
+
+> O BUSI distribui as máscaras de segmentação (`*_mask.png`) na mesma pasta das imagens. Elas
+> **não são amostras**: se ficarem lá, o Keras as carrega como se fossem exames. O carregamento
+> detecta e interrompe com instrução, em vez de treinar com o conjunto contaminado.
+>
+> Citação: W. Al-Dhabyani, M. Gomaa, H. Khaled, A. Fahmy, "Dataset of breast ultrasound images",
+> *Data in Brief*, 2020.
+
+Quando o pipeline de imagens gravar `results/metrics_vision.json`, a segunda aba do relatório HTML
+passa a ser montada a partir dele automaticamente, sem alteração de código.
+
+> **Nota sobre o SHAP.** A biblioteca depende do `numba`, cuja DLL compilada é bloqueada por
+> algumas políticas de segurança do Windows (App Control / Smart App Control). O pipeline detecta a
+> ausência e continua, mantendo coeficientes e importância por permutação — as figuras SHAP já
+> versionadas em `results/figures/` permanecem válidas.
+
 ## Estrutura do projeto
 
 ```

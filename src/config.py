@@ -45,6 +45,24 @@ EXPECTED_N_SAMPLES = 569
 EXPECTED_N_FEATURES = 30
 
 
+# ---------------------------------------------------------------------------
+# Entrega extra: diagnostico por imagem
+# ---------------------------------------------------------------------------
+# A base de imagens nao e versionada (ver .gitignore). Espera-se a convencao
+# de uma pasta por classe, adotada tanto pelo BUSI quanto pelas versoes em
+# JPEG do CBIS-DDSM:
+#
+#     data/raw/images/<classe>/<arquivo>.png
+#
+IMAGES_DIR = RAW_DATA_DIR / "images"
+VISION_METRICS_FILE = RESULTS_DIR / "metrics_vision.json"
+
+IMAGE_SIZE = (224, 224)  # entrada padrao das redes pre-treinadas usadas
+BATCH_SIZE = 32
+EPOCHS = 30
+VALIDATION_SPLIT = 0.3  # metade vira validacao, metade vira teste
+
+
 def ensure_output_dirs() -> None:
     """Cria os diretorios de saida caso ainda nao existam."""
     for directory in (FIGURES_DIR, REPORTS_DIR):

@@ -59,6 +59,9 @@ def test_permutacao_avalia_todas_as_features(contexto):
 
 
 def test_shap_produz_um_valor_por_feature_e_por_amostra(contexto):
+    if not explain.shap_available():
+        pytest.skip("SHAP indisponível neste ambiente (numba bloqueado pelo sistema)")
+
     linear, _, X_train, X_test, _ = contexto
     explicacao = explain.shap_explanation(linear, X_train, X_test)
 

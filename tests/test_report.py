@@ -84,6 +84,34 @@ def test_relatorio_e_autocontido(pagina):
     assert "@import" not in pagina
 
 
+def test_aba_extra_e_montada_a_partir_das_metricas_de_imagem(tmp_path):
+    """Quando `metrics_vision` existe, a aba deixa de ser um aviso de pendência."""
+    metricas_visao = {
+        "dataset": {
+            "classes": ["benign", "malignant"],
+            "imagens": 780,
+            "classe_positiva": "malignant",
+            "por_classe": [
+                {"classe": "benign", "imagens": 437, "proporcao": 0.5603},
+                {"classe": "malignant", "imagens": 343, "proporcao": 0.4397},
+            ],
+        },
+        "modelo_escolhido": "MobileNetV2 (transferência)",
+        "teste": [
+            {"modelo": "MobileNetV2 (transferência)", "accuracy": 0.88, "precision": 0.86, "recall": 0.84, "f1": 0.85}
+        ],
+        "figuras": [],
+    }
+
+    pagina = build_report(
+        METRICAS_MINIMAS, tmp_path / "index.html", metrics_vision=metricas_visao
+    ).read_text(encoding="utf-8")
+
+    assert '<div class="pendente">' not in pagina
+    assert "MobileNetV2" in pagina
+    assert "780" in pagina and "malignant" in pagina
+
+
 def test_relatorio_le_metrics_json_por_padrao(tmp_path):
     metricas = json.loads(config.METRICS_FILE.read_text(encoding="utf-8"))
     destino = build_report(metricas, tmp_path / "index.html")

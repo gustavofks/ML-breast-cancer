@@ -711,31 +711,112 @@ def _painel_wisconsin(m: dict) -> str:
 # ---------------------------------------------------------------------------
 # Aba 2: dataset extra
 # ---------------------------------------------------------------------------
-def _painel_extra() -> str:
-    return (
-        '<div class="pendente">'
-        "<h3>Diagnóstico por imagem com redes neurais convolucionais</h3>"
-        "<p>Esta análise é a entrega extra do desafio e será preenchida na fase seguinte, com um "
-        "segundo conjunto de dados — mamografias — e uma CNN treinada para classificação.</p>"
-        "<p>A estrutura acompanhará a da primeira aba: caracterização da base, amostras de "
-        "imagens, arquitetura da rede, curvas de treino, métricas no conjunto de teste e "
-        "interpretação dos resultados.</p>"
-        "</div>"
+def _painel_extra(m: dict | None = None) -> str:
+    """Aba do dataset de imagens.
+
+    Enquanto `results/metrics_vision.json` nao existir, exibe o aviso de
+    pendencia. Quando existir, a aba e montada a partir dele — inclusive as
+    figuras, que vem descritas no proprio arquivo. Assim o relatorio acompanha
+    a entrega extra sem exigir mudanca neste modulo.
+    """
+    if not m:
+        return (
+            '<div class="pendente">'
+            "<h3>Diagnóstico por imagem com redes neurais convolucionais</h3>"
+            "<p>Esta análise é a entrega extra do desafio e será preenchida com um segundo "
+            "conjunto de dados — imagens de exame — e uma rede neural convolucional treinada "
+            "para classificação.</p>"
+            "<p>A estrutura acompanhará a da primeira aba: caracterização da base, amostras de "
+            "imagens, arquitetura da rede, curvas de treino, métricas no conjunto de teste e "
+            "interpretação dos resultados.</p>"
+            "</div>"
+        )
+
+    base = m["dataset"]
+    blocos = []
+
+    blocos.append(
+        _secao(
+            "01",
+            "A base de imagens",
+            _indicadores(
+                [
+                    (str(base["imagens"]), "imagens", False),
+                    (str(len(base["classes"])), "classes", False),
+                    (escape(base["classe_positiva"]), "classe positiva", False),
+                ]
+            )
+            + _tabela(
+                "Distribuição por classe",
+                [("classe", "Classe"), ("imagens", "Imagens"), ("proporcao", "Proporção")],
+                base["por_classe"],
+                casas=4,
+            )
+        )
     )
+
+    if m.get("teste"):
+        blocos.append(
+            _secao(
+                "02",
+                "Resultados no conjunto de teste",
+                _tabela(
+                    "Desempenho das arquiteturas",
+                    [
+                        ("modelo", "Modelo"),
+                        ("accuracy", "Acurácia"),
+                        ("precision", "Precisão"),
+                        ("recall", "Recall"),
+                        ("f1", "F1"),
+                    ],
+                    m["teste"],
+                    destacar=m.get("modelo_escolhido"),
+                ),
+            )
+        )
+
+    if m.get("figuras"):
+        blocos.append(
+            _secao(
+                "03",
+                "Análise visual",
+                "".join(
+                    _figura(f["arquivo"], f["titulo"], f["leitura"]) for f in m["figuras"]
+                ),
+            )
+        )
+
+    if m.get("discussao"):
+        blocos.append(
+            _secao("04", "Interpretação", f'<p>{escape(m["discussao"])}</p>')
+        )
+
+    return "".join(blocos)
 
 
 # ---------------------------------------------------------------------------
 # Montagem da pagina
 # ---------------------------------------------------------------------------
-def build_report(metrics: dict | None = None, output: Path | None = None) -> Path:
+def build_report(
+    metrics: dict | None = None,
+    output: Path | None = None,
+    metrics_vision: dict | None = None,
+) -> Path:
     """Gera o relatorio HTML e devolve o caminho do arquivo escrito.
 
     Args:
-        metrics: consolidado de metricas. Lido de `results/metrics.json` se omitido.
+        metrics: consolidado do dataset tabular. Lido de `results/metrics.json`
+            se omitido.
         output: caminho de saida. Usa `results/reports/index.html` se omitido.
+        metrics_vision: consolidado da entrega extra. Lido de
+            `results/metrics_vision.json` quando o arquivo existir; a aba fica
+            marcada como pendente enquanto nao existir.
     """
     if metrics is None:
         metrics = json.loads(config.METRICS_FILE.read_text(encoding="utf-8"))
+
+    if metrics_vision is None and config.VISION_METRICS_FILE.exists():
+        metrics_vision = json.loads(config.VISION_METRICS_FILE.read_text(encoding="utf-8"))
 
     destino = output or config.REPORT_FILE
     destino.parent.mkdir(parents=True, exist_ok=True)
@@ -780,7 +861,7 @@ def build_report(metrics: dict | None = None, output: Path | None = None) -> Pat
 
 <main>
   <div class="painel" id="painel-wisconsin" role="tabpanel">{_painel_wisconsin(metrics)}</div>
-  <div class="painel" id="painel-extra" role="tabpanel" hidden>{_painel_extra()}</div>
+  <div class="painel" id="painel-extra" role="tabpanel" hidden>{_painel_extra(metrics_vision)}</div>
 </main>
 
 <footer class="rodape">

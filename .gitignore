@@ -229,5 +229,5 @@ docs/referencias/
 # Roteiro pessoal da gravacao do video
 docs/roteiro_video.md
 
-# Dataset extra de imagens (grande demais para o repositorio; ver README)
-data/raw/cbis-ddsm/
+# Base de imagens da entrega extra (grande demais para o repositorio; ver README)
+data/raw/images/

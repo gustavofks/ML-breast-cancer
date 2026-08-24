@@ -1,0 +1,7 @@
+# Dependencias da entrega extra (diagnostico por imagem com CNN)
+# Instale apenas se for executar o pipeline de visao computacional:
+#     pip install -r requirements-vision.txt
+
+tensorflow_cpu==2.21.0
+keras==3.15.1
+pillow==12.3.0

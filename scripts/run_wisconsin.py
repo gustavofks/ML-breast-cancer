@@ -78,21 +78,28 @@ def main() -> None:
     explain.plot_coefficients(coeficientes)
     explain.plot_permutation_importance(permutacao)
 
-    explicacao = explain.shap_explanation(modelo_final, X_train, X_test)
-    explain.plot_shap_beeswarm(explicacao)
-    shap_global = explain.shap_importance(explicacao)
-
     # Um falso negativo e o caso mais instrutivo para o relatorio: mostra por que
     # o modelo errou justamente onde o erro custa mais caro.
     previsoes = modelo_final.predict(X_test)
     falsos_negativos = np.where((y_test.to_numpy() == 1) & (previsoes == 0))[0]
     caso = int(falsos_negativos[0]) if len(falsos_negativos) else 0
-    explain.plot_shap_waterfall(
-        explicacao,
-        caso,
-        f"SHAP — caso {caso} do teste (tumor maligno não detectado)",
-        "14_shap_caso_falso_negativo.png",
-    )
+
+    # O SHAP depende do numba, que algumas politicas de seguranca do Windows
+    # bloqueiam. Coeficientes e permutacao ja cobrem a explicabilidade global,
+    # entao a ausencia do SHAP reduz o resultado sem interromper o pipeline.
+    shap_global = None
+    if explain.shap_available():
+        explicacao = explain.shap_explanation(modelo_final, X_train, X_test)
+        explain.plot_shap_beeswarm(explicacao)
+        shap_global = explain.shap_importance(explicacao)
+        explain.plot_shap_waterfall(
+            explicacao,
+            caso,
+            f"SHAP — caso {caso} do teste (tumor maligno não detectado)",
+            "14_shap_caso_falso_negativo.png",
+        )
+    else:
+        print("      AVISO: SHAP indisponível neste ambiente; figuras 13 e 14 preservadas.")
 
     print("7/8  Gravando métricas...")
     caminho = evaluation.save_metrics(
@@ -115,7 +122,7 @@ def main() -> None:
             "explicabilidade": {
                 "coeficientes": coeficientes.head(15).to_dict(orient="records"),
                 "permutacao": permutacao.head(15).to_dict(orient="records"),
-                "shap_global": shap_global.head(15).to_dict(orient="records"),
+                "shap_global": shap_global.head(15).to_dict(orient="records") if shap_global is not None else [],
                 "caso_analisado": caso,
             },
         }

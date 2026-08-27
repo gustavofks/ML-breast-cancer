@@ -17,6 +17,7 @@ Todos os números apresentados são reproduzíveis com `python scripts/run_wisco
 4. [Modelos utilizados e justificativa](#4-modelos-utilizados-e-justificativa)
 5. [Resultados e interpretação](#5-resultados-e-interpretação)
 6. [Discussão crítica e uso na prática](#6-discussão-crítica-e-uso-na-prática)
+7. [Entrega extra: diagnóstico por imagem com CNN](#7-entrega-extra-diagnóstico-por-imagem-com-cnn)
 
 ---
 
@@ -635,3 +636,112 @@ rápido e mais informado** — priorizando filas, oferecendo segunda opinião es
 divergências. O caso do tumor maligno não detectado, dissecado pela análise SHAP, é o argumento mais
 concreto a favor dessa posição: existem limites que o dado disponível não permite ultrapassar, e
 reconhecê-los faz parte de entregar o sistema de forma responsável.
+
+---
+
+## 7. Entrega extra: diagnóstico por imagem com CNN
+
+Código correspondente: [`src/vision/`](../src/vision/) · Execução: `python scripts/run_vision.py`
+
+A seção 6.1 apontou uma limitação central do pipeline tabular: **ele não parte de dados crus.** As
+30 features do Wisconsin já são resultado de um especialista ter examinado a imagem e medido os
+núcleos celulares. Esta entrega ataca exatamente essa limitação, classificando a partir do pixel.
+
+### 7.1 A base
+
+**BUSI — Breast Ultrasound Images** (Al-Dhabyani et al., 2020), licença CC BY 4.0. São 780 imagens
+de ultrassom mamário de 600 pacientes, em três classes. O enunciado do desafio autoriza
+explicitamente imagens de mamografia **ou ultrassom**.
+
+| Classe | Imagens | Proporção |
+|---|---|---|
+| benign | 437 | 56,0% |
+| malignant | 210 | 26,9% |
+| normal | 133 | 17,1% |
+
+![Imagens por classe](../results/figures/20_imagens_por_classe.png)
+
+![Exemplos por classe](../results/figures/21_amostras_imagens.png)
+
+**Uma armadilha do dataset que valeu registro.** O BUSI distribui as máscaras de segmentação
+(`*_mask.png`) na mesma pasta das imagens — são 798 arquivos. O carregador do Keras lê tudo o que
+encontra no diretório: mantidas ali, as máscaras entrariam como se fossem exames, dobrando o
+conjunto com imagens binárias que não existem clinicamente e inflando as métricas sem sentido. O
+carregamento detecta máscaras e **interrompe com instrução explícita**, em vez de treinar sobre um
+conjunto silenciosamente contaminado.
+
+### 7.2 Protocolo
+
+- Divisão 70/15/15 — 546 imagens de treino, 128 de validação e 106 de teste
+- Imagens redimensionadas para 224×224, entrada padrão das redes pré-treinadas
+- **Pesos de classe** inversamente proporcionais à frequência (`normal` pesa 1,95 contra 0,60 de
+  `benign`), para que a rede não aprenda a favorecer a classe majoritária
+- Aumento de dados apenas geométrico — espelhamento, rotação leve, zoom e translação. Distorções de
+  cor seriam arriscadas: em imagem médica, a intensidade carrega informação diagnóstica
+- Parada antecipada monitorando a perda de validação, com restauração dos melhores pesos
+
+### 7.3 Arquiteturas comparadas
+
+| Modelo | Parâmetros | Ideia |
+|---|---|---|
+| **CNN do zero** | 110 mil | três blocos convolucionais treinados apenas com as 546 imagens disponíveis |
+| **MobileNetV2 (transferência)** | 2,26 milhões | base pré-treinada na ImageNet, congelada, com cabeça de classificação nova |
+
+### 7.4 Resultados
+
+![Curvas de treino](../results/figures/22_curvas_treino.png)
+
+| Modelo | Épocas | Melhor época | Acurácia | F1 macro | **Recall maligno** | Precisão maligno | Malignos não detectados | Tempo |
+|---|---|---|---|---|---|---|---|---|
+| **MobileNetV2** | 15 | 9 | **0,745** | **0,727** | **0,793** | 0,639 | **6 de 29** | 77 s |
+| CNN do zero | 24 | 18 | 0,585 | 0,287 | 0,069 | 0,667 | 27 de 29 | 149 s |
+
+**A diferença não é de grau, é de natureza.** A CNN treinada do zero atinge 58,5% de acurácia, mas
+com recall de apenas 0,069 na classe maligna: detectou **2 dos 29 casos malignos** do conjunto de
+teste. Ela não aprendeu a distinguir lesões — aprendeu a responder majoritariamente "benigno", que
+é a resposta mais frequente. É a demonstração prática do que a seção 2 já afirmava sobre a acurácia
+como métrica isolada: um modelo pode parecer razoável e ser clinicamente inútil.
+
+As curvas de treino explicam o porquê: a perda de validação da CNN do zero mal se move ao longo de
+24 épocas, oscilando em torno de 1,05 — com 546 imagens, não há dados suficientes para aprender
+filtros visuais úteis a partir do zero.
+
+A MobileNetV2 converge em 9 épocas e chega a recall de 0,793 na classe maligna. **Transferência de
+aprendizado não é um detalhe de otimização neste cenário: é o que torna a tarefa viável.**
+
+![Matriz de confusão](../results/figures/23_matriz_confusao_imagens.png)
+
+A matriz do modelo escolhido detalha os erros nas 106 imagens de teste:
+
+- **23 dos 29 casos malignos** corretamente identificados
+- **4 malignos classificados como benignos** e **2 como normais** — os 6 erros de maior custo
+- 11 benignos classificados como malignos, que no fluxo clínico significam exames adicionais
+- 8 benignos classificados como normais, um erro menos grave mas ainda indesejado
+
+![Casos malignos não detectados](../results/figures/24_malignos_nao_detectados.png)
+
+Mostrar *quais* imagens escaparam cumpre, no domínio visual, o papel que a análise SHAP cumpriu no
+tabular: transforma o erro de um número agregado em um caso concreto e discutível com um
+especialista.
+
+### 7.5 Comparação honesta entre as duas entregas
+
+| | Wisconsin (tabular) | BUSI (imagem) |
+|---|---|---|
+| Entrada | 30 medidas extraídas por especialista | pixels do exame |
+| Recall da classe maligna | 0,929 | 0,793 |
+| Amostras | 569 | 780 |
+| Dependência humana prévia | alta — exige medição manual | nenhuma |
+| Explicabilidade | coeficientes, permutação e SHAP | inspeção dos erros; sem atribuição por pixel |
+
+O modelo tabular é claramente melhor **nas métricas**, mas resolve um problema mais fácil: recebe
+medidas que um profissional já extraiu. O modelo de imagem tem desempenho inferior e opera sobre o
+dado bruto, sem etapa manual anterior — mais próximo de um sistema de triagem real, e mais longe de
+estar pronto para uso.
+
+Com recall de 0,793, **1 em cada 5 tumores malignos escaparia**. É um resultado adequado a uma
+demonstração de viabilidade acadêmica e inaceitável para uso clínico, ainda que como triagem. Os
+caminhos conhecidos para melhorar — ajuste fino da base pré-treinada, mais dados, resolução maior,
+validação cruzada em vez de partição única e ajuste do limiar por classe — estão fora do escopo
+desta fase, mas nenhum deles contradiz a conclusão da seção 6: o médico continua com a palavra
+final.

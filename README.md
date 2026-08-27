@@ -32,6 +32,20 @@ A métrica prioritária é o **recall da classe maligna**: um falso negativo sig
 maligno classificado como benigno — o erro de maior custo clínico. A acurácia é reportada, mas não
 decide: com 62,7% de casos benignos, um classificador trivial já a atingiria.
 
+### Entrega extra — diagnóstico por imagem
+
+Classificação de ultrassom mamário (BUSI, 780 imagens, 3 classes) partindo do pixel cru, sem
+medidas extraídas por especialista:
+
+| Modelo | Acurácia | F1 macro | Recall maligno | Malignos não detectados |
+|---|---|---|---|---|
+| **MobileNetV2 (transferência)** | 0,745 | 0,727 | **0,793** | 6 de 29 |
+| CNN do zero | 0,585 | 0,287 | 0,069 | 27 de 29 |
+
+A CNN treinada do zero atinge 58,5% de acurácia detectando apenas 2 dos 29 casos malignos: aprendeu
+a responder "benigno", que é a resposta mais frequente. Com 546 imagens de treino, **transferência
+de aprendizado não é otimização, é o que torna a tarefa viável**.
+
 ## Base de dados
 
 **Breast Cancer Wisconsin (Diagnostic)** — 569 amostras, 30 características numéricas, sem valores
@@ -99,6 +113,7 @@ instalação principal leve:
 
 ```bash
 pip install -r requirements-vision.txt
+python scripts/run_vision.py
 ```
 
 **Base utilizada: BUSI — Breast Ultrasound Images Dataset** (Al-Dhabyani et al., 2020). São 780
@@ -146,15 +161,24 @@ ML-breast-cancer/
 │   ├── evaluation.py          # métricas e gráficos do modelo
 │   ├── explain.py             # coeficientes, permutação e SHAP
 │   ├── plotting.py            # estilo visual compartilhado
-│   └── report.py              # geração do relatório HTML
-├── scripts/run_wisconsin.py   # pipeline ponta a ponta
-├── tests/                     # 37 testes automatizados
+│   ├── report.py              # geração do relatório HTML
+│   └── vision/                # entrega extra: diagnóstico por imagem
+│       ├── dataset.py         # carregamento por pasta de classe
+│       ├── model.py           # CNN do zero e MobileNetV2
+│       ├── train.py           # treino com pesos de classe
+│       └── evaluate.py        # métricas e figuras das redes
+├── scripts/
+│   ├── run_wisconsin.py       # pipeline tabular ponta a ponta
+│   └── run_vision.py          # pipeline de imagem ponta a ponta
+├── tests/                     # 51 testes automatizados
 ├── results/
-│   ├── figures/               # 14 gráficos gerados
-│   ├── metrics.json           # métricas consolidadas
-│   └── reports/index.html     # relatório visual
+│   ├── figures/               # 19 gráficos gerados
+│   ├── metrics.json           # métricas do pipeline tabular
+│   ├── metrics_vision.json    # métricas do pipeline de imagem
+│   └── reports/index.html     # relatório visual, com as duas análises
 ├── docs/relatorio_tecnico.md  # relatório técnico completo
-└── requirements.txt
+├── requirements.txt
+└── requirements-vision.txt    # dependências da entrega extra
 ```
 
 A separação de responsabilidades é deliberada: `eda.py` analisa **os dados**, `evaluation.py`

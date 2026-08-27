@@ -88,6 +88,7 @@ def test_aba_extra_e_montada_a_partir_das_metricas_de_imagem(tmp_path):
     """Quando `metrics_vision` existe, a aba deixa de ser um aviso de pendência."""
     metricas_visao = {
         "dataset": {
+            "nome": "Base de imagens de teste",
             "classes": ["benign", "malignant"],
             "imagens": 780,
             "classe_positiva": "malignant",
@@ -98,7 +99,14 @@ def test_aba_extra_e_montada_a_partir_das_metricas_de_imagem(tmp_path):
         },
         "modelo_escolhido": "MobileNetV2 (transferência)",
         "teste": [
-            {"modelo": "MobileNetV2 (transferência)", "accuracy": 0.88, "precision": 0.86, "recall": 0.84, "f1": 0.85}
+            {
+                "modelo": "MobileNetV2 (transferência)",
+                "accuracy": 0.88,
+                "f1": 0.85,
+                "recall_maligno": 0.84,
+                "precisao_maligno": 0.86,
+                "malignos_nao_detectados": 5,
+            }
         ],
         "figuras": [],
     }

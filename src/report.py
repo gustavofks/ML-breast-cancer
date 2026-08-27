@@ -765,9 +765,10 @@ def _painel_extra(m: dict | None = None) -> str:
                     [
                         ("modelo", "Modelo"),
                         ("accuracy", "Acurácia"),
-                        ("precision", "Precisão"),
-                        ("recall", "Recall"),
-                        ("f1", "F1"),
+                        ("f1", "F1 macro"),
+                        ("recall_maligno", "Recall maligno"),
+                        ("precisao_maligno", "Precisão maligno"),
+                        ("malignos_nao_detectados", "Malignos não detectados"),
                     ],
                     m["teste"],
                     destacar=m.get("modelo_escolhido"),
@@ -825,10 +826,15 @@ def build_report(
     base = metrics["dataset"]
 
     ficha = (
-        f'<span><strong>Base</strong>{escape(base["nome"])}</span>'
-        f'<span><strong>Modelo escolhido</strong>{escape(metrics["modelo_escolhido"])}</span>'
+        f'<span><strong>Base tabular</strong>{escape(base["nome"])}</span>'
+        f'<span><strong>Modelo tabular</strong>{escape(metrics["modelo_escolhido"])}</span>'
         f'<span><strong>Amostras</strong>{base["amostras"]} ({base["treino"]} treino / {base["teste"]} teste)</span>'
-        f"<span><strong>Gerado em</strong>{gerado_em}</span>"
+        + (
+            f'<span><strong>Base de imagens</strong>{escape(metrics_vision["dataset"].get("nome", "base de imagens"))}</span>'
+            if metrics_vision
+            else ""
+        )
+        + f"<span><strong>Gerado em</strong>{gerado_em}</span>"
     )
 
     html = f"""<!doctype html>

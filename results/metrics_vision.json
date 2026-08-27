@@ -1,0 +1,104 @@
+{
+  "dataset": {
+    "nome": "BUSI — Breast Ultrasound Images",
+    "diretorio": "C:\\workspace\\ML-breast-cancer\\data\\raw\\images",
+    "classes": [
+      "benign",
+      "malignant",
+      "normal"
+    ],
+    "imagens": 780,
+    "por_classe": [
+      {
+        "classe": "benign",
+        "imagens": 437,
+        "proporcao": 0.5603
+      },
+      {
+        "classe": "malignant",
+        "imagens": 210,
+        "proporcao": 0.2692
+      },
+      {
+        "classe": "normal",
+        "imagens": 133,
+        "proporcao": 0.1705
+      }
+    ],
+    "classe_positiva": "malignant"
+  },
+  "modelo_escolhido": "MobileNetV2 (transferência)",
+  "metrica_de_selecao": "recall_maligno",
+  "treino": [
+    {
+      "modelo": "CNN do zero",
+      "parametros": 110147,
+      "epocas_treinadas": 24,
+      "melhor_epoca": 18,
+      "val_accuracy": 0.5312,
+      "val_loss": 1.044,
+      "segundos": 148.6
+    },
+    {
+      "modelo": "MobileNetV2 (transferência)",
+      "parametros": 2261827,
+      "epocas_treinadas": 15,
+      "melhor_epoca": 9,
+      "val_accuracy": 0.7266,
+      "val_loss": 0.6335,
+      "segundos": 77.3
+    }
+  ],
+  "teste": [
+    {
+      "modelo": "MobileNetV2 (transferência)",
+      "accuracy": 0.7453,
+      "precision": 0.7063,
+      "recall": 0.7844,
+      "f1": 0.727,
+      "recall_maligno": 0.7931,
+      "precisao_maligno": 0.6389,
+      "malignos_no_teste": 29,
+      "malignos_nao_detectados": 6
+    },
+    {
+      "modelo": "CNN do zero",
+      "accuracy": 0.5849,
+      "precision": 0.4202,
+      "recall": 0.3456,
+      "f1": 0.2871,
+      "recall_maligno": 0.069,
+      "precisao_maligno": 0.6667,
+      "malignos_no_teste": 29,
+      "malignos_nao_detectados": 27
+    }
+  ],
+  "figuras": [
+    {
+      "arquivo": "20_imagens_por_classe.png",
+      "titulo": "Imagens por classe",
+      "leitura": "A base é desbalanceada: 56% benignas, 27% malignas e 17% normais. O treino usa pesos de classe para compensar, evitando que a rede aprenda a favorecer a classe majoritária."
+    },
+    {
+      "arquivo": "21_amostras_imagens.png",
+      "titulo": "Exemplos de ultrassom por classe",
+      "leitura": "Ao contrário do dataset tabular, aqui não há medidas extraídas por um especialista: a rede parte do pixel cru e precisa aprender sozinha o que distingue as lesões."
+    },
+    {
+      "arquivo": "22_curvas_treino.png",
+      "titulo": "Curvas de treino",
+      "leitura": "A distância entre as curvas de treino e validação mede o sobreajuste. A parada antecipada devolve os pesos da melhor época de validação."
+    },
+    {
+      "arquivo": "23_matriz_confusao_imagens.png",
+      "titulo": "Matriz de confusão — MobileNetV2 (transferência)",
+      "leitura": "Com três classes, o erro que importa é o caso maligno classificado como benigno ou normal: é o equivalente ao falso negativo do pipeline tabular."
+    },
+    {
+      "arquivo": "24_malignos_nao_detectados.png",
+      "titulo": "Casos malignos não detectados",
+      "leitura": "Mostrar quais imagens escaparam é o análogo visual da análise SHAP do pipeline tabular: em vez de apenas contar erros, expõe o que o modelo não viu."
+    }
+  ],
+  "discussao": "O modelo de imagem parte do pixel cru, sem nenhuma medida extraída por especialista — é essa a diferença em relação ao pipeline tabular, que depende de um profissional ter medido os núcleos celulares antes. Em compensação, aprende com muito menos supervisão estruturada e erra mais. Vale como demonstração de viabilidade, não como sistema clínico."
+}

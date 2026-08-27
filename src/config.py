@@ -59,7 +59,7 @@ VISION_METRICS_FILE = RESULTS_DIR / "metrics_vision.json"
 
 IMAGE_SIZE = (224, 224)  # entrada padrao das redes pre-treinadas usadas
 BATCH_SIZE = 32
-EPOCHS = 30
+EPOCHS = 50
 VALIDATION_SPLIT = 0.3  # metade vira validacao, metade vira teste
 
 

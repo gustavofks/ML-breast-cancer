@@ -136,3 +136,60 @@ def test_callbacks_incluem_parada_antecipada():
 
     assert "EarlyStopping" in nomes
     assert "ReduceLROnPlateau" in nomes
+
+
+# ---------------------------------------------------------------------------
+# Treino e avaliacao
+# ---------------------------------------------------------------------------
+@pytest.fixture(scope="module")
+def conjuntos(base_sintetica):
+    return vdata.load_datasets(
+        base_sintetica, image_size=TAMANHO, batch_size=4, validation_split=0.4
+    )
+
+
+def test_treino_registra_historico_e_tempo(conjuntos):
+    from src.vision import train as vtrain
+
+    treino, validacao, _, class_names = conjuntos
+    modelo = vmodel.build_cnn(n_classes=len(class_names), image_size=TAMANHO)
+
+    historico, segundos = vtrain.train_model(modelo, treino, validacao, epochs=1, verbose=0)
+
+    assert len(historico.history["loss"]) == 1
+    assert "val_loss" in historico.history
+    assert segundos > 0
+
+
+def test_previsoes_cobrem_todo_o_conjunto(conjuntos):
+    from src.vision import evaluate as vevaluate
+
+    treino, validacao, teste, class_names = conjuntos
+    modelo = vmodel.build_cnn(n_classes=len(class_names), image_size=TAMANHO)
+    modelo.fit(treino, validation_data=validacao, epochs=1, verbose=0)
+
+    y_true, y_pred, y_proba = vevaluate.predict_dataset(modelo, teste)
+
+    assert len(y_true) == len(y_pred) == len(y_proba)
+    assert set(np.unique(y_pred)) <= set(range(len(class_names)))
+
+
+def test_metricas_de_imagem_sao_consistentes(conjuntos):
+    from src.vision import evaluate as vevaluate
+
+    treino, validacao, teste, class_names = conjuntos
+    modelo = vmodel.build_cnn(n_classes=len(class_names), image_size=TAMANHO)
+    modelo.fit(treino, validation_data=validacao, epochs=1, verbose=0)
+
+    metricas = vevaluate.evaluate(modelo, teste, class_names)
+
+    for chave in ("accuracy", "recall", "f1", "recall_maligno"):
+        assert 0.0 <= metricas[chave] <= 1.0
+
+    # Malignos perdidos nunca podem exceder os malignos presentes no conjunto.
+    assert metricas["malignos_nao_detectados"] <= metricas["malignos_no_teste"]
+
+    if metricas["malignos_no_teste"]:
+        detectados = metricas["malignos_no_teste"] - metricas["malignos_nao_detectados"]
+        esperado = round(detectados / metricas["malignos_no_teste"], 4)
+        assert abs(metricas["recall_maligno"] - esperado) < 1e-4

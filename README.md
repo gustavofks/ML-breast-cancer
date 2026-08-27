@@ -47,6 +47,10 @@ A CNN treinada do zero atinge 58,1% de acurácia detectando apenas 3 dos 31 caso
 a responder "benigno", que é a resposta mais frequente. Com 546 imagens de treino, **transferência
 de aprendizado não é otimização, é o que torna a tarefa viável**.
 
+A explicabilidade das previsões usa **Grad-CAM**, o equivalente visual do SHAP: mapas de calor que
+mostram onde a rede olhou. Eles revelaram que a atenção se concentra na faixa superficial da imagem,
+e não na lesão — a acurácia mede o acerto, não o raciocínio.
+
 O ajuste fino da base pré-treinada é o caso mais interessante: melhorou acurácia, F1, precisão e
 perda de validação — e **foi rejeitado**, porque o recall da classe maligna caiu de 0,806 para
 0,645, de 6 para 11 casos não detectados. Escolher pela métrica mais comum teria promovido o modelo
@@ -175,11 +179,12 @@ ML-breast-cancer/
 │       ├── dataset.py         # carregamento por pasta de classe
 │       ├── model.py           # CNN do zero e MobileNetV2
 │       ├── train.py           # treino com pesos de classe
-│       └── evaluate.py        # métricas e figuras das redes
+│       ├── evaluate.py        # métricas e figuras das redes
+│       └── explain.py         # Grad-CAM: onde a rede olhou
 ├── scripts/
 │   ├── run_wisconsin.py       # pipeline tabular ponta a ponta
 │   └── run_vision.py          # pipeline de imagem ponta a ponta
-├── tests/                     # 57 testes automatizados
+├── tests/                     # 63 testes automatizados
 ├── results/
 │   ├── figures/               # 19 gráficos gerados
 │   ├── metrics.json           # métricas do pipeline tabular

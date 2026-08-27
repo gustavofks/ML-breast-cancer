@@ -28,6 +28,7 @@ import pandas as pd  # noqa: E402
 from src import config, plotting, report  # noqa: E402
 from src.vision import dataset as vdata  # noqa: E402
 from src.vision import evaluate as vevaluate  # noqa: E402
+from src.vision import explain as vexplain  # noqa: E402
 from src.vision import model as vmodel  # noqa: E402
 from src.vision import train as vtrain  # noqa: E402
 
@@ -142,6 +143,11 @@ def main(epochs: int) -> None:
     vevaluate.plot_confusion(modelos[melhor], teste, class_names, melhor)
     perdidos = vevaluate.plot_misclassified_malignant(modelos[melhor], teste, class_names)
 
+    print("      Grad-CAM: onde a rede olhou...")
+    gradcam_acertos, gradcam_erros = vexplain.plot_gradcam_examples(
+        modelos[melhor], teste, class_names
+    )
+
     figuras = [
         {
             "arquivo": "20_imagens_por_classe.png",
@@ -177,8 +183,28 @@ def main(epochs: int) -> None:
             {
                 "arquivo": "24_malignos_nao_detectados.png",
                 "titulo": "Casos malignos não detectados",
-                "leitura": "Mostrar quais imagens escaparam é o análogo visual da análise SHAP do "
-                "pipeline tabular: em vez de apenas contar erros, expõe o que o modelo não viu.",
+                "leitura": "Mostrar quais imagens escaparam é o primeiro passo da explicabilidade "
+                "visual: em vez de apenas contar erros, expõe o que o modelo não viu.",
+            }
+        )
+    if gradcam_acertos is not None:
+        figuras.append(
+            {
+                "arquivo": "25_gradcam_acertos.png",
+                "titulo": "Grad-CAM — casos malignos detectados",
+                "leitura": "O mapa de calor mostra a região que sustentou a decisão. É o equivalente "
+                "em imagem da análise SHAP do pipeline tabular: responde onde a rede olhou, não "
+                "apenas o que ela respondeu.",
+            }
+        )
+    if gradcam_erros is not None:
+        figuras.append(
+            {
+                "arquivo": "26_gradcam_erros.png",
+                "titulo": "Grad-CAM — casos malignos que escaparam",
+                "leitura": "Nos erros, o mapa revela se a rede olhou para o lugar errado ou se a "
+                "lesão realmente não se distingue do tecido ao redor — informação que um médico "
+                "consegue julgar, ao contrário de um número de acurácia.",
             }
         )
 

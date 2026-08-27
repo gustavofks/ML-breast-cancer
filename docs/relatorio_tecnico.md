@@ -774,7 +774,60 @@ Mostrar *quais* imagens escaparam cumpre, no domínio visual, o papel que a aná
 tabular: transforma o erro de um número agregado em um caso concreto e discutível com um
 especialista.
 
-### 7.5 Comparação honesta entre as duas entregas
+### 7.5 Explicabilidade: onde a rede olhou
+
+Código correspondente: [`src/vision/explain.py`](../src/vision/explain.py)
+
+O pipeline tabular responde "por que esta paciente?" com SHAP, decompondo a previsão em
+contribuições por medida. Em imagem não existem medidas, existem pixels, e a pergunta equivalente é
+**onde a rede olhou**. O Grad-CAM responde isso: toma o último mapa de ativação convolucional, mede
+pelo gradiente o quanto cada canal influencia a pontuação da classe, e soma os canais ponderados por
+essa influência.
+
+A leitura correta exige uma ressalva: o mapa mostra *onde*, não *por quê*. Ele não afirma que a rede
+reconheceu uma margem espiculada — apenas que aquela região pesou na decisão. Ainda assim, é o que
+permite a um médico discordar de forma fundamentada, porque um mapa centrado fora da lesão denuncia
+uma previsão correta pelo motivo errado.
+
+![Grad-CAM em casos detectados](../results/figures/25_gradcam_acertos.png)
+
+**E é exatamente isso que se observa.** Nos três casos malignos corretamente detectados, o calor se
+concentra na **faixa superficial superior da imagem**, não na lesão. No primeiro caso, a massa
+hipoecoica está no centro-esquerda e permanece fria; o mapa acende no tecido acima dela.
+
+Isso não invalida as previsões, mas muda o que se pode afirmar sobre elas. A rede pode estar
+aprendendo a associar características do tecido superficial, do ganho do aparelho ou do
+enquadramento do exame ao diagnóstico — atalhos que se correlacionam com o rótulo no BUSI, mas não
+generalizam. **A acurácia de 0,769 mede o acerto, não o raciocínio.**
+
+![Grad-CAM em casos perdidos](../results/figures/26_gradcam_erros.png)
+
+Nos casos que escaparam, dois detalhes saltam. O primeiro é que a atenção continua na faixa
+superior. O segundo é mais incômodo: **as imagens trazem anotações gravadas em pixel** — os
+marcadores de medição em cruz, a linha pontilhada entre eles e a etiqueta de posição. Essas marcas
+são feitas pelo profissional que já identificou a lesão suspeita, ou seja, **carregam informação do
+diagnóstico**. Uma rede que aprendesse a reconhecê-las teria desempenho alto e valor clínico nulo,
+porque em um exame novo, ainda não avaliado, elas não existem.
+
+### 7.6 Duplicatas e vazamento entre partições
+
+A inspeção visual do Grad-CAM levantou uma suspeita concreta: dois dos casos perdidos exibiam a
+mesma lesão, com a mesma etiqueta gravada. A verificação confirmou o problema e revelou algo pior.
+
+| Verificação | Resultado |
+|---|---|
+| Arquivos byte a byte idênticos | 1 par — e com **rótulos contraditórios**: o mesmo arquivo aparece como `benign (433)` e como `malignant (145)` |
+| Pares quase idênticos (distância de *hash* perceptual ≤ 2) | **127** |
+| Desses, pares que caem em partições diferentes | **62** |
+
+Sessenta e dois pares de imagens praticamente iguais estão distribuídos entre treino, validação e
+teste. Na prática, a rede é avaliada em imagens que já viu — vazamento de dados, o mesmo problema
+que o pipeline tabular evita ao manter o `StandardScaler` dentro do `Pipeline`.
+
+**As métricas da seção 7.4 são, portanto, otimistas.** A correção está descrita na seção 7.7:
+agrupar as imagens quase idênticas e garantir que cada grupo caia inteiro em um único conjunto.
+
+### 7.8 Comparação honesta entre as duas entregas
 
 | | Wisconsin (tabular) | BUSI (imagem) |
 |---|---|---|

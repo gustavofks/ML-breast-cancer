@@ -641,7 +641,9 @@ reconhecê-los faz parte de entregar o sistema de forma responsável.
 
 ## 7. Entrega extra: diagnóstico por imagem com CNN
 
-Código correspondente: [`src/vision/`](../src/vision/) · Execução: `python scripts/run_vision.py`
+Código correspondente: [`src/vision/`](../src/vision/) ·
+Notebook: [`notebooks/03_vision_cnn.ipynb`](../notebooks/03_vision_cnn.ipynb) ·
+Execução: `python scripts/run_vision.py`
 
 A seção 6.1 apontou uma limitação central do pipeline tabular: **ele não parte de dados crus.** As
 30 features do Wisconsin já são resultado de um especialista ter examinado a imagem e medido os

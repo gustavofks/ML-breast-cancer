@@ -110,6 +110,7 @@ jupyter lab
 |---|---|
 | [`01_exploratory_analysis.ipynb`](notebooks/01_exploratory_analysis.ipynb) | análise exploratória, correlação, multicolinearidade e pré-processamento |
 | [`02_modeling_evaluation.ipynb`](notebooks/02_modeling_evaluation.ipynb) | modelagem, validação cruzada, avaliação, ajuste de limiar e explicabilidade |
+| [`03_vision_cnn.ipynb`](notebooks/03_vision_cnn.ipynb) | entrega extra: auditoria de duplicatas, CNNs, ajuste fino e Grad-CAM |
 
 Ambos estão versionados **com as saídas executadas** — podem ser lidos sem rodar nada.
 
@@ -164,7 +165,7 @@ passa a ser montada a partir dele automaticamente, sem alteração de código.
 ```
 ML-breast-cancer/
 ├── data/raw/data.csv          # dataset original
-├── notebooks/                 # análise exploratória e modelagem, com saídas
+├── notebooks/                 # análise exploratória, modelagem e visão, com saídas
 ├── src/
 │   ├── config.py              # caminhos, semente e constantes do dataset
 │   ├── data.py                # carregamento, limpeza e validação

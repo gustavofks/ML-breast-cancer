@@ -39,25 +39,25 @@ medidas extraídas por especialista:
 
 | Modelo | Acurácia | F1 macro | Recall maligno | Malignos não detectados |
 |---|---|---|---|---|
-| **MobileNetV2 (transferência)** | 0,769 | 0,765 | **0,806** | 6 de 31 |
-| MobileNetV2 (ajuste fino) | 0,795 | 0,781 | 0,645 | 11 de 31 |
-| CNN do zero | 0,581 | 0,328 | 0,097 | 28 de 31 |
+| **MobileNetV2 (ajuste fino)** | 0,839 | 0,821 | **0,900** | 3 de 30 |
+| MobileNetV2 (transferência) | 0,759 | 0,751 | 0,767 | 7 de 30 |
+| CNN do zero | 0,563 | 0,240 | 0,000 | 30 de 30 |
 
-A CNN treinada do zero atinge 58,1% de acurácia detectando apenas 3 dos 31 casos malignos: aprendeu
-a responder "benigno", que é a resposta mais frequente. Com 546 imagens de treino, **transferência
-de aprendizado não é otimização, é o que torna a tarefa viável**.
+A CNN treinada do zero atinge 56,3% de acurácia **sem detectar um único caso maligno**: aprendeu a
+responder "benigno", que é a resposta mais frequente. Com 556 imagens de treino, transferência de
+aprendizado não é otimização — é o que torna a tarefa possível.
 
-A explicabilidade das previsões usa **Grad-CAM**, o equivalente visual do SHAP: mapas de calor que
-mostram onde a rede olhou. Eles revelaram que a atenção se concentra na faixa superficial da imagem,
-e não na lesão — a acurácia mede o acerto, não o raciocínio.
+Duas decisões metodológicas sustentam esses números:
 
-O ajuste fino da base pré-treinada é o caso mais interessante: melhorou acurácia, F1, precisão e
-perda de validação — e **foi rejeitado**, porque o recall da classe maligna caiu de 0,806 para
-0,645, de 6 para 11 casos não detectados. Escolher pela métrica mais comum teria promovido o modelo
-pior.
+- **Partição por grupos.** A base tem 112 imagens que são quadros repetidos de exames já presentes,
+  e 62 pares caíam em partições diferentes. Cada grupo de quadros quase idênticos agora cai inteiro
+  em um único conjunto, eliminando o vazamento.
+- **Execução determinística.** Sementes fixas no TensorFlow: duas execuções produzem exatamente as
+  mesmas métricas.
 
-A partição das imagens é estratificada, como no pipeline tabular — o split padrão do Keras é
-aleatório e deixaria ao acaso quantos casos malignos caem no teste.
+A explicabilidade usa **Grad-CAM**, equivalente visual do SHAP: nos casos detectados o calor se
+concentra sobre a lesão; nos que escapam, a lesão fica fria e a atenção migra para uma região
+irrelevante da imagem.
 
 ## Base de dados
 
@@ -184,7 +184,7 @@ ML-breast-cancer/
 ├── scripts/
 │   ├── run_wisconsin.py       # pipeline tabular ponta a ponta
 │   └── run_vision.py          # pipeline de imagem ponta a ponta
-├── tests/                     # 63 testes automatizados
+├── tests/                     # 67 testes automatizados
 ├── results/
 │   ├── figures/               # 19 gráficos gerados
 │   ├── metrics.json           # métricas do pipeline tabular

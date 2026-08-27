@@ -670,111 +670,106 @@ conjunto com imagens binárias que não existem clinicamente e inflando as métr
 carregamento detecta máscaras e **interrompe com instrução explícita**, em vez de treinar sobre um
 conjunto silenciosamente contaminado.
 
-### 7.2 Protocolo
+### 7.2 Duplicatas: o problema que precedeu qualquer métrica
 
-- Divisão **estratificada** 70/15/15 — 546 imagens de treino, 117 de validação e 117 de teste. O
-  `image_dataset_from_directory` do Keras divide aleatoriamente, sem preservar a proporção das
-  classes; em uma base pequena e desbalanceada isso deixaria ao acaso quantos casos malignos caem
-  no teste. A partição é feita sobre a lista de arquivos, com `stratify`, mantendo 26,9% de
-  malignos no treino, 27,4% na validação e 26,5% no teste, contra 26,9% na base completa
+Antes de reportar desempenho foi preciso resolver um defeito da base. O BUSI contém vários quadros
+do mesmo exame, praticamente indistinguíveis entre si. Uma auditoria por *hash* perceptual — que
+compara miniaturas em tons de cinza e tolera diferenças de compressão — encontrou o seguinte:
+
+| Verificação | Resultado |
+|---|---|
+| Imagens | 780 |
+| Grupos de imagens distintas | 668 |
+| Grupos com mais de um quadro | 95 |
+| Imagens redundantes | 112 |
+| Grupos com **rótulos contraditórios** | 7 |
+
+Dois achados exigem comentário. O primeiro: **112 das 780 imagens são repetições** de exames já
+presentes na base. Distribuídas ao acaso, 62 pares caíam em partições diferentes — a rede era
+avaliada em imagens que já tinha visto no treino. É vazamento de dados, exatamente o problema que o
+pipeline tabular evita ao manter o `StandardScaler` dentro do `Pipeline`.
+
+O segundo: **7 grupos têm rótulos contraditórios** — imagens praticamente idênticas catalogadas com
+diagnósticos diferentes, incluindo um par byte a byte igual que aparece como `benign (433)` e como
+`malignant (145)`. Não há como decidir qual rótulo está correto sem acesso ao laudo original, então
+os casos foram mantidos e registrados: representam um limite de qualidade da base, não do modelo.
+
+A correção foi tratar cada grupo como uma unidade indivisível na partição. `StratifiedGroupKFold`
+atende às duas exigências ao mesmo tempo: preserva a proporção das classes e nunca separa um grupo.
+
+### 7.3 Protocolo
+
+- Divisão **estratificada e agrupada** — 556 imagens de treino, 112 de validação e 112 de teste,
+  com nenhum grupo de quadros repetidos dividido entre conjuntos
+- Proporção de casos malignos: 27,0% no treino, 26,8% na validação e 26,8% no teste, contra 26,9%
+  na base completa
 - Imagens redimensionadas para 224×224, entrada padrão das redes pré-treinadas
-- **Pesos de classe** inversamente proporcionais à frequência (`normal` pesa 1,95 contra 0,60 de
-  `benign`), para que a rede não aprenda a favorecer a classe majoritária
+- **Pesos de classe** inversamente proporcionais à frequência, para que a rede não aprenda a
+  favorecer a classe majoritária
 - Aumento de dados apenas geométrico — espelhamento, rotação leve, zoom e translação. Distorções de
   cor seriam arriscadas: em imagem médica, a intensidade carrega informação diagnóstica
 - Parada antecipada monitorando a perda de validação, com restauração dos melhores pesos
+- **Execução determinística**: sementes fixas e `enable_op_determinism()`. Sem isso, cada execução
+  produzia métricas diferentes, porque inicialização de pesos, embaralhamento e aumento de dados
+  usam geradores próprios
 
-### 7.3 Arquiteturas comparadas
+### 7.4 Arquiteturas comparadas
 
 | Modelo | Parâmetros | Ideia |
 |---|---|---|
-| **CNN do zero** | 110 mil | três blocos convolucionais treinados apenas com as 546 imagens disponíveis |
+| **CNN do zero** | 110 mil | três blocos convolucionais treinados apenas com as 556 imagens disponíveis |
 | **MobileNetV2 (transferência)** | 2,26 milhões | base pré-treinada na ImageNet, congelada, com cabeça de classificação nova |
 | **MobileNetV2 (ajuste fino)** | 2,26 milhões | segunda etapa: as 60 camadas finais da base são liberadas, com taxa de aprendizado 10× menor |
 
-O ajuste fino só faz sentido **depois** que a cabeça converge com a base congelada. Aplicado a
-pesos aleatórios, os gradientes iniciais destruiriam as features pré-treinadas. Três cuidados
-tornam a etapa segura: apenas as camadas finais são liberadas — as primeiras detectam bordas e
-texturas úteis em qualquer imagem —, a taxa de aprendizado cai de 1e-3 para 1e-4, e as camadas de
-normalização em lote permanecem congeladas, porque atualizar suas estatísticas com lotes pequenos
-degradaria a normalização aprendida em milhões de imagens.
+O ajuste fino só faz sentido **depois** que a cabeça converge com a base congelada. Aplicado a pesos
+aleatórios, os gradientes iniciais destruiriam as features pré-treinadas. Três cuidados tornam a
+etapa segura: apenas as camadas finais são liberadas — as primeiras detectam bordas e texturas úteis
+em qualquer imagem —, a taxa de aprendizado cai de 1e-3 para 1e-4, e as camadas de normalização em
+lote permanecem congeladas, porque atualizar suas estatísticas com lotes pequenos degradaria a
+normalização aprendida em milhões de imagens.
 
-### 7.4 Resultados
+### 7.5 Resultados
 
 ![Curvas de treino](../results/figures/22_curvas_treino.png)
 
 | Modelo | Épocas | Melhor época | Acurácia | F1 macro | **Recall maligno** | Precisão maligno | Malignos não detectados | Tempo |
 |---|---|---|---|---|---|---|---|---|
-| **MobileNetV2 (transferência)** | 33 | 27 | 0,769 | 0,765 | **0,806** | 0,714 | **6 de 31** | 168 s |
-| MobileNetV2 (ajuste fino) | 15 | 9 | **0,795** | **0,781** | 0,645 | **0,800** | 11 de 31 | 96 s |
-| CNN do zero | 25 | 19 | 0,581 | 0,328 | 0,097 | 0,600 | 28 de 31 | 155 s |
+| **MobileNetV2 (ajuste fino)** | 12 | 6 | **0,839** | **0,821** | **0,900** | **0,771** | **3 de 30** | 78 s |
+| MobileNetV2 (transferência) | 26 | 20 | 0,759 | 0,751 | 0,767 | 0,622 | 7 de 30 | 140 s |
+| CNN do zero | 14 | 8 | 0,563 | 0,240 | 0,000 | 0,000 | 30 de 30 | 97 s |
 
-**A diferença não é de grau, é de natureza.** A CNN treinada do zero atinge 58,1% de acurácia, mas
-com recall de apenas 0,097 na classe maligna: detectou **3 dos 31 casos malignos** do conjunto de
-teste. Ela não aprendeu a distinguir lesões — aprendeu a responder majoritariamente "benigno", que
-é a resposta mais frequente. É a demonstração prática do que a seção 2 já afirmava sobre a acurácia
-como métrica isolada: um modelo pode parecer razoável e ser clinicamente inútil.
+**A CNN treinada do zero não aprendeu a tarefa.** Com 56,3% de acurácia, ela não detectou nenhum
+dos 30 casos malignos: aprendeu a responder "benigno", que é a resposta mais frequente. É a
+demonstração prática do que a seção 2 já afirmava sobre a acurácia como métrica isolada — um modelo
+pode exibir mais de metade de acerto e ter valor clínico zero. As curvas confirmam: sua perda de
+validação mal se move ao longo de 14 épocas. Com 556 imagens, não há dados suficientes para aprender
+filtros visuais a partir do zero.
 
-As curvas de treino explicam o porquê: a perda de validação da CNN do zero mal se move ao longo de
-25 épocas, oscilando em torno de 1,0 — com 546 imagens, não há dados suficientes para aprender
-filtros visuais úteis a partir do zero.
+**A transferência de aprendizado é o que torna a tarefa viável**, e o ajuste fino é o que a torna
+razoável: liberar as camadas finais elevou o recall da classe maligna de 0,767 para **0,900**,
+reduzindo de 7 para 3 os casos não detectados, e ainda assim melhorou a precisão. As features da
+ImageNet servem de ponto de partida, mas texturas de ultrassom não se parecem com fotografias
+naturais — adaptá-las é o que faz diferença.
 
-A MobileNetV2 chega a recall de 0,806 na classe maligna. **Transferência de aprendizado não é um
-detalhe de otimização neste cenário: é o que torna a tarefa viável.**
-
-**O ajuste fino foi rejeitado, e o motivo é o argumento central deste projeto.** Liberadas as 60
-camadas finais da MobileNetV2 com taxa de aprendizado 10× menor, o modelo melhorou em quase tudo
-que se costuma olhar primeiro: a perda de validação caiu de 0,593 para 0,435, a acurácia de
-validação subiu de 0,735 para 0,846, a acurácia de teste de 0,769 para 0,795, o F1 de 0,765 para
-0,781 e a precisão na classe maligna de 0,714 para 0,800.
-
-E ainda assim ele é o pior modelo para este problema: **o recall da classe maligna caiu de 0,806
-para 0,645, e os casos malignos não detectados saltaram de 6 para 11.** O ajuste fino tornou a rede
-mais conservadora — ela passou a afirmar "maligno" com mais certeza e menos frequência. Em uma
-triagem, essa é exatamente a troca errada: cinco pacientes a mais voltariam para casa com um tumor
-maligno não sinalizado, em troca de menos encaminhamentos desnecessários.
-
-Por isso o critério de seleção é o recall da classe maligna, e não a acurácia ou a perda de
-validação. Se a escolha fosse automática pela métrica mais comum, o pipeline teria promovido o
-modelo pior. **A métrica correta não é a que mostra o melhor número, é a que reflete o custo real
-do erro.**
-
-Duas notas de método sobre esta etapa. Primeira: uma tentativa mais conservadora — 40 camadas e
-taxa 1e-5 — não moveu os pesos e parou na primeira época; a configuração do ajuste fino precisa ser
-testada, não presumida. Segunda: a primeira implementação continha um defeito silencioso. A busca
-pela base pré-treinada usava `isinstance(camada, Model)`, e a camada de aumento de dados é um
-`Sequential`, que também é um `Model` — o código liberava o bloco de aumento em vez da MobileNetV2.
-O modelo treinava, as métricas mudavam ligeiramente e nada acusava erro. Um teste que exige que as
-camadas liberadas pertençam à base pré-treinada expôs o problema.
-
-Vale registrar também um efeito da estratificação: sobre a partição aleatória do Keras, esta mesma
-arquitetura havia marcado 0,793 de recall. A diferença não reflete mudança no modelo, e sim que
-resultados medidos sobre partições sorteadas variam sozinhos — exatamente o otimismo que a
-estratificação elimina.
-
-**Reprodutibilidade.** O treino fixa as sementes do TensorFlow e ativa a execução determinística.
-Sem isso, cada execução produzia métricas diferentes, porque a inicialização dos pesos, a ordem do
-embaralhamento e o aumento de dados usam geradores próprios. Com o determinismo ativo, duas
-execuções consecutivas devolveram exatamente os mesmos números — a mesma garantia que o pipeline
-tabular já oferecia.
+Duas notas de método que valem mais que os números. A primeira: uma tentativa conservadora de ajuste
+fino (40 camadas, taxa 1e-5) não moveu os pesos e parou na primeira época; a configuração precisa
+ser testada, não presumida. A segunda: a primeira implementação continha um defeito silencioso — a
+busca pela base pré-treinada usava `isinstance(camada, Model)`, e a camada de aumento de dados é um
+`Sequential`, que também é um `Model`, de modo que o código liberava o bloco de aumento em vez da
+MobileNetV2. Nada acusava erro. Um teste exigindo que as camadas liberadas pertençam à base expôs o
+problema.
 
 ![Matriz de confusão](../results/figures/23_matriz_confusao_imagens.png)
 
-A matriz do modelo escolhido detalha os erros nas 117 imagens de teste:
+A matriz do modelo escolhido detalha os erros nas 112 imagens de teste:
 
-- **25 dos 31 casos malignos** corretamente identificados
-- **4 malignos classificados como benignos** e **2 como normais** — os 6 erros de maior custo
-- 10 benignos classificados como malignos, que no fluxo clínico significam exames adicionais
-- 11 benignos classificados como normais, um erro menos grave mas ainda indesejado
-- **as 20 imagens normais foram todas classificadas corretamente**
+- **27 dos 30 casos malignos** corretamente identificados
+- **3 malignos classificados como benignos** — os erros de maior custo, e nenhum deles foi
+  confundido com tecido normal
+- 8 benignos classificados como malignos, que no fluxo clínico significam exames adicionais
+- 7 imagens normais classificadas como benignas, erro sem consequência clínica relevante
 
-![Casos malignos não detectados](../results/figures/24_malignos_nao_detectados.png)
-
-Mostrar *quais* imagens escaparam cumpre, no domínio visual, o papel que a análise SHAP cumpriu no
-tabular: transforma o erro de um número agregado em um caso concreto e discutível com um
-especialista.
-
-### 7.5 Explicabilidade: onde a rede olhou
+### 7.6 Explicabilidade: onde a rede olhou
 
 Código correspondente: [`src/vision/explain.py`](../src/vision/explain.py)
 
@@ -791,60 +786,54 @@ uma previsão correta pelo motivo errado.
 
 ![Grad-CAM em casos detectados](../results/figures/25_gradcam_acertos.png)
 
-**E é exatamente isso que se observa.** Nos três casos malignos corretamente detectados, o calor se
-concentra na **faixa superficial superior da imagem**, não na lesão. No primeiro caso, a massa
-hipoecoica está no centro-esquerda e permanece fria; o mapa acende no tecido acima dela.
-
-Isso não invalida as previsões, mas muda o que se pode afirmar sobre elas. A rede pode estar
-aprendendo a associar características do tecido superficial, do ganho do aparelho ou do
-enquadramento do exame ao diagnóstico — atalhos que se correlacionam com o rótulo no BUSI, mas não
-generalizam. **A acurácia de 0,769 mede o acerto, não o raciocínio.**
+Nos casos detectados corretamente, **o calor se concentra sobre a lesão**. No primeiro, a massa
+hipoecoica central é exatamente a região que sustenta a previsão, com 0,95 de confiança. Nos outros
+dois, a atenção cobre a área da lesão e sua vizinhança imediata. O modelo está olhando para o lugar
+certo — o que não era garantido, e é justamente o que a explicabilidade existe para verificar.
 
 ![Grad-CAM em casos perdidos](../results/figures/26_gradcam_erros.png)
 
-Nos casos que escaparam, dois detalhes saltam. O primeiro é que a atenção continua na faixa
-superior. O segundo é mais incômodo: **as imagens trazem anotações gravadas em pixel** — os
-marcadores de medição em cruz, a linha pontilhada entre eles e a etiqueta de posição. Essas marcas
-são feitas pelo profissional que já identificou a lesão suspeita, ou seja, **carregam informação do
-diagnóstico**. Uma rede que aprendesse a reconhecê-las teria desempenho alto e valor clínico nulo,
-porque em um exame novo, ainda não avaliado, elas não existem.
+Nos casos que escaparam, o padrão se inverte de forma reveladora: **a lesão permanece fria e o calor
+migra para o canto inferior direito**, uma região de sombra acústica sem relevância diagnóstica. O
+modelo não avaliou mal a lesão — ele não a considerou. A confiança na classe maligna despenca para
+0,01 e 0,03.
 
-### 7.6 Duplicatas e vazamento entre partições
+Duas observações adicionais nessas imagens. Elas trazem **anotações gravadas em pixel** — marcadores
+de medição em cruz, linha pontilhada e etiqueta de posição — feitas pelo profissional que já
+identificou a lesão suspeita. Essas marcas carregam informação do diagnóstico, e uma rede que
+aprendesse a reconhecê-las teria desempenho alto e valor clínico nulo, porque em um exame novo elas
+não existem. Os mapas mostram que, ao menos nestes casos, a atenção não se fixa nelas.
 
-A inspeção visual do Grad-CAM levantou uma suspeita concreta: dois dos casos perdidos exibiam a
-mesma lesão, com a mesma etiqueta gravada. A verificação confirmou o problema e revelou algo pior.
+E as duas primeiras colunas são o **mesmo exame**, em quadros quase idênticos. Aparecem juntas no
+conjunto de teste porque o agrupamento descrito na seção 7.2 as manteve inseparáveis — antes da
+correção, teriam sido distribuídas entre treino e teste.
 
-| Verificação | Resultado |
-|---|---|
-| Arquivos byte a byte idênticos | 1 par — e com **rótulos contraditórios**: o mesmo arquivo aparece como `benign (433)` e como `malignant (145)` |
-| Pares quase idênticos (distância de *hash* perceptual ≤ 2) | **127** |
-| Desses, pares que caem em partições diferentes | **62** |
+Um defeito encontrado durante esta etapa merece registro, porque é sutil e silencioso. A
+normalização da MobileNetV2 era aplicada como chamada de função durante a construção do modelo. Uma
+função aplicada ao tensor é absorvida pelo grafo e **não aparece na lista de camadas** — o Grad-CAM,
+que percorre as camadas, pulava a normalização e alimentava a rede com pixels de 0 a 255 onde ela
+espera valores de −1 a 1. Os mapas resultantes eram ruído com aparência plausível, e as
+probabilidades exibidas ficavam abaixo de 1/3 em um problema de três classes, o que é
+matematicamente impossível para a classe prevista. A normalização passou a ser declarada como
+camada, e um teste agora exige que percorrer as camadas reproduza exatamente a saída de `predict`.
 
-Sessenta e dois pares de imagens praticamente iguais estão distribuídos entre treino, validação e
-teste. Na prática, a rede é avaliada em imagens que já viu — vazamento de dados, o mesmo problema
-que o pipeline tabular evita ao manter o `StandardScaler` dentro do `Pipeline`.
-
-**As métricas da seção 7.4 são, portanto, otimistas.** A correção está descrita na seção 7.7:
-agrupar as imagens quase idênticas e garantir que cada grupo caia inteiro em um único conjunto.
-
-### 7.8 Comparação honesta entre as duas entregas
+### 7.7 Comparação honesta entre as duas entregas
 
 | | Wisconsin (tabular) | BUSI (imagem) |
 |---|---|---|
 | Entrada | 30 medidas extraídas por especialista | pixels do exame |
-| Recall da classe maligna | 0,929 | 0,806 |
-| Amostras | 569 | 780 |
+| Recall da classe maligna | 0,929 | 0,900 |
+| Amostras | 569 | 780 (668 exames distintos) |
 | Dependência humana prévia | alta — exige medição manual | nenhuma |
-| Explicabilidade | coeficientes, permutação e SHAP | inspeção dos erros; sem atribuição por pixel |
+| Explicabilidade | coeficientes, permutação e SHAP | Grad-CAM sobre a imagem |
 
-O modelo tabular é claramente melhor **nas métricas**, mas resolve um problema mais fácil: recebe
-medidas que um profissional já extraiu. O modelo de imagem tem desempenho inferior e opera sobre o
-dado bruto, sem etapa manual anterior — mais próximo de um sistema de triagem real, e mais longe de
-estar pronto para uso.
+O modelo tabular ainda leva vantagem nas métricas, mas resolve um problema mais fácil: recebe
+medidas que um profissional já extraiu. O modelo de imagem opera sobre o dado bruto, sem etapa
+manual anterior — mais próximo de um sistema de triagem real, e mais longe de estar pronto.
 
-Com recall de 0,806, **1 em cada 5 tumores malignos escaparia**. É um resultado adequado a uma
-demonstração de viabilidade acadêmica e inaceitável para uso clínico, ainda que como triagem. Os
-caminhos conhecidos para melhorar — ajuste fino da base pré-treinada, mais dados, resolução maior,
-validação cruzada em vez de partição única e ajuste do limiar por classe — estão fora do escopo
-desta fase, mas nenhum deles contradiz a conclusão da seção 6: o médico continua com a palavra
-final.
+Com recall de 0,900, **1 em cada 10 tumores malignos ainda escaparia**. É um resultado adequado a
+uma demonstração de viabilidade acadêmica e insuficiente para uso clínico, ainda que como triagem.
+Os caminhos conhecidos para melhorar — mais dados, resolução maior, validação cruzada em vez de
+partição única, ajuste de limiar por classe e remoção das anotações gravadas nas imagens — estão
+fora do escopo desta fase. Nenhum deles contradiz a conclusão da seção 6: o médico continua com a
+palavra final.

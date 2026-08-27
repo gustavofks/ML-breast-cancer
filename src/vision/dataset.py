@@ -18,6 +18,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 
 from src import config
@@ -144,43 +145,127 @@ def list_images(root: Path | None = None) -> tuple[list[str], list[int], list[st
     return caminhos, rotulos, class_names
 
 
+# Distancia maxima entre dois hashes perceptuais para que duas imagens sejam
+# tratadas como o mesmo exame. Dois bits em 64 tolera diferenca de compressao e
+# recorte sem juntar lesoes distintas.
+LIMIAR_DUPLICATA = 2
+
+
+def perceptual_hash(caminho: str | Path, tamanho: int = 8) -> np.ndarray:
+    """Assinatura perceptual da imagem (dHash), como vetor de bits.
+
+    Compara cada pixel com o vizinho a direita em uma miniatura em tons de
+    cinza. Imagens visualmente iguais produzem assinaturas quase iguais, mesmo
+    com diferenca de compressao ou de recorte leve.
+    """
+    from PIL import Image
+
+    miniatura = Image.open(caminho).convert("L").resize((tamanho + 1, tamanho))
+    pixels = np.asarray(miniatura, dtype=np.int16)
+    return (pixels[:, 1:] > pixels[:, :-1]).ravel()
+
+
+def duplicate_groups(caminhos: list[str], limiar: int = LIMIAR_DUPLICATA) -> list[int]:
+    """Agrupa imagens quase identicas e devolve o id do grupo de cada uma.
+
+    O BUSI contem varios quadros do mesmo exame, praticamente indistinguiveis.
+    Se caissem em particoes diferentes, a rede seria avaliada em imagens que ja
+    viu — vazamento de dados, o mesmo problema que o pipeline tabular evita ao
+    manter o escalonamento dentro do `Pipeline`.
+
+    Imagens sem nenhuma parecida formam um grupo de um elemento so, entao o
+    agrupamento e sempre seguro de aplicar.
+    """
+    assinaturas = np.array([perceptual_hash(c) for c in caminhos], dtype=bool)
+
+    pai = list(range(len(caminhos)))
+
+    def raiz(i: int) -> int:
+        while pai[i] != i:
+            pai[i] = pai[pai[i]]
+            i = pai[i]
+        return i
+
+    for i in range(len(caminhos)):
+        # XOR vetorizado contra todas as imagens seguintes: 780 imagens tornam a
+        # comparacao completa barata o suficiente para rodar a cada execucao.
+        distancias = np.count_nonzero(assinaturas[i + 1 :] != assinaturas[i], axis=1)
+        for deslocamento in np.where(distancias <= limiar)[0]:
+            j = i + 1 + int(deslocamento)
+            a, b = raiz(i), raiz(j)
+            if a != b:
+                pai[a] = b
+
+    identificadores = {}
+    return [identificadores.setdefault(raiz(i), len(identificadores)) for i in range(len(caminhos))]
+
+
+def duplicate_summary(root: Path | None = None, limiar: int = LIMIAR_DUPLICATA) -> dict:
+    """Quantifica as duplicatas da base, para registro no relatorio."""
+    caminhos, rotulos, _ = list_images(root)
+    grupos = duplicate_groups(caminhos, limiar)
+
+    tamanhos = pd.Series(grupos).value_counts()
+    com_repeticao = tamanhos[tamanhos > 1]
+
+    rotulo_por_grupo = pd.DataFrame({"grupo": grupos, "rotulo": rotulos})
+    contraditorios = (
+        rotulo_por_grupo.groupby("grupo")["rotulo"].nunique().pipe(lambda s: int((s > 1).sum()))
+    )
+
+    return {
+        "imagens": len(caminhos),
+        "grupos": int(tamanhos.size),
+        "grupos_com_repeticao": int(com_repeticao.size),
+        "imagens_redundantes": int(com_repeticao.sum() - com_repeticao.size),
+        "grupos_com_rotulos_contraditorios": contraditorios,
+    }
+
+
 def stratified_split(
     root: Path | None = None,
     validation_split: float = config.VALIDATION_SPLIT,
     seed: int = config.SEED,
 ) -> tuple[dict[str, tuple[list[str], list[int]]], list[str]]:
-    """Divide as imagens em treino, validacao e teste preservando as classes.
+    """Divide as imagens em treino, validacao e teste, por grupo e por classe.
 
-    O `image_dataset_from_directory` do Keras divide **aleatoriamente**, sem
-    estratificar. Em uma base pequena e desbalanceada como esta, isso deixa a
-    proporcao de casos malignos no teste ao acaso — inconsistente com o rigor
-    aplicado ao pipeline tabular. Aqui a particao e feita sobre a lista de
-    arquivos, com `stratify`, e o restante e dividido meio a meio entre
-    validacao e teste, tambem estratificado.
+    Duas exigencias precisam valer ao mesmo tempo:
+
+    - **Estratificacao.** O `image_dataset_from_directory` do Keras divide
+      aleatoriamente; em uma base pequena e desbalanceada, isso deixaria ao acaso
+      quantos casos malignos caem no teste.
+    - **Agrupamento.** Quadros quase identicos do mesmo exame precisam cair
+      inteiros em um unico conjunto. Sem isso, a rede e avaliada em imagens que
+      ja viu.
+
+    `StratifiedGroupKFold` atende as duas: mantem a proporcao das classes e nunca
+    divide um grupo entre dobras. Uma dobra vira validacao, outra vira teste, e o
+    restante e o treino.
     """
-    from sklearn.model_selection import train_test_split
+    from sklearn.model_selection import StratifiedGroupKFold
 
     caminhos, rotulos, class_names = list_images(root)
+    grupos = duplicate_groups(caminhos)
 
-    treino_x, restante_x, treino_y, restante_y = train_test_split(
-        caminhos,
-        rotulos,
-        test_size=validation_split,
-        random_state=seed,
-        stratify=rotulos,
-    )
-    validacao_x, teste_x, validacao_y, teste_y = train_test_split(
-        restante_x,
-        restante_y,
-        test_size=0.5,
-        random_state=seed,
-        stratify=restante_y,
-    )
+    # Duas dobras de 1/k formam validacao e teste; para `validation_split` de
+    # 0,3 isso da k = 7, ou seja, cerca de 14% para cada uma.
+    n_dobras = max(3, round(2 / validation_split))
+    dobrador = StratifiedGroupKFold(n_splits=n_dobras, shuffle=True, random_state=seed)
+    dobras = [indices for _, indices in dobrador.split(caminhos, rotulos, groups=grupos)]
+
+    indices_validacao, indices_teste = set(dobras[0]), set(dobras[1])
+    indices_treino = [
+        i for i in range(len(caminhos)) if i not in indices_validacao and i not in indices_teste
+    ]
+
+    def recortar(indices):
+        indices = sorted(indices)
+        return [caminhos[i] for i in indices], [rotulos[i] for i in indices]
 
     particoes = {
-        "treino": (treino_x, treino_y),
-        "validacao": (validacao_x, validacao_y),
-        "teste": (teste_x, teste_y),
+        "treino": recortar(indices_treino),
+        "validacao": recortar(indices_validacao),
+        "teste": recortar(indices_teste),
     }
     return particoes, class_names
 

@@ -102,8 +102,73 @@ def test_split_preserva_a_proporcao_das_classes(base_sintetica):
     resumo = vdata.split_summary(particoes, classes)
 
     proporcao_original = 12 / 36  # malignant / total da base sintética
+    # Tolerância larga de propósito: com 36 imagens, cada dobra fica com ~7, e
+    # uma única imagem desloca a proporção em 14 pontos. A estratificação real
+    # é verificada sobre o dataset completo, onde o desvio fica abaixo de 0,5 p.p.
     for proporcao in resumo["proporcao_positiva"]:
-        assert abs(proporcao - proporcao_original) < 0.08
+        assert abs(proporcao - proporcao_original) < 0.15
+
+
+def test_imagens_iguais_caem_no_mesmo_grupo(tmp_path):
+    """Quadros quase idênticos do mesmo exame não podem ser tratados como amostras distintas."""
+    from PIL import Image
+
+    gerador = np.random.default_rng(3)
+    (tmp_path / "benign").mkdir()
+    (tmp_path / "malignant").mkdir()
+
+    original = gerador.integers(0, 255, (64, 64, 3), dtype=np.uint8)
+    Image.fromarray(original).save(tmp_path / "benign" / "a.png")
+    # Cópia com ruído mínimo: o mesmo exame, salvo outra vez.
+    quase = original.copy()
+    quase[0, 0] = (int(quase[0, 0, 0]) + 1) % 256
+    Image.fromarray(quase).save(tmp_path / "benign" / "b.png")
+    # Imagem sem relação nenhuma.
+    Image.fromarray(gerador.integers(0, 255, (64, 64, 3), dtype=np.uint8)).save(
+        tmp_path / "malignant" / "c.png"
+    )
+
+    caminhos, _, _ = vdata.list_images(tmp_path)
+    grupos = vdata.duplicate_groups(caminhos)
+
+    assert grupos[0] == grupos[1], "as cópias deveriam formar um grupo"
+    assert grupos[2] != grupos[0], "imagens diferentes não podem ser agrupadas"
+
+
+def test_grupos_nunca_se_dividem_entre_particoes(base_sintetica):
+    """Sem isso, a rede seria avaliada em imagens que já viu durante o treino."""
+    particoes, _ = vdata.stratified_split(base_sintetica, validation_split=0.4)
+    caminhos, _, _ = vdata.list_images(base_sintetica)
+    grupo_de = dict(zip(caminhos, vdata.duplicate_groups(caminhos)))
+
+    conjunto_de = {c: nome for nome, (cs, _) in particoes.items() for c in cs}
+    por_grupo = {}
+    for caminho in caminhos:
+        por_grupo.setdefault(grupo_de[caminho], set()).add(conjunto_de[caminho])
+
+    assert all(len(conjuntos) == 1 for conjuntos in por_grupo.values())
+
+
+def test_resumo_de_duplicatas_conta_grupos_e_redundancias(tmp_path):
+    from PIL import Image
+
+    gerador = np.random.default_rng(11)
+    for classe in ("benign", "malignant"):
+        (tmp_path / classe).mkdir()
+
+    base = gerador.integers(0, 255, (64, 64, 3), dtype=np.uint8)
+    Image.fromarray(base).save(tmp_path / "benign" / "a.png")
+    Image.fromarray(base).save(tmp_path / "benign" / "a_copia.png")
+    Image.fromarray(gerador.integers(0, 255, (64, 64, 3), dtype=np.uint8)).save(
+        tmp_path / "malignant" / "b.png"
+    )
+
+    resumo = vdata.duplicate_summary(tmp_path)
+
+    assert resumo["imagens"] == 3
+    assert resumo["grupos"] == 2
+    assert resumo["grupos_com_repeticao"] == 1
+    assert resumo["imagens_redundantes"] == 1
 
 
 def test_conjuntos_do_split_sao_disjuntos(base_sintetica):

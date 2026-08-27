@@ -27,96 +27,103 @@
     ],
     "classe_positiva": "malignant"
   },
+  "duplicatas": {
+    "imagens": 780,
+    "grupos": 668,
+    "grupos_com_repeticao": 95,
+    "imagens_redundantes": 112,
+    "grupos_com_rotulos_contraditorios": 7
+  },
   "particoes": [
     {
       "conjunto": "treino",
-      "imagens": 546,
-      "benign": 306,
-      "malignant": 147,
-      "normal": 93,
-      "proporcao_positiva": 0.2692
+      "imagens": 556,
+      "benign": 311,
+      "malignant": 150,
+      "normal": 95,
+      "proporcao_positiva": 0.2698
     },
     {
       "conjunto": "validacao",
-      "imagens": 117,
-      "benign": 65,
-      "malignant": 32,
-      "normal": 20,
-      "proporcao_positiva": 0.2735
+      "imagens": 112,
+      "benign": 63,
+      "malignant": 30,
+      "normal": 19,
+      "proporcao_positiva": 0.2679
     },
     {
       "conjunto": "teste",
-      "imagens": 117,
-      "benign": 66,
-      "malignant": 31,
-      "normal": 20,
-      "proporcao_positiva": 0.265
+      "imagens": 112,
+      "benign": 63,
+      "malignant": 30,
+      "normal": 19,
+      "proporcao_positiva": 0.2679
     }
   ],
-  "modelo_escolhido": "MobileNetV2 (transferência)",
+  "modelo_escolhido": "MobileNetV2 (ajuste fino)",
   "metrica_de_selecao": "recall_maligno",
   "treino": [
     {
       "modelo": "CNN do zero",
       "parametros": 110147,
-      "epocas_treinadas": 25,
-      "melhor_epoca": 19,
-      "val_accuracy": 0.5983,
-      "val_loss": 0.9865,
-      "segundos": 164.0
+      "epocas_treinadas": 14,
+      "melhor_epoca": 8,
+      "val_accuracy": 0.5625,
+      "val_loss": 0.9992,
+      "segundos": 92.8
     },
     {
       "modelo": "MobileNetV2 (transferência)",
       "parametros": 2261827,
-      "epocas_treinadas": 33,
-      "melhor_epoca": 27,
-      "val_accuracy": 0.735,
-      "val_loss": 0.5932,
-      "segundos": 171.4
+      "epocas_treinadas": 26,
+      "melhor_epoca": 20,
+      "val_accuracy": 0.8036,
+      "val_loss": 0.5275,
+      "segundos": 135.7
     },
     {
       "modelo": "MobileNetV2 (ajuste fino)",
       "parametros": 2261827,
-      "epocas_treinadas": 15,
-      "melhor_epoca": 9,
-      "val_accuracy": 0.8462,
-      "val_loss": 0.4347,
-      "segundos": 97.4
+      "epocas_treinadas": 12,
+      "melhor_epoca": 6,
+      "val_accuracy": 0.8661,
+      "val_loss": 0.4234,
+      "segundos": 78.4
     }
   ],
   "teste": [
     {
-      "modelo": "MobileNetV2 (transferência)",
-      "accuracy": 0.7692,
-      "precision": 0.7462,
-      "recall": 0.8294,
-      "f1": 0.765,
-      "recall_maligno": 0.8065,
-      "precisao_maligno": 0.7143,
-      "malignos_no_teste": 31,
-      "malignos_nao_detectados": 6
+      "modelo": "MobileNetV2 (ajuste fino)",
+      "accuracy": 0.8393,
+      "precision": 0.8725,
+      "recall": 0.8015,
+      "f1": 0.8214,
+      "recall_maligno": 0.9,
+      "precisao_maligno": 0.7714,
+      "malignos_no_teste": 30,
+      "malignos_nao_detectados": 3
     },
     {
-      "modelo": "MobileNetV2 (ajuste fino)",
-      "accuracy": 0.7949,
-      "precision": 0.7738,
-      "recall": 0.8161,
-      "f1": 0.7808,
-      "recall_maligno": 0.6452,
-      "precisao_maligno": 0.8,
-      "malignos_no_teste": 31,
-      "malignos_nao_detectados": 11
+      "modelo": "MobileNetV2 (transferência)",
+      "accuracy": 0.7589,
+      "precision": 0.7335,
+      "recall": 0.8041,
+      "f1": 0.7508,
+      "recall_maligno": 0.7667,
+      "precisao_maligno": 0.6216,
+      "malignos_no_teste": 30,
+      "malignos_nao_detectados": 7
     },
     {
       "modelo": "CNN do zero",
-      "accuracy": 0.5812,
-      "precision": 0.5606,
-      "recall": 0.3722,
-      "f1": 0.3283,
-      "recall_maligno": 0.0968,
-      "precisao_maligno": 0.6,
-      "malignos_no_teste": 31,
-      "malignos_nao_detectados": 28
+      "accuracy": 0.5625,
+      "precision": 0.1875,
+      "recall": 0.3333,
+      "f1": 0.24,
+      "recall_maligno": 0.0,
+      "precisao_maligno": 0.0,
+      "malignos_no_teste": 30,
+      "malignos_nao_detectados": 30
     }
   ],
   "figuras": [
@@ -137,7 +144,7 @@
     },
     {
       "arquivo": "23_matriz_confusao_imagens.png",
-      "titulo": "Matriz de confusão — MobileNetV2 (transferência)",
+      "titulo": "Matriz de confusão — MobileNetV2 (ajuste fino)",
       "leitura": "Com três classes, o erro que importa é o caso maligno classificado como benigno ou normal: é o equivalente ao falso negativo do pipeline tabular."
     },
     {

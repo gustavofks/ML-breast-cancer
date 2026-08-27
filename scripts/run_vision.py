@@ -57,7 +57,10 @@ def main(epochs: int) -> None:
     vevaluate.plot_class_balance(contagens)
     vevaluate.plot_samples(config.IMAGES_DIR, resumo["classes"])
 
-    print("2/6  Montando treino, validação e teste (estratificado)...")
+    print("2/6  Montando treino, validação e teste (estratificado, por grupo)...")
+    duplicatas = vdata.duplicate_summary()
+    print(f"      {duplicatas['imagens_redundantes']} imagens quase duplicadas em "
+          f"{duplicatas['grupos_com_repeticao']} grupos; cada grupo cai inteiro em um só conjunto")
     particoes, class_names = vdata.stratified_split()
     composicao = vdata.split_summary(particoes, class_names)
     print(composicao.to_string(index=False))
@@ -214,6 +217,7 @@ def main(epochs: int) -> None:
             "nome": "BUSI — Breast Ultrasound Images",
             **resumo,
         },
+        "duplicatas": duplicatas,
         "particoes": composicao.to_dict(orient="records"),
         "modelo_escolhido": melhor,
         "metrica_de_selecao": "recall_maligno",

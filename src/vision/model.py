@@ -120,7 +120,6 @@ def build_transfer_model(
     from tensorflow import keras
     from tensorflow.keras import layers
     from tensorflow.keras.applications import MobileNetV2
-    from tensorflow.keras.applications.mobilenet_v2 import preprocess_input
 
     unidades, ativacao, perda = _saida(n_classes)
 
@@ -129,7 +128,11 @@ def build_transfer_model(
 
     entradas = keras.Input(shape=(*image_size, 3))
     x = _augmentation()(entradas)
-    x = preprocess_input(x)
+    # Normalizacao da MobileNetV2 (de 0-255 para -1..1) escrita como camada, e
+    # nao como chamada a preprocess_input: uma funcao aplicada ao tensor e
+    # absorvida pelo grafo e nao aparece na lista de camadas, o que quebraria
+    # qualquer analise que percorra as camadas — o Grad-CAM, por exemplo.
+    x = layers.Rescaling(scale=1 / 127.5, offset=-1, name="normalizacao")(x)
     x = base(x, training=False)
     x = layers.GlobalAveragePooling2D()(x)
     x = layers.Dropout(0.3)(x)

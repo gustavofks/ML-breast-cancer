@@ -96,6 +96,26 @@ def test_pesos_compensam_o_desbalanceamento(base_sintetica):
     assert round(pesos[1] / pesos[0], 2) == 2.0
 
 
+def test_split_preserva_a_proporcao_das_classes(base_sintetica):
+    """O split do Keras é aleatório; este projeto estratifica, como no tabular."""
+    particoes, classes = vdata.stratified_split(base_sintetica, validation_split=0.4)
+    resumo = vdata.split_summary(particoes, classes)
+
+    proporcao_original = 12 / 36  # malignant / total da base sintética
+    for proporcao in resumo["proporcao_positiva"]:
+        assert abs(proporcao - proporcao_original) < 0.08
+
+
+def test_conjuntos_do_split_sao_disjuntos(base_sintetica):
+    particoes, _ = vdata.stratified_split(base_sintetica, validation_split=0.4)
+    treino, validacao, teste = (set(caminhos) for caminhos, _ in particoes.values())
+
+    assert not treino & validacao
+    assert not treino & teste
+    assert not validacao & teste
+    assert len(treino | validacao | teste) == 36
+
+
 def test_conjuntos_sao_disjuntos_e_nao_vazios(base_sintetica):
     treino, validacao, teste, classes = vdata.load_datasets(
         base_sintetica, image_size=TAMANHO, batch_size=4, validation_split=0.4

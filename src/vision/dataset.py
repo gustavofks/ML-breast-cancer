@@ -121,6 +121,127 @@ def class_weights(counts: pd.DataFrame, class_names: list[str]) -> dict[int, flo
     }
 
 
+def list_images(root: Path | None = None) -> tuple[list[str], list[int], list[str]]:
+    """Lista os caminhos das imagens com o indice da classe de cada uma.
+
+    Returns:
+        `(caminhos, rotulos, class_names)`, com os caminhos em ordem estavel
+        para que a particao dependa apenas da semente.
+    """
+    diretorio = root or config.IMAGES_DIR
+    class_names = discover_classes(diretorio)
+
+    caminhos, rotulos = [], []
+    for indice, classe in enumerate(class_names):
+        arquivos = sorted(
+            arquivo
+            for arquivo in (diretorio / classe).rglob("*")
+            if arquivo.suffix.lower() in EXTENSOES and not is_mask(arquivo)
+        )
+        caminhos.extend(str(arquivo) for arquivo in arquivos)
+        rotulos.extend([indice] * len(arquivos))
+
+    return caminhos, rotulos, class_names
+
+
+def stratified_split(
+    root: Path | None = None,
+    validation_split: float = config.VALIDATION_SPLIT,
+    seed: int = config.SEED,
+) -> tuple[dict[str, tuple[list[str], list[int]]], list[str]]:
+    """Divide as imagens em treino, validacao e teste preservando as classes.
+
+    O `image_dataset_from_directory` do Keras divide **aleatoriamente**, sem
+    estratificar. Em uma base pequena e desbalanceada como esta, isso deixa a
+    proporcao de casos malignos no teste ao acaso — inconsistente com o rigor
+    aplicado ao pipeline tabular. Aqui a particao e feita sobre a lista de
+    arquivos, com `stratify`, e o restante e dividido meio a meio entre
+    validacao e teste, tambem estratificado.
+    """
+    from sklearn.model_selection import train_test_split
+
+    caminhos, rotulos, class_names = list_images(root)
+
+    treino_x, restante_x, treino_y, restante_y = train_test_split(
+        caminhos,
+        rotulos,
+        test_size=validation_split,
+        random_state=seed,
+        stratify=rotulos,
+    )
+    validacao_x, teste_x, validacao_y, teste_y = train_test_split(
+        restante_x,
+        restante_y,
+        test_size=0.5,
+        random_state=seed,
+        stratify=restante_y,
+    )
+
+    particoes = {
+        "treino": (treino_x, treino_y),
+        "validacao": (validacao_x, validacao_y),
+        "teste": (teste_x, teste_y),
+    }
+    return particoes, class_names
+
+
+def split_summary(
+    particoes: dict[str, tuple[list[str], list[int]]],
+    class_names: list[str],
+) -> pd.DataFrame:
+    """Composicao de cada conjunto, para comprovar que a estratificacao valeu."""
+    positiva = positive_index(class_names)
+    linhas = []
+
+    for nome, (_, rotulos) in particoes.items():
+        linha = {"conjunto": nome, "imagens": len(rotulos)}
+        for indice, classe in enumerate(class_names):
+            linha[classe] = sum(1 for r in rotulos if r == indice)
+        linha["proporcao_positiva"] = round(
+            sum(1 for r in rotulos if r == positiva) / len(rotulos), 4
+        )
+        linhas.append(linha)
+
+    return pd.DataFrame(linhas)
+
+
+def _build_dataset(
+    caminhos: list[str],
+    rotulos: list[int],
+    n_classes: int,
+    image_size: tuple[int, int],
+    batch_size: int,
+    embaralhar: bool,
+    seed: int,
+):
+    """Constroi um `tf.data.Dataset` a partir de caminhos e rotulos.
+
+    As imagens saem em escala 0-255, igual ao que o
+    `image_dataset_from_directory` entrega: a normalizacao acontece dentro dos
+    modelos, em `src/vision/model.py`.
+    """
+    import tensorflow as tf
+
+    if n_classes == 2:
+        alvos = tf.constant(rotulos, dtype=tf.float32)[:, None]
+    else:
+        alvos = tf.one_hot(rotulos, depth=n_classes)
+
+    conjunto = tf.data.Dataset.from_tensor_slices((tf.constant(caminhos), alvos))
+
+    def carregar(caminho, alvo):
+        imagem = tf.io.read_file(caminho)
+        imagem = tf.image.decode_image(imagem, channels=3, expand_animations=False)
+        imagem = tf.image.resize(imagem, image_size)
+        return tf.cast(imagem, tf.float32), alvo
+
+    if embaralhar:
+        conjunto = conjunto.shuffle(len(caminhos), seed=seed, reshuffle_each_iteration=True)
+
+    autotune = tf.data.AUTOTUNE
+    return conjunto.map(carregar, num_parallel_calls=autotune).batch(batch_size).cache().prefetch(autotune)
+
+
 def load_datasets(
     root: Path | None = None,
     image_size: tuple[int, int] = config.IMAGE_SIZE,
@@ -128,19 +249,12 @@ def load_datasets(
     validation_split: float = config.VALIDATION_SPLIT,
     seed: int = config.SEED,
 ):
-    """Monta os conjuntos de treino, validacao e teste.
-
-    O Keras separa apenas treino e validacao; a metade final da validacao e
-    reservada como teste, de modo que os tres conjuntos sejam disjuntos.
+    """Monta os conjuntos de treino, validacao e teste, estratificados.
 
     Returns:
         `(treino, validacao, teste, class_names)`.
     """
-    import tensorflow as tf
-
     diretorio = root or config.IMAGES_DIR
-    class_names = discover_classes(diretorio)
-    modo = "binary" if len(class_names) == 2 else "categorical"
 
     # O Keras carrega tudo o que encontra na pasta: uma mascara esquecida vira
     # amostra de treino. Melhor falhar aqui, com instrucao clara, do que treinar
@@ -153,31 +267,22 @@ def load_datasets(
             "elas seriam carregadas como se fossem exames."
         )
 
-    treino, restante = tf.keras.utils.image_dataset_from_directory(
-        diretorio,
-        labels="inferred",
-        label_mode=modo,
-        class_names=class_names,
-        image_size=image_size,
-        batch_size=batch_size,
-        validation_split=validation_split,
-        subset="both",
-        seed=seed,
-        shuffle=True,
-    )
+    particoes, class_names = stratified_split(diretorio, validation_split, seed)
+    n_classes = len(class_names)
 
-    lotes_restantes = restante.cardinality().numpy()
-    lotes_validacao = max(1, lotes_restantes // 2)
-    validacao = restante.take(lotes_validacao)
-    teste = restante.skip(lotes_validacao)
-
-    autotune = tf.data.AUTOTUNE
-    return (
-        treino.cache().prefetch(autotune),
-        validacao.cache().prefetch(autotune),
-        teste.cache().prefetch(autotune),
-        class_names,
-    )
+    conjuntos = [
+        _build_dataset(
+            caminhos,
+            rotulos,
+            n_classes,
+            image_size,
+            batch_size,
+            embaralhar=(nome == "treino"),
+            seed=seed,
+        )
+        for nome, (caminhos, rotulos) in particoes.items()
+    ]
+    return (*conjuntos, class_names)
 
 
 def dataset_summary(root: Path | None = None) -> dict:

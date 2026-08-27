@@ -672,7 +672,11 @@ conjunto silenciosamente contaminado.
 
 ### 7.2 Protocolo
 
-- Divisão 70/15/15 — 546 imagens de treino, 128 de validação e 106 de teste
+- Divisão **estratificada** 70/15/15 — 546 imagens de treino, 117 de validação e 117 de teste. O
+  `image_dataset_from_directory` do Keras divide aleatoriamente, sem preservar a proporção das
+  classes; em uma base pequena e desbalanceada isso deixaria ao acaso quantos casos malignos caem
+  no teste. A partição é feita sobre a lista de arquivos, com `stratify`, mantendo 26,9% de
+  malignos no treino, 27,4% na validação e 26,5% no teste, contra 26,9% na base completa
 - Imagens redimensionadas para 224×224, entrada padrão das redes pré-treinadas
 - **Pesos de classe** inversamente proporcionais à frequência (`normal` pesa 1,95 contra 0,60 de
   `benign`), para que a rede não aprenda a favorecer a classe majoritária
@@ -693,30 +697,35 @@ conjunto silenciosamente contaminado.
 
 | Modelo | Épocas | Melhor época | Acurácia | F1 macro | **Recall maligno** | Precisão maligno | Malignos não detectados | Tempo |
 |---|---|---|---|---|---|---|---|---|
-| **MobileNetV2** | 15 | 9 | **0,745** | **0,727** | **0,793** | 0,639 | **6 de 29** | 77 s |
-| CNN do zero | 24 | 18 | 0,585 | 0,287 | 0,069 | 0,667 | 27 de 29 | 149 s |
+| **MobileNetV2** | 17 | 11 | **0,684** | **0,682** | **0,742** | 0,548 | **8 de 31** | 90 s |
+| CNN do zero | 21 | 15 | 0,573 | 0,295 | 0,097 | 0,600 | 28 de 31 | 138 s |
 
-**A diferença não é de grau, é de natureza.** A CNN treinada do zero atinge 58,5% de acurácia, mas
-com recall de apenas 0,069 na classe maligna: detectou **2 dos 29 casos malignos** do conjunto de
+**A diferença não é de grau, é de natureza.** A CNN treinada do zero atinge 57,3% de acurácia, mas
+com recall de apenas 0,097 na classe maligna: detectou **3 dos 31 casos malignos** do conjunto de
 teste. Ela não aprendeu a distinguir lesões — aprendeu a responder majoritariamente "benigno", que
 é a resposta mais frequente. É a demonstração prática do que a seção 2 já afirmava sobre a acurácia
 como métrica isolada: um modelo pode parecer razoável e ser clinicamente inútil.
 
 As curvas de treino explicam o porquê: a perda de validação da CNN do zero mal se move ao longo de
-24 épocas, oscilando em torno de 1,05 — com 546 imagens, não há dados suficientes para aprender
+21 épocas, oscilando em torno de 1,0 — com 546 imagens, não há dados suficientes para aprender
 filtros visuais úteis a partir do zero.
 
-A MobileNetV2 converge em 9 épocas e chega a recall de 0,793 na classe maligna. **Transferência de
+A MobileNetV2 converge em 11 épocas e chega a recall de 0,742 na classe maligna. **Transferência de
 aprendizado não é um detalhe de otimização neste cenário: é o que torna a tarefa viável.**
+
+Vale registrar um efeito da própria estratificação: com a partição aleatória do Keras, a mesma
+arquitetura havia marcado 0,793 de recall e 0,745 de acurácia. A queda ao estratificar não indica
+piora do modelo — indica que o resultado anterior se apoiava em uma partição favorável. É
+exatamente o tipo de otimismo que a estratificação existe para evitar.
 
 ![Matriz de confusão](../results/figures/23_matriz_confusao_imagens.png)
 
-A matriz do modelo escolhido detalha os erros nas 106 imagens de teste:
+A matriz do modelo escolhido detalha os erros nas 117 imagens de teste:
 
-- **23 dos 29 casos malignos** corretamente identificados
-- **4 malignos classificados como benignos** e **2 como normais** — os 6 erros de maior custo
-- 11 benignos classificados como malignos, que no fluxo clínico significam exames adicionais
-- 8 benignos classificados como normais, um erro menos grave mas ainda indesejado
+- **23 dos 31 casos malignos** corretamente identificados
+- **4 malignos classificados como benignos** e **4 como normais** — os 8 erros de maior custo
+- 18 benignos classificados como malignos, que no fluxo clínico significam exames adicionais
+- 9 benignos classificados como normais, um erro menos grave mas ainda indesejado
 
 ![Casos malignos não detectados](../results/figures/24_malignos_nao_detectados.png)
 
@@ -729,7 +738,7 @@ especialista.
 | | Wisconsin (tabular) | BUSI (imagem) |
 |---|---|---|
 | Entrada | 30 medidas extraídas por especialista | pixels do exame |
-| Recall da classe maligna | 0,929 | 0,793 |
+| Recall da classe maligna | 0,929 | 0,742 |
 | Amostras | 569 | 780 |
 | Dependência humana prévia | alta — exige medição manual | nenhuma |
 | Explicabilidade | coeficientes, permutação e SHAP | inspeção dos erros; sem atribuição por pixel |
@@ -739,7 +748,7 @@ medidas que um profissional já extraiu. O modelo de imagem tem desempenho infer
 dado bruto, sem etapa manual anterior — mais próximo de um sistema de triagem real, e mais longe de
 estar pronto para uso.
 
-Com recall de 0,793, **1 em cada 5 tumores malignos escaparia**. É um resultado adequado a uma
+Com recall de 0,742, **1 em cada 4 tumores malignos escaparia**. É um resultado adequado a uma
 demonstração de viabilidade acadêmica e inaceitável para uso clínico, ainda que como triagem. Os
 caminhos conhecidos para melhorar — ajuste fino da base pré-treinada, mais dados, resolução maior,
 validação cruzada em vez de partição única e ajuste do limiar por classe — estão fora do escopo

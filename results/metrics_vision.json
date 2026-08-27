@@ -27,50 +27,76 @@
     ],
     "classe_positiva": "malignant"
   },
+  "particoes": [
+    {
+      "conjunto": "treino",
+      "imagens": 546,
+      "benign": 306,
+      "malignant": 147,
+      "normal": 93,
+      "proporcao_positiva": 0.2692
+    },
+    {
+      "conjunto": "validacao",
+      "imagens": 117,
+      "benign": 65,
+      "malignant": 32,
+      "normal": 20,
+      "proporcao_positiva": 0.2735
+    },
+    {
+      "conjunto": "teste",
+      "imagens": 117,
+      "benign": 66,
+      "malignant": 31,
+      "normal": 20,
+      "proporcao_positiva": 0.265
+    }
+  ],
   "modelo_escolhido": "MobileNetV2 (transferência)",
   "metrica_de_selecao": "recall_maligno",
   "treino": [
     {
       "modelo": "CNN do zero",
       "parametros": 110147,
-      "epocas_treinadas": 24,
-      "melhor_epoca": 18,
-      "val_accuracy": 0.5312,
-      "val_loss": 1.044,
-      "segundos": 148.6
+      "epocas_treinadas": 21,
+      "melhor_epoca": 15,
+      "val_accuracy": 0.5812,
+      "val_loss": 1.007,
+      "segundos": 137.6
     },
     {
       "modelo": "MobileNetV2 (transferência)",
       "parametros": 2261827,
-      "epocas_treinadas": 15,
-      "melhor_epoca": 9,
-      "val_accuracy": 0.7266,
-      "val_loss": 0.6335,
-      "segundos": 77.3
+      "epocas_treinadas": 17,
+      "melhor_epoca": 11,
+      "val_accuracy": 0.7094,
+      "val_loss": 0.638,
+      "segundos": 89.6
     }
   ],
   "teste": [
     {
       "modelo": "MobileNetV2 (transferência)",
-      "accuracy": 0.7453,
-      "precision": 0.7063,
-      "recall": 0.7844,
-      "f1": 0.727,
-      "recall_maligno": 0.7931,
-      "precisao_maligno": 0.6389,
-      "malignos_no_teste": 29,
-      "malignos_nao_detectados": 6
+      "accuracy": 0.6838,
+      "precision": 0.6715,
+      "recall": 0.7443,
+      "f1": 0.6817,
+      "recall_maligno": 0.7419,
+      "precisao_maligno": 0.5476,
+      "malignos_no_teste": 31,
+      "malignos_nao_detectados": 8
     },
     {
       "modelo": "CNN do zero",
-      "accuracy": 0.5849,
-      "precision": 0.4202,
-      "recall": 0.3456,
-      "f1": 0.2871,
-      "recall_maligno": 0.069,
-      "precisao_maligno": 0.6667,
-      "malignos_no_teste": 29,
-      "malignos_nao_detectados": 27
+      "accuracy": 0.5726,
+      "precision": 0.3905,
+      "recall": 0.3555,
+      "f1": 0.2953,
+      "recall_maligno": 0.0968,
+      "precisao_maligno": 0.6,
+      "malignos_no_teste": 31,
+      "malignos_nao_detectados": 28
     }
   ],
   "figuras": [

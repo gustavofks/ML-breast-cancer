@@ -50,7 +50,11 @@ def main(epochs: int) -> None:
     vevaluate.plot_class_balance(contagens)
     vevaluate.plot_samples(config.IMAGES_DIR, resumo["classes"])
 
-    print("2/5  Montando treino, validação e teste...")
+    print("2/5  Montando treino, validação e teste (estratificado)...")
+    particoes, class_names = vdata.stratified_split()
+    composicao = vdata.split_summary(particoes, class_names)
+    print(composicao.to_string(index=False))
+
     treino, validacao, teste, class_names = vdata.load_datasets()
     pesos = vdata.class_weights(contagens, class_names)
     print(f"      pesos de classe: {pesos}")
@@ -117,6 +121,7 @@ def main(epochs: int) -> None:
             "nome": "BUSI — Breast Ultrasound Images",
             **resumo,
         },
+        "particoes": composicao.to_dict(orient="records"),
         "modelo_escolhido": melhor,
         "metrica_de_selecao": "recall_maligno",
         "treino": tabela_treino.to_dict(orient="records"),

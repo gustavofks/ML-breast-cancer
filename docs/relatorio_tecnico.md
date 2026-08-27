@@ -690,6 +690,14 @@ conjunto silenciosamente contaminado.
 |---|---|---|
 | **CNN do zero** | 110 mil | três blocos convolucionais treinados apenas com as 546 imagens disponíveis |
 | **MobileNetV2 (transferência)** | 2,26 milhões | base pré-treinada na ImageNet, congelada, com cabeça de classificação nova |
+| **MobileNetV2 (ajuste fino)** | 2,26 milhões | segunda etapa: as 60 camadas finais da base são liberadas, com taxa de aprendizado 10× menor |
+
+O ajuste fino só faz sentido **depois** que a cabeça converge com a base congelada. Aplicado a
+pesos aleatórios, os gradientes iniciais destruiriam as features pré-treinadas. Três cuidados
+tornam a etapa segura: apenas as camadas finais são liberadas — as primeiras detectam bordas e
+texturas úteis em qualquer imagem —, a taxa de aprendizado cai de 1e-3 para 1e-4, e as camadas de
+normalização em lote permanecem congeladas, porque atualizar suas estatísticas com lotes pequenos
+degradaria a normalização aprendida em milhões de imagens.
 
 ### 7.4 Resultados
 
@@ -697,35 +705,68 @@ conjunto silenciosamente contaminado.
 
 | Modelo | Épocas | Melhor época | Acurácia | F1 macro | **Recall maligno** | Precisão maligno | Malignos não detectados | Tempo |
 |---|---|---|---|---|---|---|---|---|
-| **MobileNetV2** | 17 | 11 | **0,684** | **0,682** | **0,742** | 0,548 | **8 de 31** | 90 s |
-| CNN do zero | 21 | 15 | 0,573 | 0,295 | 0,097 | 0,600 | 28 de 31 | 138 s |
+| **MobileNetV2 (transferência)** | 33 | 27 | 0,769 | 0,765 | **0,806** | 0,714 | **6 de 31** | 168 s |
+| MobileNetV2 (ajuste fino) | 15 | 9 | **0,795** | **0,781** | 0,645 | **0,800** | 11 de 31 | 96 s |
+| CNN do zero | 25 | 19 | 0,581 | 0,328 | 0,097 | 0,600 | 28 de 31 | 155 s |
 
-**A diferença não é de grau, é de natureza.** A CNN treinada do zero atinge 57,3% de acurácia, mas
+**A diferença não é de grau, é de natureza.** A CNN treinada do zero atinge 58,1% de acurácia, mas
 com recall de apenas 0,097 na classe maligna: detectou **3 dos 31 casos malignos** do conjunto de
 teste. Ela não aprendeu a distinguir lesões — aprendeu a responder majoritariamente "benigno", que
 é a resposta mais frequente. É a demonstração prática do que a seção 2 já afirmava sobre a acurácia
 como métrica isolada: um modelo pode parecer razoável e ser clinicamente inútil.
 
 As curvas de treino explicam o porquê: a perda de validação da CNN do zero mal se move ao longo de
-21 épocas, oscilando em torno de 1,0 — com 546 imagens, não há dados suficientes para aprender
+25 épocas, oscilando em torno de 1,0 — com 546 imagens, não há dados suficientes para aprender
 filtros visuais úteis a partir do zero.
 
-A MobileNetV2 converge em 11 épocas e chega a recall de 0,742 na classe maligna. **Transferência de
-aprendizado não é um detalhe de otimização neste cenário: é o que torna a tarefa viável.**
+A MobileNetV2 chega a recall de 0,806 na classe maligna. **Transferência de aprendizado não é um
+detalhe de otimização neste cenário: é o que torna a tarefa viável.**
 
-Vale registrar um efeito da própria estratificação: com a partição aleatória do Keras, a mesma
-arquitetura havia marcado 0,793 de recall e 0,745 de acurácia. A queda ao estratificar não indica
-piora do modelo — indica que o resultado anterior se apoiava em uma partição favorável. É
-exatamente o tipo de otimismo que a estratificação existe para evitar.
+**O ajuste fino foi rejeitado, e o motivo é o argumento central deste projeto.** Liberadas as 60
+camadas finais da MobileNetV2 com taxa de aprendizado 10× menor, o modelo melhorou em quase tudo
+que se costuma olhar primeiro: a perda de validação caiu de 0,593 para 0,435, a acurácia de
+validação subiu de 0,735 para 0,846, a acurácia de teste de 0,769 para 0,795, o F1 de 0,765 para
+0,781 e a precisão na classe maligna de 0,714 para 0,800.
+
+E ainda assim ele é o pior modelo para este problema: **o recall da classe maligna caiu de 0,806
+para 0,645, e os casos malignos não detectados saltaram de 6 para 11.** O ajuste fino tornou a rede
+mais conservadora — ela passou a afirmar "maligno" com mais certeza e menos frequência. Em uma
+triagem, essa é exatamente a troca errada: cinco pacientes a mais voltariam para casa com um tumor
+maligno não sinalizado, em troca de menos encaminhamentos desnecessários.
+
+Por isso o critério de seleção é o recall da classe maligna, e não a acurácia ou a perda de
+validação. Se a escolha fosse automática pela métrica mais comum, o pipeline teria promovido o
+modelo pior. **A métrica correta não é a que mostra o melhor número, é a que reflete o custo real
+do erro.**
+
+Duas notas de método sobre esta etapa. Primeira: uma tentativa mais conservadora — 40 camadas e
+taxa 1e-5 — não moveu os pesos e parou na primeira época; a configuração do ajuste fino precisa ser
+testada, não presumida. Segunda: a primeira implementação continha um defeito silencioso. A busca
+pela base pré-treinada usava `isinstance(camada, Model)`, e a camada de aumento de dados é um
+`Sequential`, que também é um `Model` — o código liberava o bloco de aumento em vez da MobileNetV2.
+O modelo treinava, as métricas mudavam ligeiramente e nada acusava erro. Um teste que exige que as
+camadas liberadas pertençam à base pré-treinada expôs o problema.
+
+Vale registrar também um efeito da estratificação: sobre a partição aleatória do Keras, esta mesma
+arquitetura havia marcado 0,793 de recall. A diferença não reflete mudança no modelo, e sim que
+resultados medidos sobre partições sorteadas variam sozinhos — exatamente o otimismo que a
+estratificação elimina.
+
+**Reprodutibilidade.** O treino fixa as sementes do TensorFlow e ativa a execução determinística.
+Sem isso, cada execução produzia métricas diferentes, porque a inicialização dos pesos, a ordem do
+embaralhamento e o aumento de dados usam geradores próprios. Com o determinismo ativo, duas
+execuções consecutivas devolveram exatamente os mesmos números — a mesma garantia que o pipeline
+tabular já oferecia.
 
 ![Matriz de confusão](../results/figures/23_matriz_confusao_imagens.png)
 
 A matriz do modelo escolhido detalha os erros nas 117 imagens de teste:
 
-- **23 dos 31 casos malignos** corretamente identificados
-- **4 malignos classificados como benignos** e **4 como normais** — os 8 erros de maior custo
-- 18 benignos classificados como malignos, que no fluxo clínico significam exames adicionais
-- 9 benignos classificados como normais, um erro menos grave mas ainda indesejado
+- **25 dos 31 casos malignos** corretamente identificados
+- **4 malignos classificados como benignos** e **2 como normais** — os 6 erros de maior custo
+- 10 benignos classificados como malignos, que no fluxo clínico significam exames adicionais
+- 11 benignos classificados como normais, um erro menos grave mas ainda indesejado
+- **as 20 imagens normais foram todas classificadas corretamente**
 
 ![Casos malignos não detectados](../results/figures/24_malignos_nao_detectados.png)
 
@@ -738,7 +779,7 @@ especialista.
 | | Wisconsin (tabular) | BUSI (imagem) |
 |---|---|---|
 | Entrada | 30 medidas extraídas por especialista | pixels do exame |
-| Recall da classe maligna | 0,929 | 0,742 |
+| Recall da classe maligna | 0,929 | 0,806 |
 | Amostras | 569 | 780 |
 | Dependência humana prévia | alta — exige medição manual | nenhuma |
 | Explicabilidade | coeficientes, permutação e SHAP | inspeção dos erros; sem atribuição por pixel |
@@ -748,7 +789,7 @@ medidas que um profissional já extraiu. O modelo de imagem tem desempenho infer
 dado bruto, sem etapa manual anterior — mais próximo de um sistema de triagem real, e mais longe de
 estar pronto para uso.
 
-Com recall de 0,742, **1 em cada 4 tumores malignos escaparia**. É um resultado adequado a uma
+Com recall de 0,806, **1 em cada 5 tumores malignos escaparia**. É um resultado adequado a uma
 demonstração de viabilidade acadêmica e inaceitável para uso clínico, ainda que como triagem. Os
 caminhos conhecidos para melhorar — ajuste fino da base pré-treinada, mais dados, resolução maior,
 validação cruzada em vez de partição única e ajuste do limiar por classe — estão fora do escopo

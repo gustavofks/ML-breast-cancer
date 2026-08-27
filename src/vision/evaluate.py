@@ -21,7 +21,15 @@ from sklearn.metrics import (
     recall_score,
 )
 
-from src.plotting import COLOR_BENIGNO, COLOR_MALIGNO, INK, INK_MUTED, SURFACE, save_figure
+from src.plotting import (
+    COLOR_BENIGNO,
+    COLOR_MALIGNO,
+    INK,
+    INK_MUTED,
+    SURFACE,
+    model_color,
+    save_figure,
+)
 from src.vision.dataset import EXTENSOES, is_mask, positive_index
 
 
@@ -79,14 +87,22 @@ def evaluate(modelo, conjunto, class_names: list[str]) -> dict:
     }
 
 
-def evaluate_all(modelos: dict, conjunto, class_names: list[str]) -> pd.DataFrame:
-    """Tabela com as metricas de teste de todos os modelos, ordenada por recall maligno."""
-    linhas = [{"modelo": nome, **evaluate(m, conjunto, class_names)} for nome, m in modelos.items()]
+def rank(resultados: pd.DataFrame) -> pd.DataFrame:
+    """Ordena por recall maligno e, em caso de empate, por F1 macro.
+
+    O desempate importa: duas arquiteturas podem perder o mesmo numero de casos
+    malignos e ainda assim diferir bastante no resto da matriz de confusao.
+    """
     return (
-        pd.DataFrame(linhas)
-        .sort_values("recall_maligno", ascending=False)
+        resultados.sort_values(["recall_maligno", "f1"], ascending=False)
         .reset_index(drop=True)
     )
+
+
+def evaluate_all(modelos: dict, conjunto, class_names: list[str]) -> pd.DataFrame:
+    """Tabela com as metricas de teste de todos os modelos, ja ordenada."""
+    linhas = [{"modelo": nome, **evaluate(m, conjunto, class_names)} for nome, m in modelos.items()]
+    return rank(pd.DataFrame(linhas))
 
 
 # ---------------------------------------------------------------------------
@@ -158,7 +174,7 @@ def plot_training_curves(historicos: dict, filename: str = "22_curvas_treino.png
     for nome, historico in historicos.items():
         registro = historico.history
         epocas = range(1, len(registro["loss"]) + 1)
-        cor = COLOR_MALIGNO if "Mobile" in nome else COLOR_BENIGNO
+        cor = model_color(nome)
 
         axes[0].plot(epocas, registro["loss"], color=cor, label=f"{nome} — treino")
         axes[0].plot(epocas, registro["val_loss"], color=cor, linestyle="--", label=f"{nome} — validação")

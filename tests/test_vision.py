@@ -151,6 +151,51 @@ def test_cnn_multiclasse_tem_uma_saida_por_classe():
     assert np.allclose(previsao.sum(axis=1), 1.0, atol=1e-5)
 
 
+def test_ajuste_fino_libera_so_as_camadas_finais():
+    from tensorflow.keras import layers
+
+    modelo = vmodel.build_transfer_model(n_classes=3, image_size=(96, 96))
+    from tensorflow import keras
+
+    base = next(
+        c for c in modelo.layers
+        if isinstance(c, keras.Model) and not isinstance(c, keras.Sequential)
+    )
+    assert not base.trainable, "a base deve nascer congelada"
+
+    vmodel.enable_fine_tuning(modelo, n_camadas=10, learning_rate=1e-4)
+
+    treinaveis = [c for c in base.layers if c.trainable]
+    assert treinaveis, "o ajuste fino precisa liberar alguma camada"
+    assert len(treinaveis) <= 10
+    # Normalização em lote fica congelada: lotes pequenos degradariam suas estatísticas.
+    assert not any(isinstance(c, layers.BatchNormalization) for c in treinaveis)
+
+
+def test_ajuste_fino_rejeita_modelo_sem_base_pre_treinada():
+    modelo = vmodel.build_cnn(n_classes=2, image_size=TAMANHO)
+
+    with pytest.raises(TypeError, match="sem base pré-treinada"):
+        vmodel.enable_fine_tuning(modelo)
+
+
+def test_desempate_do_ranking_usa_f1():
+    """Dois modelos podem perder os mesmos malignos e diferir no resto."""
+    import pandas as pd
+
+    from src.vision import evaluate as vevaluate
+
+    tabela = pd.DataFrame(
+        [
+            {"modelo": "A", "recall_maligno": 0.80, "f1": 0.70},
+            {"modelo": "B", "recall_maligno": 0.80, "f1": 0.77},
+            {"modelo": "C", "recall_maligno": 0.90, "f1": 0.60},
+        ]
+    )
+
+    assert list(vevaluate.rank(tabela)["modelo"]) == ["C", "B", "A"]
+
+
 def test_callbacks_incluem_parada_antecipada():
     nomes = [type(c).__name__ for c in vmodel.callbacks()]
 

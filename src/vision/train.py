@@ -23,6 +23,21 @@ from src import config
 from src.vision import model as vmodel
 
 
+def configure_determinism(seed: int = config.SEED) -> None:
+    """Fixa as sementes do TensorFlow para que o treino seja reproduzivel.
+
+    Sem isso, cada execucao produz metricas diferentes: a inicializacao dos
+    pesos, a ordem do embaralhamento e o aumento de dados usam geradores
+    proprios. `enable_op_determinism` cobra um pouco de desempenho, aceitavel
+    numa base deste tamanho, e e o que garante que rodar duas vezes devolva o
+    mesmo resultado — a mesma promessa que o pipeline tabular ja cumpre.
+    """
+    import tensorflow as tf
+
+    tf.keras.utils.set_random_seed(seed)
+    tf.config.experimental.enable_op_determinism()
+
+
 def train_model(
     modelo,
     treino,
@@ -47,6 +62,29 @@ def train_model(
         verbose=verbose,
     )
     return historico, round(time.perf_counter() - inicio, 1)
+
+
+def fine_tune(
+    modelo,
+    treino,
+    validacao,
+    class_weight: dict[int, float] | None = None,
+    epochs: int = 20,
+    n_camadas: int = 40,
+    learning_rate: float = 1e-5,
+    verbose: int = 2,
+):
+    """Segunda etapa do treino: adapta as camadas finais da base pre-treinada.
+
+    Deve ser chamada com um modelo **ja treinado** com a base congelada. Rodar o
+    ajuste fino a partir de pesos aleatorios na cabeca destruiria a base, porque
+    os gradientes iniciais seriam enormes.
+
+    Returns:
+        `(historico, segundos)`.
+    """
+    vmodel.enable_fine_tuning(modelo, n_camadas=n_camadas, learning_rate=learning_rate)
+    return train_model(modelo, treino, validacao, class_weight, epochs, verbose)
 
 
 def train_all(

@@ -59,40 +59,60 @@
     {
       "modelo": "CNN do zero",
       "parametros": 110147,
-      "epocas_treinadas": 21,
-      "melhor_epoca": 15,
-      "val_accuracy": 0.5812,
-      "val_loss": 1.007,
-      "segundos": 137.6
+      "epocas_treinadas": 25,
+      "melhor_epoca": 19,
+      "val_accuracy": 0.5983,
+      "val_loss": 0.9865,
+      "segundos": 155.0
     },
     {
       "modelo": "MobileNetV2 (transferência)",
       "parametros": 2261827,
-      "epocas_treinadas": 17,
-      "melhor_epoca": 11,
-      "val_accuracy": 0.7094,
-      "val_loss": 0.638,
-      "segundos": 89.6
+      "epocas_treinadas": 33,
+      "melhor_epoca": 27,
+      "val_accuracy": 0.735,
+      "val_loss": 0.5932,
+      "segundos": 168.1
+    },
+    {
+      "modelo": "MobileNetV2 (ajuste fino)",
+      "parametros": 2261827,
+      "epocas_treinadas": 15,
+      "melhor_epoca": 9,
+      "val_accuracy": 0.8462,
+      "val_loss": 0.4347,
+      "segundos": 96.0
     }
   ],
   "teste": [
     {
       "modelo": "MobileNetV2 (transferência)",
-      "accuracy": 0.6838,
-      "precision": 0.6715,
-      "recall": 0.7443,
-      "f1": 0.6817,
-      "recall_maligno": 0.7419,
-      "precisao_maligno": 0.5476,
+      "accuracy": 0.7692,
+      "precision": 0.7462,
+      "recall": 0.8294,
+      "f1": 0.765,
+      "recall_maligno": 0.8065,
+      "precisao_maligno": 0.7143,
       "malignos_no_teste": 31,
-      "malignos_nao_detectados": 8
+      "malignos_nao_detectados": 6
+    },
+    {
+      "modelo": "MobileNetV2 (ajuste fino)",
+      "accuracy": 0.7949,
+      "precision": 0.7738,
+      "recall": 0.8161,
+      "f1": 0.7808,
+      "recall_maligno": 0.6452,
+      "precisao_maligno": 0.8,
+      "malignos_no_teste": 31,
+      "malignos_nao_detectados": 11
     },
     {
       "modelo": "CNN do zero",
-      "accuracy": 0.5726,
-      "precision": 0.3905,
-      "recall": 0.3555,
-      "f1": 0.2953,
+      "accuracy": 0.5812,
+      "precision": 0.5606,
+      "recall": 0.3722,
+      "f1": 0.3283,
       "recall_maligno": 0.0968,
       "precisao_maligno": 0.6,
       "malignos_no_teste": 31,
@@ -113,7 +133,7 @@
     {
       "arquivo": "22_curvas_treino.png",
       "titulo": "Curvas de treino",
-      "leitura": "A distância entre as curvas de treino e validação mede o sobreajuste. A parada antecipada devolve os pesos da melhor época de validação."
+      "leitura": "A distância entre as curvas de treino e validação mede o sobreajuste. A parada antecipada devolve os pesos da melhor época. O ajuste fino é uma segunda etapa, que continua de onde a transferência parou — por isso sua contagem de épocas recomeça do zero e sua perda já nasce baixa."
     },
     {
       "arquivo": "23_matriz_confusao_imagens.png",

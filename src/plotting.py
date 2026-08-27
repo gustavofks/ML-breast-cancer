@@ -27,9 +27,14 @@ CLASS_COLORS = {0: COLOR_BENIGNO, 1: COLOR_MALIGNO}
 # identidade visual de cada modelo permanece a mesma em todos os graficos, mesmo
 # quando a ordenacao muda de uma figura para outra.
 MODEL_COLORS = {
+    # pipeline tabular
     "Regressão Logística": "#2a78d6",
     "KNN": "#eb6834",
     "Random Forest": "#1baf7a",
+    # pipeline de imagem
+    "CNN do zero": "#2a78d6",
+    "MobileNetV2 (transferência)": "#eb6834",
+    "MobileNetV2 (ajuste fino)": "#1baf7a",
 }
 _FALLBACK_COLOR = "#4a3aa7"
 

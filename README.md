@@ -39,12 +39,18 @@ medidas extraídas por especialista:
 
 | Modelo | Acurácia | F1 macro | Recall maligno | Malignos não detectados |
 |---|---|---|---|---|
-| **MobileNetV2 (transferência)** | 0,684 | 0,682 | **0,742** | 8 de 31 |
-| CNN do zero | 0,573 | 0,295 | 0,097 | 28 de 31 |
+| **MobileNetV2 (transferência)** | 0,769 | 0,765 | **0,806** | 6 de 31 |
+| MobileNetV2 (ajuste fino) | 0,795 | 0,781 | 0,645 | 11 de 31 |
+| CNN do zero | 0,581 | 0,328 | 0,097 | 28 de 31 |
 
-A CNN treinada do zero atinge 57,3% de acurácia detectando apenas 3 dos 31 casos malignos: aprendeu
+A CNN treinada do zero atinge 58,1% de acurácia detectando apenas 3 dos 31 casos malignos: aprendeu
 a responder "benigno", que é a resposta mais frequente. Com 546 imagens de treino, **transferência
 de aprendizado não é otimização, é o que torna a tarefa viável**.
+
+O ajuste fino da base pré-treinada é o caso mais interessante: melhorou acurácia, F1, precisão e
+perda de validação — e **foi rejeitado**, porque o recall da classe maligna caiu de 0,806 para
+0,645, de 6 para 11 casos não detectados. Escolher pela métrica mais comum teria promovido o modelo
+pior.
 
 A partição das imagens é estratificada, como no pipeline tabular — o split padrão do Keras é
 aleatório e deixaria ao acaso quantos casos malignos caem no teste.
@@ -173,7 +179,7 @@ ML-breast-cancer/
 ├── scripts/
 │   ├── run_wisconsin.py       # pipeline tabular ponta a ponta
 │   └── run_vision.py          # pipeline de imagem ponta a ponta
-├── tests/                     # 54 testes automatizados
+├── tests/                     # 57 testes automatizados
 ├── results/
 │   ├── figures/               # 19 gráficos gerados
 │   ├── metrics.json           # métricas do pipeline tabular

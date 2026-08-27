@@ -144,6 +144,73 @@ def build_transfer_model(
     return modelo
 
 
+def enable_fine_tuning(modelo, n_camadas: int = 40, learning_rate: float = 1e-5):
+    """Libera as ultimas camadas da base pre-treinada para ajuste fino.
+
+    Treinar a cabeca com a base congelada aprende *o que fazer* com as features
+    da ImageNet; o ajuste fino adapta as proprias features ao dominio — texturas
+    de ultrassom nao se parecem com fotografias naturais.
+
+    Tres cuidados que evitam destruir o que ja foi aprendido:
+
+    - **Somente as camadas finais.** As primeiras detectam bordas e texturas
+      genericas, uteis em qualquer imagem; as ultimas e que sao especificas da
+      ImageNet.
+    - **Taxa de aprendizado muito menor** (1e-5 contra 1e-3). Com a taxa
+      original, os gradientes da cabeca recem-treinada apagariam os pesos
+      pre-treinados na primeira epoca.
+    - **BatchNormalization permanece congelada.** Atualizar suas estatisticas com
+      lotes pequenos degrada a normalizacao aprendida em milhoes de imagens.
+
+    Returns:
+        O proprio modelo, recompilado e pronto para continuar o treino.
+    """
+    from tensorflow import keras
+    from tensorflow.keras import layers
+
+    # Cuidado necessario: a camada de aumento de dados tambem e um modelo
+    # (Sequential herda de Model). A base pre-treinada e a unica submodelo
+    # funcional, entao e por ai que ela se distingue.
+    base = next(
+        (
+            camada
+            for camada in modelo.layers
+            if isinstance(camada, keras.Model) and not isinstance(camada, keras.Sequential)
+        ),
+        None,
+    )
+    if base is None:
+        raise TypeError("Modelo sem base pré-treinada: nada a liberar para ajuste fino.")
+
+    base.trainable = True
+    for camada in base.layers[:-n_camadas]:
+        camada.trainable = False
+    for camada in base.layers:
+        if isinstance(camada, layers.BatchNormalization):
+            camada.trainable = False
+
+    n_classes = 2 if modelo.output_shape[-1] == 1 else modelo.output_shape[-1]
+    _, _, perda = _saida(n_classes)
+
+    modelo.compile(
+        optimizer=keras.optimizers.Adam(learning_rate),
+        loss=perda,
+        metrics=_metricas(n_classes),
+    )
+    return modelo
+
+
+def trainable_layers(modelo) -> int:
+    """Quantidade de camadas treinaveis, para registrar o efeito do ajuste fino."""
+    return sum(1 for camada in modelo.layers if camada.trainable) + sum(
+        1
+        for camada in modelo.layers
+        if hasattr(camada, "layers")
+        for sub in camada.layers
+        if sub.trainable
+    )
+
+
 def callbacks(patience: int = 6):
     """Parada antecipada e reducao de taxa de aprendizado.
 

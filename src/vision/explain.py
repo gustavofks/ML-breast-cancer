@@ -61,7 +61,12 @@ def last_conv_layer(modelo) -> str:
     raise TypeError("Modelo sem mapa de ativação convolucional: Grad-CAM não se aplica.")
 
 
-def gradcam(modelo, imagem: np.ndarray, classe: int | None = None, nome_camada: str | None = None):
+def gradcam(
+    modelo,
+    imagem: np.ndarray,
+    classe: int | None = None,
+    nome_camada: str | None = None,
+):
     """Mapa de calor Grad-CAM de uma imagem.
 
     Args:

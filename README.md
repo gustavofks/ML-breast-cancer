@@ -97,8 +97,15 @@ explicações e gera o relatório HTML. É idempotente: rodar de novo regenera t
 results/reports/index.html
 ```
 
-Abra por duplo clique — página estática, sem servidor e sem dependência de rede. Reúne as duas
-análises em abas: o dataset tabular (Wisconsin) e o extra com imagens.
+Abra por duplo clique — página estática, sem servidor e sem dependência de rede. Traz resumo
+executivo, três abas com índice lateral que acompanha a rolagem (tabular, imagens e uma comparação
+entre as duas abordagens), diagramas do fluxo de dados, e a tabela de números por trás de cada
+gráfico, recolhida sob a figura. O tema acompanha o sistema na primeira visita e pode ser alternado
+entre claro e escuro na própria página.
+
+Cada etapa aparece com o **código que a executa**, lido do arquivo-fonte no momento da geração — um
+trecho copiado envelheceria na primeira refatoração. E cada aba fecha com um **painel de decisões**,
+onde toda escolha técnica vem acompanhada do que teria acontecido no caminho oposto.
 
 ### Notebooks
 
@@ -175,7 +182,9 @@ ML-breast-cancer/
 │   ├── evaluation.py          # métricas e gráficos do modelo
 │   ├── explain.py             # coeficientes, permutação e SHAP
 │   ├── plotting.py            # estilo visual compartilhado
-│   ├── report.py              # geração do relatório HTML
+│   ├── report.py              # montagem do relatório HTML
+│   ├── report_code.py         # extração e realce dos trechos de código exibidos
+│   ├── report_style.py        # folha de estilo e script da página
 │   └── vision/                # entrega extra: diagnóstico por imagem
 │       ├── dataset.py         # carregamento por pasta de classe
 │       ├── model.py           # CNN do zero e MobileNetV2
@@ -185,7 +194,7 @@ ML-breast-cancer/
 ├── scripts/
 │   ├── run_wisconsin.py       # pipeline tabular ponta a ponta
 │   └── run_vision.py          # pipeline de imagem ponta a ponta
-├── tests/                     # 67 testes automatizados
+├── tests/                     # 86 testes automatizados
 ├── results/
 │   ├── figures/               # 19 gráficos gerados
 │   ├── metrics.json           # métricas do pipeline tabular

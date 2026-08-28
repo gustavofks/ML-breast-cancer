@@ -255,7 +255,9 @@ def stratified_split(
 
     indices_validacao, indices_teste = set(dobras[0]), set(dobras[1])
     indices_treino = [
-        i for i in range(len(caminhos)) if i not in indices_validacao and i not in indices_teste
+        i
+        for i in range(len(caminhos))
+        if i not in indices_validacao and i not in indices_teste
     ]
 
     def recortar(indices):

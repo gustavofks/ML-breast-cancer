@@ -4,85 +4,160 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Detecção de Riscos em Saúde da Mulher — Tech Challenge Fase 1</title>
+<meta name="description" content="Classificação de exames com aprendizado de máquina, avaliada pelo custo clínico do erro.">
 <style>
 :root {
-  --papel: #f7f4ee;
-  --papel-cartao: #fffdf9;
-  --tinta: #16150f;
-  --tinta-media: #55524a;
-  --tinta-fraca: #8b8779;
-  --linha: #ddd7c9;
-  --linha-forte: #b8b1a0;
-  --laranja: #c2551f;
-  --destaque-fundo: #f0ece0;
+  color-scheme: light dark;
+
+  --papel: #f6f3ec;
+  --papel-cartao: #fffdf8;
+  --papel-fundo: #efebe1;
+  --tinta: #14161c;
+  --tinta-media: #4a5160;
+  --tinta-fraca: #7c8494;
+  --linha: #ded8cb;
+  --linha-forte: #bab3a3;
+  --marinho: #1e3a5f;
+  --ambar: #b45309;
+  --destaque: #efe9dc;
+  --sombra: 0 1px 2px rgba(20, 22, 28, 0.04);
+
   --serifada: "Iowan Old Style", "Palatino Linotype", Palatino, Cambria, Georgia, serif;
   --sem-serifa: Corbel, "Segoe UI", Optima, "Avenir Next", "Helvetica Neue", sans-serif;
-  --mono: Consolas, "SF Mono", "Roboto Mono", monospace;
+  --mono: Consolas, "SF Mono", "Roboto Mono", ui-monospace, monospace;
+
+  /* A largura do texto e a unidade de medida da pagina: a coluna de conteudo
+     tem exatamente a mesma largura da linha de texto confortavel, entao
+     paragrafos, figuras, tabelas e legendas dividem a mesma margem esquerda e
+     a mesma margem direita. Nada fica em bloco estreito sob uma imagem larga. */
+  --medida: 74ch;
+  --largura: 1160px;
+  --coluna-indice: 232px;
 }
 
+/* Paleta escura, definida uma vez e aplicada em dois casos: quando o sistema
+   pede modo escuro e o leitor nao escolheu nada, ou quando ele escolheu escuro
+   explicitamente. A escolha do leitor sempre vence a do sistema. */
 @media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    --papel: #14140f;
-    --papel-cartao: #1c1c16;
-    --tinta: #f0ece1;
-    --tinta-media: #b3ae9f;
-    --tinta-fraca: #7d7869;
-    --linha: #33322a;
-    --linha-forte: #4b4940;
-    --laranja: #ee8f5e;
-    --destaque-fundo: #24241c;
+  :root:not([data-tema]) {
+    --papel: #12141a;
+    --papel-cartao: #191c23;
+    --papel-fundo: #0d0f14;
+    --tinta: #eef1f6;
+    --tinta-media: #aab3c2;
+    --tinta-fraca: #79818f;
+    --linha: #2a2e38;
+    --linha-forte: #3d434f;
+    --marinho: #7ea9dd;
+    --ambar: #e79a4a;
+    --destaque: #1e2129;
+    --sombra: none;
   }
 }
 
+:root[data-tema="escuro"] {
+  --papel: #12141a;
+  --papel-cartao: #191c23;
+  --papel-fundo: #0d0f14;
+  --tinta: #eef1f6;
+  --tinta-media: #aab3c2;
+  --tinta-fraca: #79818f;
+  --linha: #2a2e38;
+  --linha-forte: #3d434f;
+  --marinho: #7ea9dd;
+  --ambar: #e79a4a;
+  --destaque: #1e2129;
+  --sombra: none;
+}
+
 * { box-sizing: border-box; }
+
+html { scroll-behavior: smooth; scroll-padding-top: 96px; }
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}
 
 body {
   margin: 0;
   background: var(--papel);
   color: var(--tinta);
   font-family: var(--serifada);
-  font-size: 17px;
-  line-height: 1.65;
+  /* Corpo grande de proposito: a pagina e usada como apoio visual em video,
+     onde o texto e lido em tela compartilhada e nao a 40 cm de distancia. */
+  font-size: 20px;
+  line-height: 1.7;
   -webkit-font-smoothing: antialiased;
 }
 
-.envelope { max-width: 1080px; margin: 0 auto; padding: 0 32px 96px; }
+a { color: inherit; }
 
-.cabecalho { padding: 72px 0 36px; border-bottom: 2px solid var(--tinta); }
+:focus-visible {
+  outline: 2px solid var(--ambar);
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+
+.pular {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  background: var(--papel-cartao);
+  color: var(--tinta);
+  padding: 12px 18px;
+  border: 1px solid var(--linha-forte);
+  font-family: var(--sem-serifa);
+  font-size: 14px;
+  z-index: 100;
+}
+.pular:focus { left: 16px; top: 16px; }
+
+/* `relative` para ancorar o alternador de tema no canto da pagina. */
+.envelope { position: relative; max-width: var(--largura); margin: 0 auto; padding: 0 40px 96px; }
+
+/* ---------------------------------------------------------------- capa --- */
+.capa { padding: 84px 0 40px; }
 
 .etiqueta {
   font-family: var(--sem-serifa);
   font-size: 11px;
-  letter-spacing: 0.22em;
+  letter-spacing: 0.24em;
   text-transform: uppercase;
   color: var(--tinta-fraca);
-  margin-bottom: 20px;
+  margin-bottom: 22px;
 }
 
 h1 {
-  font-size: clamp(34px, 5.4vw, 56px);
-  line-height: 1.06;
-  margin: 0 0 18px;
+  font-size: clamp(38px, 6vw, 66px);
+  line-height: 1.03;
+  margin: 0 0 20px;
   font-weight: 400;
-  letter-spacing: -0.015em;
+  letter-spacing: -0.02em;
+  max-width: 18ch;
 }
 
-.subtitulo {
-  font-size: 20px;
+.chamada {
+  font-size: 24px;
+  line-height: 1.45;
   color: var(--tinta-media);
-  max-width: 62ch;
-  margin: 0 0 32px;
+  max-width: 60ch;
+  margin: 0 0 36px;
 }
 
+/* Grade, nao flex: em linha unica os campos ficam em colunas alinhadas, e
+   quando a tela encolhe eles quebram em fileiras regulares em vez de deixar
+   um campo solto na segunda linha. */
 .ficha {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 14px 44px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(145px, 1fr));
+  gap: 20px 28px;
   font-family: var(--sem-serifa);
-  font-size: 13px;
+  font-size: 14px;
   color: var(--tinta-media);
+  padding-top: 26px;
+  border-top: 1px solid var(--linha);
 }
-
 .ficha strong {
   display: block;
   font-size: 10px;
@@ -90,127 +165,311 @@ h1 {
   text-transform: uppercase;
   color: var(--tinta-fraca);
   font-weight: 600;
-  margin-bottom: 2px;
+  margin-bottom: 3px;
 }
 
-.abas {
-  display: flex;
-  gap: 4px;
+/* ------------------------------------------------------ resumo executivo --- */
+.resumo {
+  margin: 56px 0 48px;
+  padding: 40px 44px;
+  background: var(--papel-cartao);
+  border: 1px solid var(--linha);
+  box-shadow: var(--sombra);
+}
+
+.resumo h2 {
+  font-family: var(--sem-serifa);
+  font-size: 12px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--tinta-fraca);
+  margin: 0 0 20px;
+  font-weight: 600;
+}
+
+.resumo p { font-size: 21px; max-width: 72ch; }
+.resumo p:last-of-type { margin-bottom: 0; }
+
+.veredito {
+  border-left: 3px solid var(--ambar);
+  padding-left: 22px;
+  margin: 28px 0 0;
+  font-size: 19px;
+  color: var(--tinta-media);
+}
+
+/* ---------------------------------------------------------------- abas --- */
+.barra-abas {
   position: sticky;
   top: 0;
-  z-index: 10;
+  z-index: 20;
   background: var(--papel);
   border-bottom: 1px solid var(--linha);
+  display: flex;
+  align-items: center;
+  gap: 16px;
 }
+
+.abas { display: flex; gap: 2px; overflow-x: auto; scrollbar-width: none; min-width: 0; }
+.abas::-webkit-scrollbar { display: none; }
 
 .aba {
   appearance: none;
   border: none;
   background: none;
   cursor: pointer;
+  white-space: nowrap;
   font-family: var(--sem-serifa);
-  font-size: 13.5px;
+  font-size: 14.5px;
+  letter-spacing: 0.01em;
   color: var(--tinta-fraca);
-  padding: 20px 22px 17px;
+  padding: 19px 22px 16px;
   border-bottom: 3px solid transparent;
   transition: color 0.18s ease, border-color 0.18s ease;
 }
-
 .aba:hover { color: var(--tinta-media); }
-.aba[aria-selected="true"] { color: var(--tinta); border-bottom-color: var(--laranja); }
+.aba[aria-selected="true"] { color: var(--tinta); border-bottom-color: var(--ambar); }
+.aba .numero {
+  font-family: var(--mono);
+  font-size: 11.5px;
+  color: var(--ambar);
+  margin-right: 8px;
+}
+
+/* Alternador de tema no topo direito da pagina — posicionado no envelope, nao
+   na janela: ele fica onde a pagina comeca e sai de cena com a rolagem, em vez
+   de acompanhar a tela e cobrir conteudo. */
+.tema {
+  position: absolute;
+  top: 22px;
+  right: 40px;
+  z-index: 60;
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  appearance: none;
+  cursor: pointer;
+  background: var(--papel-cartao);
+  border: 1px solid var(--linha-forte);
+  color: var(--tinta-media);
+  font-family: var(--sem-serifa);
+  font-size: 12px;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  padding: 10px 15px;
+  border-radius: 2px;
+  box-shadow: var(--sombra);
+  transition: color 0.18s ease, border-color 0.18s ease;
+}
+.tema:hover { color: var(--tinta); border-color: var(--tinta-fraca); }
+.tema svg { width: 16px; height: 16px; flex: none; }
+.tema [data-icone] { display: none; }
+.tema[data-estado="claro"] [data-icone="claro"],
+.tema[data-estado="escuro"] [data-icone="escuro"] { display: block; }
+
+@media (max-width: 860px) {
+  .tema .rotulo-tema { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+  .tema { padding: 10px 11px; top: 16px; right: 20px; }
+}
 
 .painel[hidden] { display: none; }
 
-section { padding: 56px 0 8px; border-bottom: 1px solid var(--linha); }
+/* --------------------------------------------------------------- corpo --- */
+.corpo {
+  display: grid;
+  grid-template-columns: var(--coluna-indice) minmax(0, 1fr);
+  gap: 56px;
+  align-items: start;
+}
+
+/* --------------------------------------------------------------- indice --- */
+.indice { position: sticky; top: 78px; padding-top: 52px; }
+
+.indice h2 {
+  font-family: var(--sem-serifa);
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--tinta-fraca);
+  margin: 0 0 14px;
+  font-weight: 600;
+}
+
+.indice ol { list-style: none; margin: 0; padding: 0; }
+
+.indice a {
+  display: flex;
+  gap: 10px;
+  align-items: baseline;
+  text-decoration: none;
+  font-family: var(--sem-serifa);
+  font-size: 14px;
+  line-height: 1.35;
+  color: var(--tinta-fraca);
+  padding: 9px 0 9px 14px;
+  border-left: 2px solid var(--linha);
+  transition: color 0.18s ease, border-color 0.18s ease;
+}
+.indice a:hover { color: var(--tinta-media); }
+.indice a[aria-current="true"] { color: var(--tinta); border-left-color: var(--ambar); }
+.indice .numero { font-family: var(--mono); font-size: 10px; color: var(--tinta-fraca); }
+
+/* -------------------------------------------------------------- secoes --- */
+/* Toda a coluna de leitura cabe na medida do texto. Como figuras, tabelas,
+   indicadores e legendas sao filhos dela, todos terminam na mesma margem
+   direita — o alinhamento vem da estrutura, nao de ajuste caso a caso. */
+.conteudo { min-width: 0; max-width: var(--medida); padding-top: 8px; }
+
+section { padding: 52px 0 4px; border-bottom: 1px solid var(--linha); scroll-margin-top: 96px; }
 section:last-child { border-bottom: none; }
 
-h2 {
-  font-size: 15px;
+section > h2 {
+  font-size: 16px;
   font-family: var(--sem-serifa);
   font-weight: 600;
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--tinta-fraca);
-  margin: 0 0 26px;
+  margin: 0 0 28px;
   display: flex;
   align-items: baseline;
   gap: 14px;
 }
-
-h2::before {
+section > h2::before {
   content: attr(data-numero);
   font-family: var(--mono);
   font-size: 12px;
-  color: var(--laranja);
+  color: var(--ambar);
   letter-spacing: 0;
 }
 
 h3 {
-  font-size: 23px;
+  font-size: 26px;
   font-weight: 400;
-  margin: 40px 0 14px;
-  letter-spacing: -0.01em;
+  margin: 42px 0 14px;
+  letter-spacing: -0.012em;
 }
 
-p { max-width: 68ch; margin: 0 0 18px; }
+p { max-width: none; margin: 0 0 20px; }
 
 p.nota {
-  font-size: 15px;
+  font-size: 18px;
   color: var(--tinta-media);
   border-left: 2px solid var(--linha-forte);
-  padding-left: 18px;
+  padding-left: 20px;
 }
 
 strong { font-weight: 600; }
 
 code {
   font-family: var(--mono);
-  font-size: 0.86em;
-  background: var(--destaque-fundo);
-  padding: 1px 5px;
+  font-size: 0.85em;
+  background: var(--destaque);
+  padding: 1px 6px;
   border-radius: 3px;
 }
 
-ul { max-width: 68ch; padding-left: 20px; margin: 0 0 18px; }
-li { margin-bottom: 8px; }
+ul { max-width: none; padding-left: 24px; margin: 0 0 22px; }
+li { margin-bottom: 10px; }
+li::marker { color: var(--tinta-fraca); }
 
+/* --------------------------------------------------------- indicadores --- */
 .indicadores {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(158px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
   gap: 1px;
   background: var(--linha);
   border: 1px solid var(--linha);
-  margin: 8px 0 40px;
+  margin: 4px 0 40px;
 }
 
-.indicador { background: var(--papel-cartao); padding: 22px 20px 20px; }
+.indicador {
+  background: var(--papel-cartao);
+  padding: 24px 20px 20px;
+  display: flex;
+  flex-direction: column;
+}
 
+/* O numero nunca quebra em duas linhas: um "357 / 212" partido ao meio
+   desalinha o rotulo do cartao vizinho. O rotulo fica colado na base para
+   que todos os cartoes leiam na mesma altura. */
 .indicador .valor {
-  font-size: 40px;
-  line-height: 1;
-  letter-spacing: -0.02em;
+  font-size: 34px;
+  line-height: 1.05;
+  letter-spacing: -0.03em;
   display: block;
-  margin-bottom: 10px;
+  margin-bottom: 14px;
+  white-space: nowrap;
   font-variant-numeric: tabular-nums;
 }
 
+.indicador .rotulo:last-child { margin-top: auto; }
+
 .indicador .rotulo {
   font-family: var(--sem-serifa);
-  font-size: 10.5px;
+  font-size: 11.5px;
   letter-spacing: 0.13em;
   text-transform: uppercase;
   color: var(--tinta-fraca);
   display: block;
 }
 
-.indicador.alerta .valor { color: var(--laranja); }
+.indicador.alerta .valor { color: var(--ambar); }
+.indicador.marcado .valor { color: var(--marinho); }
 
-.rolagem { overflow-x: auto; margin: 0 0 32px; }
+/* -------------------------------------------------------------- fluxo --- */
+/* Tres colunas, nao seis: na medida do texto, seis cartoes deixavam cada
+   etapa com uma palavra por linha. Duas fileiras de tres respiram melhor e
+   sao legiveis a distancia, que e como a pagina sera lida no video. */
+.fluxo {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin: 8px 0 40px;
+}
+
+@media (max-width: 620px) { .fluxo { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 420px) { .fluxo { grid-template-columns: minmax(0, 1fr); } }
+
+.etapa {
+  background: var(--papel-cartao);
+  border: 1px solid var(--linha);
+  padding: 16px 16px 14px;
+  position: relative;
+  box-shadow: var(--sombra);
+}
+
+.etapa .ordem {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--ambar);
+  display: block;
+  margin-bottom: 8px;
+}
+
+.etapa .nome {
+  font-family: var(--sem-serifa);
+  font-size: 15px;
+  font-weight: 600;
+  display: block;
+  margin-bottom: 6px;
+  line-height: 1.3;
+}
+
+.etapa .detalhe {
+  font-family: var(--sem-serifa);
+  font-size: 13px;
+  color: var(--tinta-fraca);
+  line-height: 1.45;
+}
+
+/* ------------------------------------------------------------- tabelas --- */
+.rolagem { overflow-x: auto; margin: 0 0 30px; }
 
 table {
   border-collapse: collapse;
   width: 100%;
-  font-size: 15px;
+  font-size: 16.5px;
   font-variant-numeric: tabular-nums;
 }
 
@@ -218,19 +477,23 @@ caption {
   caption-side: top;
   text-align: left;
   font-family: var(--sem-serifa);
-  font-size: 12px;
+  font-size: 12.5px;
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--tinta-fraca);
-  padding-bottom: 10px;
+  padding-bottom: 12px;
 }
 
-th, td { padding: 11px 16px 11px 0; text-align: right; white-space: nowrap; }
+/* As celulas quebram linha. Numeros nao tem onde quebrar e continuam inteiros;
+   quem quebra e o texto corrido — antes ele forcava a tabela para alem da
+   coluna de leitura e a ultima coluna saia cortada na tela. */
+th, td { padding: 11px 18px 11px 0; text-align: right; vertical-align: top; }
 th:first-child, td:first-child { text-align: left; padding-left: 0; }
+td { text-wrap: pretty; }
 
 thead th {
   font-family: var(--sem-serifa);
-  font-size: 11.5px;
+  font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.07em;
   text-transform: uppercase;
@@ -239,7 +502,7 @@ thead th {
 }
 
 tbody tr { border-bottom: 1px solid var(--linha); }
-tbody tr.destacada { background: var(--destaque-fundo); }
+tbody tr.destacada { background: var(--destaque); }
 
 tbody tr.destacada td:first-child::after {
   content: "escolhido";
@@ -247,11 +510,12 @@ tbody tr.destacada td:first-child::after {
   font-size: 9.5px;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: var(--laranja);
+  color: var(--ambar);
   margin-left: 10px;
 }
 
-figure { margin: 0 0 38px; }
+/* ------------------------------------------------------------- figuras --- */
+figure { margin: 0 0 34px; }
 
 figure img {
   display: block;
@@ -259,93 +523,696 @@ figure img {
   height: auto;
   background: #fcfcfb;
   border: 1px solid var(--linha);
-  padding: 10px;
+  padding: 12px;
 }
 
+/* Legenda em duas colunas, ocupando toda a largura da figura: o titulo fica
+   na coluna estreita da esquerda e a leitura corre pela linha inteira. Antes a
+   legenda tinha medida propria e formava um bloco estreito sob a imagem. */
 figcaption {
+  display: grid;
+  grid-template-columns: minmax(0, 13em) minmax(0, 1fr);
+  gap: 6px 32px;
+  align-items: baseline;
+  max-width: none;
+  margin-top: 14px;
+  padding-top: 13px;
+  border-top: 1px solid var(--linha);
+  font-family: var(--sem-serifa);
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--tinta-media);
+  text-wrap: pretty;
+}
+
+figcaption .titulo-figura {
+  color: var(--tinta);
+  font-weight: 600;
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  line-height: 1.45;
+}
+
+@media (max-width: 620px) {
+  figcaption { grid-template-columns: minmax(0, 1fr); }
+}
+
+details.dados { margin-top: 12px; }
+
+details.dados > summary {
+  cursor: pointer;
   font-family: var(--sem-serifa);
   font-size: 12.5px;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
   color: var(--tinta-fraca);
-  margin-top: 10px;
-  max-width: 68ch;
-  line-height: 1.5;
+  padding: 7px 0;
+  list-style: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: color 0.18s ease;
+}
+details.dados > summary::-webkit-details-marker { display: none; }
+details.dados > summary:hover { color: var(--tinta-media); }
+details.dados > summary::before {
+  content: "+";
+  font-family: var(--mono);
+  font-size: 13px;
+  color: var(--ambar);
+}
+details.dados[open] > summary::before { content: "−"; }
+
+details.dados .rolagem {
+  margin: 8px 0 0;
+  padding: 18px 20px;
+  background: var(--papel-cartao);
+  border: 1px solid var(--linha);
 }
 
-figcaption b { color: var(--tinta-media); font-weight: 600; }
+/* --------------------------------------------------- como foi feito --- */
+/* O codigo que executa a etapa, ao lado da prosa que a explica. E o bloco que
+   sustenta a narracao do video: da para apontar para a linha enquanto se fala
+   sobre a decisao. */
+.feito {
+  margin: 10px 0 38px;
+  border: 1px solid var(--linha);
+  background: var(--papel-cartao);
+  box-shadow: var(--sombra);
+}
 
+.feito-cabeca {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 6px 20px;
+  padding: 12px 20px;
+  background: var(--destaque);
+  border-bottom: 1px solid var(--linha);
+}
+
+.feito-etiqueta {
+  font-family: var(--sem-serifa);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.17em;
+  text-transform: uppercase;
+  color: var(--ambar);
+}
+
+.feito-ref {
+  font-family: var(--mono);
+  font-size: 12.5px;
+  color: var(--tinta-fraca);
+  background: none;
+  padding: 0;
+  overflow-wrap: anywhere;
+}
+
+pre.codigo {
+  margin: 0;
+  padding: 20px;
+  overflow-x: auto;
+  font-family: var(--mono);
+  font-size: 13.5px;
+  line-height: 1.62;
+  color: var(--tinta-media);
+  tab-size: 4;
+}
+pre.codigo code {
+  background: none;
+  padding: 0;
+  font-size: inherit;
+  border-radius: 0;
+}
+
+/* Realce sobrio: palavra reservada, texto, numero e comentario. Quatro cores,
+   nao um arco-iris — o bloco continua sendo parte da pagina. */
+pre.codigo .k { color: var(--marinho); font-weight: 600; }
+pre.codigo .d { color: var(--tinta); font-weight: 600; }
+pre.codigo .b { color: var(--tinta); }
+pre.codigo .s { color: var(--ambar); }
+pre.codigo .n { color: var(--marinho); }
+pre.codigo .c { color: var(--tinta-fraca); font-style: italic; }
+
+.feito-nota {
+  margin: 0;
+  padding: 14px 20px 16px;
+  border-top: 1px solid var(--linha);
+  font-family: var(--sem-serifa);
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--tinta-media);
+  text-wrap: pretty;
+}
+
+/* ----------------------------------------------------------- decisoes --- */
+.decisoes {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 14px;
+  margin: 10px 0 38px;
+}
+
+/* `subgrid` alinha titulo, justificativa e contrafactual na mesma altura em
+   toda a fileira, mesmo com textos de comprimentos diferentes. Sem isso, o
+   filete do contrafactual cai em alturas distintas em cada cartao. */
+.decisao {
+  display: grid;
+  grid-template-rows: subgrid;
+  grid-row: span 3;
+  align-content: start;
+  background: var(--papel-cartao);
+  border: 1px solid var(--linha);
+  padding: 20px 22px 18px;
+  box-shadow: var(--sombra);
+}
+
+.decisao h4 {
+  margin: 0 0 14px;
+  font-family: var(--sem-serifa);
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.35;
+  letter-spacing: 0;
+  color: var(--tinta);
+  text-wrap: balance;
+}
+
+.decisao p {
+  margin: 0;
+  font-size: 16px;
+  line-height: 1.55;
+  color: var(--tinta-media);
+  text-wrap: pretty;
+}
+
+.decisao .marca {
+  display: block;
+  font-family: var(--sem-serifa);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--tinta-fraca);
+  margin-bottom: 4px;
+}
+
+/* O caminho que nao foi tomado leva o filete ambar: e o que justifica a
+   decisao, e precisa se distinguir dela a distancia. */
+.decisao .contra {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--linha);
+}
+.decisao .contra .marca { color: var(--ambar); }
+
+/* -------------------------------------------------------------- aviso --- */
 .pendente {
   border: 1px dashed var(--linha-forte);
-  padding: 48px 40px;
-  margin: 48px 0;
+  padding: 48px 44px;
+  margin: 44px 0;
   background: var(--papel-cartao);
 }
-
 .pendente h3 { margin-top: 0; }
 
+/* ------------------------------------------------------------- rodape --- */
 .rodape {
-  margin-top: 72px;
+  margin-top: 64px;
   padding-top: 26px;
   border-top: 2px solid var(--tinta);
   font-family: var(--sem-serifa);
-  font-size: 12.5px;
+  font-size: 13.5px;
   color: var(--tinta-fraca);
   display: flex;
   justify-content: space-between;
   flex-wrap: wrap;
-  gap: 12px;
+  gap: 14px;
 }
 
-@media (max-width: 640px) {
+/* ----------------------------------------------------------- responsivo --- */
+@media (max-width: 1080px) {
+  .corpo { grid-template-columns: 1fr; gap: 0; }
+  .indice {
+    position: static;
+    padding: 32px 0 0;
+    border-bottom: 1px solid var(--linha);
+  }
+  .indice ol { display: flex; flex-wrap: wrap; gap: 4px 6px; padding-bottom: 20px; }
+  .indice a { border-left: none; border-bottom: 2px solid var(--linha); padding: 6px 10px; }
+  .indice a[aria-current="true"] { border-bottom-color: var(--ambar); }
+}
+
+@media (max-width: 720px) {
   .envelope { padding: 0 20px 64px; }
-  .cabecalho { padding-top: 48px; }
-  .abas { overflow-x: auto; }
+  .capa { padding-top: 52px; }
+  .resumo { padding: 28px 24px; }
   .indicador .valor { font-size: 32px; }
+  th, td { padding-right: 14px; }
+}
+
+@media print {
+  .barra-abas, .indice, .pular, .tema { display: none; }
+  .painel[hidden] { display: block; }
+  .corpo { grid-template-columns: 1fr; }
+  section { break-inside: avoid; }
+  figure { break-inside: avoid; }
+  details.dados[open] > summary { display: none; }
+  pre.codigo { white-space: pre-wrap; font-size: 11px; }
+  .feito, .decisao { break-inside: avoid; }
 }
 </style>
+<script>
+// Aplica o tema antes da primeira pintura, para a pagina nao piscar no tema
+// errado ao ser aberta. Sem escolha salva, segue a preferencia do sistema.
+(function () {
+  var tema = null;
+  try { tema = localStorage.getItem('tema'); } catch (erro) {}
+  if (tema !== 'claro' && tema !== 'escuro') {
+    tema = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
+      ? 'escuro'
+      : 'claro';
+  }
+  document.documentElement.setAttribute('data-tema', tema);
+})();
+</script>
 </head>
 <body>
+<a class="pular" href="#conteudo-principal">Pular para o conteúdo</a>
 <div class="envelope">
 
-<header class="cabecalho">
-  <div class="etiqueta">Tech Challenge · Fase 1 · Pós-graduação em Inteligência Artificial</div>
-  <h1>Detecção de riscos<br>em saúde da mulher</h1>
-  <p class="subtitulo">Classificação de exames com aprendizado de máquina, com avaliação orientada
-  ao custo clínico do erro e explicabilidade das previsões.</p>
-  <div class="ficha"><span><strong>Base tabular</strong>Breast Cancer Wisconsin (Diagnostic)</span><span><strong>Modelo tabular</strong>Regressão Logística</span><span><strong>Amostras</strong>569 (455 treino / 114 teste)</span><span><strong>Base de imagens</strong>BUSI — Breast Ultrasound Images</span><span><strong>Gerado em</strong>27/08/2026 às 18:40</span></div>
+<button class="tema" type="button" data-estado="claro" aria-pressed="false"
+        aria-label="Tema Claro. Clique para usar o tema escuro.">
+  <svg data-icone="claro" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+       stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <circle cx="12" cy="12" r="4"></circle>
+    <path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"></path>
+  </svg>
+  <svg data-icone="escuro" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+       stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"></path>
+  </svg>
+  <span class="rotulo-tema">Claro</span>
+</button>
+
+<header class="capa">
+  <p class="etiqueta">Tech Challenge · Fase 1 · Pós-graduação em Inteligência Artificial</p>
+  <h1>Detecção de riscos em saúde da mulher</h1>
+  <p class="chamada">Classificação de exames com aprendizado de máquina, avaliada pelo custo clínico
+  do erro e acompanhada da explicação de cada previsão.</p>
+  <div class="ficha"><span><strong>Base tabular</strong>Breast Cancer Wisconsin (Diagnostic)</span><span><strong>Modelo tabular</strong>Regressão Logística</span><span><strong>Amostras</strong>569 (455 treino / 114 teste)</span><span><strong>Base de imagens</strong>BUSI — Breast Ultrasound Images</span><span><strong>Modelo de imagem</strong>MobileNetV2 (ajuste fino)</span><span><strong>Gerado em</strong>27/08/2026 às 21:04</span></div>
 </header>
 
-<nav class="abas" role="tablist">
-  <button class="aba" role="tab" aria-selected="true" data-painel="painel-wisconsin">
-    Dataset 1 — Wisconsin (tabular)
-  </button>
-  <button class="aba" role="tab" aria-selected="false" data-painel="painel-extra">
-    Dataset 2 — Extra (imagens · CNN)
-  </button>
-</nav>
+<section class="resumo" aria-labelledby="resumo-titulo"><h2 id="resumo-titulo">Resumo executivo</h2><p>Dois modelos de apoio ao diagnóstico de câncer de mama, avaliados pelo custo clínico do erro. No conjunto tabular, uma regressão logística classifica tumores a partir de 30 medidas morfológicas com recall de 0,929 na classe maligna e 3 falsos negativos em 114 casos de teste. A entrega extra repete o exercício partindo do pixel cru de ultrassons, sem medidas extraídas por especialista, e alcança recall de 0,900 com uma MobileNetV2 ajustada.</p><p>A decisão metodológica central é a escolha da métrica: <strong>recall da classe maligna</strong>, não acurácia. Um falso negativo é um tumor maligno classificado como benigno — o erro de maior custo. Com 62,7% de casos benignos, um classificador trivial já atingiria 62,7% de acurácia sem detectar nada.</p><p class="veredito">O sistema é utilizável como triagem e segunda opinião, nunca como decisor. As análises de explicabilidade mostram onde cada modelo se apoia — e, mais importante, expõem os casos em que erra e por quê.</p></section>
 
-<main>
-  <div class="painel" id="painel-wisconsin" role="tabpanel"><section><h2 data-numero="01">O problema</h2><p>Uma rede de hospitais especializados no atendimento à mulher precisa de um sistema de apoio ao diagnóstico capaz de acelerar a triagem. Esta análise entrega a base de Machine Learning dessa solução: a classificação de tumores de mama em <strong>malignos</strong> ou <strong>benignos</strong> a partir de características morfológicas de núcleos celulares extraídas de punção aspirativa por agulha fina.</p><p class="nota">O modelo é ferramenta de triagem e segunda opinião. O diagnóstico final é sempre responsabilidade do médico. Essa premissa define a métrica prioritária e a exigência de explicabilidade.</p></section><section><h2 data-numero="02">A base de dados</h2><div class="indicadores"><div class="indicador"><span class="valor">569</span><span class="rotulo">amostras</span></div><div class="indicador"><span class="valor">30</span><span class="rotulo">features numéricas</span></div><div class="indicador"><span class="valor">357 / 212</span><span class="rotulo">benignos / malignos</span></div><div class="indicador"><span class="valor">0</span><span class="rotulo">valores ausentes</span></div></div><p><strong>Breast Cancer Wisconsin (Diagnostic).</strong> Dez medidas do núcleo celular — raio, textura, perímetro, área, suavidade, compacidade, concavidade, pontos côncavos, simetria e dimensão fractal — cada uma em três variantes: média da amostra (<code>_mean</code>), erro padrão (<code>_se</code>) e média das três piores células (<code>_worst</code>).</p><p>A única inconsistência é estrutural: o cabeçalho do CSV termina em vírgula, gerando uma coluna vazia que é descartada no carregamento. Não há valores ausentes reais.</p><figure><img src="../figures/01_balanceamento_classes.png" alt="Distribuição dos diagnósticos" loading="lazy"><figcaption><b>Distribuição dos diagnósticos</b> — 62,7% benignos contra 37,3% malignos. O desbalanceamento é leve, mas suficiente para inutilizar a acurácia como métrica isolada: responder sempre benigno já acertaria 62,7% dos casos.</figcaption></figure></section><section><h2 data-numero="03">Análise exploratória</h2><figure><img src="../figures/02_distribuicoes_mean.png" alt="Distribuição das medidas médias por diagnóstico" loading="lazy"><figcaption><b>Distribuição das medidas médias por diagnóstico</b> — Medidas de tamanho e irregularidade deslocam-se claramente entre as classes. Suavidade, simetria e dimensão fractal quase não separam os grupos isoladamente.</figcaption></figure><figure><img src="../figures/03_boxplots_worst.png" alt="Dispersão das medidas worst por diagnóstico" loading="lazy"><figcaption><b>Dispersão das medidas worst por diagnóstico</b> — O grupo worst separa melhor que o mean: o que caracteriza malignidade não é o tecido médio, mas a existência de células com morfologia mais agressiva. Os outliers são casos malignos graves reais e foram preservados.</figcaption></figure><figure><img src="../figures/04_separacao_features.png" alt="Poder de separação por feature (d de Cohen)" loading="lazy"><figcaption><b>Poder de separação por feature (d de Cohen)</b> — Concavidade e pontos côncavos lideram, seguidos das medidas de tamanho. Todos os valores do topo são positivos: as medidas são sistematicamente maiores nos tumores malignos.</figcaption></figure></section><section><h2 data-numero="04">Pré-processamento e correlação</h2><p>Pipeline do scikit-learn com imputação de mediana (defensiva) e <code>StandardScaler</code>. A padronização vive <strong>dentro</strong> do pipeline: ajustá-la antes da separação treino/teste faria a média e o desvio carregarem informação do teste — vazamento de dados que infla as métricas.</p><div class="rolagem"><table><caption>Separação estratificada 80/20</caption><thead><tr><th>Conjunto</th><th>Amostras</th><th>Benigno</th><th>Maligno</th><th>Proporção maligno</th></tr></thead><tbody><tr><td>Treino</td><td>455</td><td>285</td><td>170</td><td>0,3736</td></tr><tr><td>Teste</td><td>114</td><td>72</td><td>42</td><td>0,3684</td></tr></tbody></table></div><figure><img src="../figures/05_correlacao.png" alt="Correlação entre as features" loading="lazy"><figcaption><b>Correlação entre as features</b> — Vinte e um pares superam 0,9 de correlação. Raio, perímetro e área chegam a 0,998 — não por acaso estatístico, mas por geometria: as três medem a mesma grandeza. Nenhuma feature foi removida; a regularização trata a redundância.</figcaption></figure><figure><img src="../figures/06_correlacao_alvo.png" alt="Correlação com o diagnóstico" loading="lazy"><figcaption><b>Correlação com o diagnóstico</b> — Nenhuma feature isolada passa de 0,79. Não existe atalho de variável única: a classificação depende da combinação de várias medidas.</figcaption></figure></section><section><h2 data-numero="05">Modelagem</h2><p>Três técnicas com fundamentos distintos: <strong>Regressão Logística</strong> (baseline linear e interpretável), <strong>KNN</strong> (não paramétrico, sensível a escala) e <strong>Random Forest</strong> (não linear, com importância nativa). A comparação usa validação cruzada estratificada de 5 folds <strong>dentro do treino</strong>; o conjunto de teste permanece intocado.</p><p>A seleção usa <strong>F1</strong>, não recall puro: otimizar recall isolado premiaria um classificador que chama quase tudo de maligno. O recall é otimizado depois, pelo ajuste do limiar.</p><div class="rolagem"><table><caption>Validação cruzada no conjunto de treino</caption><thead><tr><th>Modelo</th><th>Acurácia</th><th>Precisão</th><th>Recall</th><th>F1</th><th>AUC</th></tr></thead><tbody><tr class="destacada"><td>Regressão Logística</td><td>0,974</td><td>0,977</td><td>0,953</td><td>0,964</td><td>0,996</td></tr><tr><td>KNN</td><td>0,965</td><td>0,988</td><td>0,918</td><td>0,951</td><td>0,987</td></tr><tr><td>Random Forest</td><td>0,960</td><td>0,958</td><td>0,935</td><td>0,946</td><td>0,988</td></tr></tbody></table></div></section><section><h2 data-numero="06">Resultados no conjunto de teste</h2><div class="indicadores"><div class="indicador"><span class="valor">0,929</span><span class="rotulo">recall (maligno)</span></div><div class="indicador"><span class="valor">0,951</span><span class="rotulo">F1</span></div><div class="indicador"><span class="valor">0,996</span><span class="rotulo">AUC</span></div><div class="indicador alerta"><span class="valor">3</span><span class="rotulo">falsos negativos</span></div></div><div class="rolagem"><table><caption>Desempenho no conjunto de teste</caption><thead><tr><th>Modelo</th><th>Acurácia</th><th>Precisão</th><th>Recall</th><th>F1</th><th>AUC</th><th>Falsos negativos</th></tr></thead><tbody><tr class="destacada"><td>Regressão Logística</td><td>0,965</td><td>0,975</td><td>0,929</td><td>0,951</td><td>0,996</td><td>3</td></tr><tr><td>Random Forest</td><td>0,965</td><td>1,000</td><td>0,905</td><td>0,950</td><td>0,995</td><td>4</td></tr><tr><td>KNN</td><td>0,939</td><td>0,973</td><td>0,857</td><td>0,911</td><td>0,983</td><td>6</td></tr></tbody></table></div><figure><img src="../figures/07_matriz_confusao.png" alt="Matriz de confusão do modelo escolhido" loading="lazy"><figcaption><b>Matriz de confusão do modelo escolhido</b> — 71 verdadeiros negativos, 39 verdadeiros positivos, 1 falso positivo e 3 falsos negativos. Os falsos negativos são o número que importa: tumores malignos que passaram despercebidos.</figcaption></figure><figure><img src="../figures/08_curvas_roc.png" alt="Curvas ROC" loading="lazy"><figcaption><b>Curvas ROC</b> — AUC entre 0,983 e 0,996. AUC alta com recall de 0,929 no limiar padrão indica que o modelo separa bem as classes e o que está mal calibrado é o corte.</figcaption></figure><figure><img src="../figures/09_comparacao_modelos.png" alt="Comparação dos modelos por métrica" loading="lazy"><figcaption><b>Comparação dos modelos por métrica</b> — A Random Forest alcança precisão perfeita, mas com mais falsos negativos. Trocar um falso positivo por um falso negativo é mau negócio: o primeiro custa um exame, o segundo custa um diagnóstico perdido.</figcaption></figure></section><section><h2 data-numero="07">Ajuste do limiar de decisão</h2><p>O limiar de 0,5 é apenas a convenção do <code>predict()</code>, não uma escolha clínica. Baixá-lo para 0,30 melhora todas as métricas ao mesmo tempo e reduz os falsos negativos de 3 para 1, sem aumento de falsos positivos.</p><div class="rolagem"><table><caption>Efeito do limiar sobre as métricas</caption><thead><tr><th>Limiar</th><th>Recall</th><th>Precisão</th><th>F1</th><th>Falsos negativos</th><th>Falsos positivos</th></tr></thead><tbody><tr><td>0,2000</td><td>0,9762</td><td>0,9111</td><td>0,9425</td><td>1</td><td>4</td></tr><tr><td>0,3000</td><td>0,9762</td><td>0,9762</td><td>0,9762</td><td>1</td><td>1</td></tr><tr><td>0,4000</td><td>0,9524</td><td>0,9756</td><td>0,9639</td><td>2</td><td>1</td></tr><tr><td>0,5000</td><td>0,9286</td><td>0,9750</td><td>0,9512</td><td>3</td><td>1</td></tr><tr><td>0,6000</td><td>0,9048</td><td>1,0000</td><td>0,9500</td><td>4</td><td>0</td></tr><tr><td>0,7000</td><td>0,9048</td><td>1,0000</td><td>0,9500</td><td>4</td><td>0</td></tr></tbody></table></div><figure><img src="../figures/10_limiar_decisao.png" alt="Recall e precisão em função do limiar" loading="lazy"><figcaption><b>Recall e precisão em função do limiar</b> — A direção do ajuste é defensável pelo custo assimétrico dos erros. O valor exato, porém, é frágil: com 114 casos de teste, uma diferença de dois falsos negativos pode não se repetir em outra amostra.</figcaption></figure></section><section><h2 data-numero="08">Explicabilidade</h2><p>Um sistema de apoio ao diagnóstico que não explica sua previsão não é utilizável na prática: o médico precisa poder concordar ou discordar com base no raciocínio. Três técnicas complementares foram aplicadas.</p><div class="rolagem"><table><caption>Maiores coeficientes da regressão logística</caption><thead><tr><th>Feature</th><th>Coeficiente</th><th>Razão de chances</th></tr></thead><tbody><tr><td>texture_worst</td><td>1,434</td><td>4,196</td></tr><tr><td>radius_se</td><td>1,233</td><td>3,433</td></tr><tr><td>symmetry_worst</td><td>1,061</td><td>2,890</td></tr><tr><td>concave points_mean</td><td>0,953</td><td>2,593</td></tr><tr><td>concavity_worst</td><td>0,911</td><td>2,488</td></tr><tr><td>area_se</td><td>0,909</td><td>2,482</td></tr><tr><td>compactness_se</td><td>-0,907</td><td>0,404</td></tr><tr><td>area_worst</td><td>0,900</td><td>2,461</td></tr></tbody></table></div><figure><img src="../figures/11_coeficientes.png" alt="Coeficientes do modelo" loading="lazy"><figcaption><b>Coeficientes do modelo</b> — O maior coeficiente é texture_worst, não concave points_worst, que liderava a análise exploratória. A causa é a multicolinearidade: features redundantes dividem o peso entre si. Coeficiente alto significa informação única ao modelo, não importância clínica.</figcaption></figure><figure><img src="../figures/12_importancia_permutacao.png" alt="Importância por permutação, medida em recall" loading="lazy"><figcaption><b>Importância por permutação, medida em recall</b> — Embaralhar texture_worst derruba o recall em 5,4 pontos percentuais. Da quinta feature em diante a queda é praticamente nula: o modelo se apoia em poucas medidas.</figcaption></figure><figure><img src="../figures/13_shap_beeswarm.png" alt="SHAP — visão global" loading="lazy"><figcaption><b>SHAP — visão global</b> — Cada ponto é uma paciente. Para quase todas as features do topo, valores altos empurram a previsão para maligno, exatamente como a literatura médica descreve.</figcaption></figure><figure><img src="../figures/14_shap_caso_falso_negativo.png" alt="SHAP — um tumor maligno não detectado" loading="lazy"><figcaption><b>SHAP — um tumor maligno não detectado</b> — Praticamente todas as medidas desta paciente estão abaixo da média da base. O modelo não errou por acaso: viu um tumor maligno de morfologia pouco característica. É o limite que nenhum ajuste de hiperparâmetro resolve.</figcaption></figure></section><section><h2 data-numero="09">Leitura crítica</h2><p>O modelo atinge desempenho alto e estável, com explicações coerentes com a morfologia celular descrita na literatura. Ainda assim, três limites são intransponíveis com esta base:</p><ul><li><strong>569 casos de uma única fonte.</strong> O desempenho pode degradar em outra população ou com outro protocolo de coleta.</li><li><strong>As features já foram extraídas por um especialista</strong> a partir das imagens. O sistema não parte de dados crus: depende de uma etapa manual anterior.</li><li><strong>Existem tumores malignos morfologicamente discretos</strong>, como mostra o caso analisado por SHAP. Nenhuma quantidade de ajuste resolve isso, porque a informação necessária não está nas medidas disponíveis.</li></ul><p class="nota">Uso adequado: triagem e priorização de fila, segunda opinião e sinalização de casos discordantes — sempre com o laudo final assinado por um médico.</p></section></div>
-  <div class="painel" id="painel-extra" role="tabpanel" hidden><section><h2 data-numero="01">A base de imagens</h2><div class="indicadores"><div class="indicador"><span class="valor">780</span><span class="rotulo">imagens</span></div><div class="indicador"><span class="valor">3</span><span class="rotulo">classes</span></div><div class="indicador"><span class="valor">malignant</span><span class="rotulo">classe positiva</span></div></div><div class="rolagem"><table><caption>Distribuição por classe</caption><thead><tr><th>Classe</th><th>Imagens</th><th>Proporção</th></tr></thead><tbody><tr><td>benign</td><td>437</td><td>0,5603</td></tr><tr><td>malignant</td><td>210</td><td>0,2692</td></tr><tr><td>normal</td><td>133</td><td>0,1705</td></tr></tbody></table></div></section><section><h2 data-numero="02">Resultados no conjunto de teste</h2><div class="rolagem"><table><caption>Desempenho das arquiteturas</caption><thead><tr><th>Modelo</th><th>Acurácia</th><th>F1 macro</th><th>Recall maligno</th><th>Precisão maligno</th><th>Malignos não detectados</th></tr></thead><tbody><tr class="destacada"><td>MobileNetV2 (ajuste fino)</td><td>0,839</td><td>0,821</td><td>0,900</td><td>0,771</td><td>3</td></tr><tr><td>MobileNetV2 (transferência)</td><td>0,759</td><td>0,751</td><td>0,767</td><td>0,622</td><td>7</td></tr><tr><td>CNN do zero</td><td>0,562</td><td>0,240</td><td>0,000</td><td>0,000</td><td>30</td></tr></tbody></table></div></section><section><h2 data-numero="03">Análise visual</h2><figure><img src="../figures/20_imagens_por_classe.png" alt="Imagens por classe" loading="lazy"><figcaption><b>Imagens por classe</b> — A base é desbalanceada: 56% benignas, 27% malignas e 17% normais. O treino usa pesos de classe para compensar, evitando que a rede aprenda a favorecer a classe majoritária.</figcaption></figure><figure><img src="../figures/21_amostras_imagens.png" alt="Exemplos de ultrassom por classe" loading="lazy"><figcaption><b>Exemplos de ultrassom por classe</b> — Ao contrário do dataset tabular, aqui não há medidas extraídas por um especialista: a rede parte do pixel cru e precisa aprender sozinha o que distingue as lesões.</figcaption></figure><figure><img src="../figures/22_curvas_treino.png" alt="Curvas de treino" loading="lazy"><figcaption><b>Curvas de treino</b> — A distância entre as curvas de treino e validação mede o sobreajuste. A parada antecipada devolve os pesos da melhor época. O ajuste fino é uma segunda etapa, que continua de onde a transferência parou — por isso sua contagem de épocas recomeça do zero e sua perda já nasce baixa.</figcaption></figure><figure><img src="../figures/23_matriz_confusao_imagens.png" alt="Matriz de confusão — MobileNetV2 (ajuste fino)" loading="lazy"><figcaption><b>Matriz de confusão — MobileNetV2 (ajuste fino)</b> — Com três classes, o erro que importa é o caso maligno classificado como benigno ou normal: é o equivalente ao falso negativo do pipeline tabular.</figcaption></figure><figure><img src="../figures/24_malignos_nao_detectados.png" alt="Casos malignos não detectados" loading="lazy"><figcaption><b>Casos malignos não detectados</b> — Mostrar quais imagens escaparam é o primeiro passo da explicabilidade visual: em vez de apenas contar erros, expõe o que o modelo não viu.</figcaption></figure><figure><img src="../figures/25_gradcam_acertos.png" alt="Grad-CAM — casos malignos detectados" loading="lazy"><figcaption><b>Grad-CAM — casos malignos detectados</b> — O mapa de calor mostra a região que sustentou a decisão. É o equivalente em imagem da análise SHAP do pipeline tabular: responde onde a rede olhou, não apenas o que ela respondeu.</figcaption></figure><figure><img src="../figures/26_gradcam_erros.png" alt="Grad-CAM — casos malignos que escaparam" loading="lazy"><figcaption><b>Grad-CAM — casos malignos que escaparam</b> — Nos erros, o mapa revela se a rede olhou para o lugar errado ou se a lesão realmente não se distingue do tecido ao redor — informação que um médico consegue julgar, ao contrário de um número de acurácia.</figcaption></figure></section><section><h2 data-numero="04">Interpretação</h2><p>O modelo de imagem parte do pixel cru, sem nenhuma medida extraída por especialista — é essa a diferença em relação ao pipeline tabular, que depende de um profissional ter medido os núcleos celulares antes. Em compensação, aprende com muito menos supervisão estruturada e erra mais. Vale como demonstração de viabilidade, não como sistema clínico.</p></section></div>
-</main>
+<div id="ancora-abas"></div>
+<div class="barra-abas">
+  <div class="abas" role="tablist" aria-label="Análises do projeto"><button class="aba" id="aba-wisconsin" role="tab" aria-controls="painel-wisconsin" aria-selected="true" tabindex="0" data-painel="painel-wisconsin"><span class="numero">01</span>Wisconsin · dados tabulares</button><button class="aba" id="aba-imagens" role="tab" aria-controls="painel-imagens" aria-selected="false" tabindex="-1" data-painel="painel-imagens"><span class="numero">02</span>Ultrassom · visão computacional</button><button class="aba" id="aba-comparacao" role="tab" aria-controls="painel-comparacao" aria-selected="false" tabindex="-1" data-painel="painel-comparacao"><span class="numero">03</span>Comparação e conclusões</button></div>
+</div>
+
+<main id="conteudo-principal"><div class="painel" id="painel-wisconsin" role="tabpanel" aria-labelledby="aba-wisconsin"><div class="corpo"><nav class="indice" aria-label="Seções desta análise"><h2>Nesta análise</h2><ol><li><a href="#wisconsin-01"><span class="numero">01</span><span>O problema</span></a></li><li><a href="#wisconsin-02"><span class="numero">02</span><span>A base de dados</span></a></li><li><a href="#wisconsin-03"><span class="numero">03</span><span>Análise exploratória</span></a></li><li><a href="#wisconsin-04"><span class="numero">04</span><span>Pré-processamento e correlação</span></a></li><li><a href="#wisconsin-05"><span class="numero">05</span><span>Modelagem</span></a></li><li><a href="#wisconsin-06"><span class="numero">06</span><span>Resultados no teste</span></a></li><li><a href="#wisconsin-07"><span class="numero">07</span><span>Limiar de decisão</span></a></li><li><a href="#wisconsin-08"><span class="numero">08</span><span>Explicabilidade</span></a></li><li><a href="#wisconsin-09"><span class="numero">09</span><span>Decisões e o contrafactual</span></a></li></ol></nav><div class="conteudo"><section id="wisconsin-01"><h2 data-numero="01">O problema</h2><p>Uma rede de hospitais especializados no atendimento à mulher precisa de um sistema de apoio ao diagnóstico capaz de acelerar a triagem. Esta análise entrega a base de Machine Learning dessa solução: a classificação de tumores de mama em <strong>malignos</strong> ou <strong>benignos</strong> a partir de características morfológicas de núcleos celulares extraídas de punção aspirativa por agulha fina.</p><p class="nota">O modelo é ferramenta de triagem e segunda opinião. O diagnóstico final é sempre responsabilidade do médico. Essa premissa define a métrica prioritária e a exigência de explicabilidade.</p><h3>O caminho dos dados</h3><div class="fluxo"><div class="etapa"><span class="ordem">01</span><span class="nome">Carga e limpeza</span><span class="detalhe">coluna fantasma e id removidos, alvo codificado</span></div><div class="etapa"><span class="ordem">02</span><span class="nome">Separação</span><span class="detalhe">80/20 estratificado, teste intocado</span></div><div class="etapa"><span class="ordem">03</span><span class="nome">Pipeline</span><span class="detalhe">imputação e padronização dentro do modelo</span></div><div class="etapa"><span class="ordem">04</span><span class="nome">Validação cruzada</span><span class="detalhe">5 folds no treino, seleção por F1</span></div><div class="etapa"><span class="ordem">05</span><span class="nome">Teste</span><span class="detalhe">métricas com foco no recall maligno</span></div><div class="etapa"><span class="ordem">06</span><span class="nome">Explicabilidade</span><span class="detalhe">coeficientes, permutação e SHAP</span></div></div></section><section id="wisconsin-02"><h2 data-numero="02">A base de dados</h2><div class="indicadores"><div class="indicador"><span class="valor">569</span><span class="rotulo">amostras</span></div><div class="indicador"><span class="valor">30</span><span class="rotulo">features numéricas</span></div><div class="indicador"><span class="valor">357 / 212</span><span class="rotulo">benignos / malignos</span></div><div class="indicador"><span class="valor">0</span><span class="rotulo">valores ausentes</span></div></div><p><strong>Breast Cancer Wisconsin (Diagnostic).</strong> Dez medidas do núcleo celular — raio, textura, perímetro, área, suavidade, compacidade, concavidade, pontos côncavos, simetria e dimensão fractal — cada uma em três variantes: média da amostra (<code>_mean</code>), erro padrão (<code>_se</code>) e média das três piores células (<code>_worst</code>).</p><p>A única inconsistência é estrutural: o cabeçalho do CSV termina em vírgula, gerando uma coluna vazia que é descartada no carregamento. Não há valores ausentes reais.</p><div class="feito"><div class="feito-cabeca"><span class="feito-etiqueta">Como foi feito</span><code class="feito-ref">src/data.py · clean()</code></div><pre class="codigo"><code><span class="k">def</span> <span class="d">clean</span>(df: pd.DataFrame) -&gt; pd.DataFrame:
+    data = df.copy()
+
+    unnamed = [c <span class="k">for</span> c <span class="k">in</span> data.columns <span class="k">if</span> <span class="b">str</span>(c).startswith(<span class="s">&quot;Unnamed&quot;</span>)]
+    all_null = [c <span class="k">for</span> c <span class="k">in</span> data.columns <span class="k">if</span> data[c].isna().all()]
+    data = data.drop(columns=<span class="b">set</span>(unnamed) | <span class="b">set</span>(all_null))
+
+    <span class="k">if</span> config.ID_COLUMN <span class="k">in</span> data.columns:
+        data = data.drop(columns=[config.ID_COLUMN])
+
+    <span class="k">if</span> config.TARGET_COLUMN <span class="k">not</span> <span class="k">in</span> data.columns:
+        <span class="k">raise</span> DatasetValidationError(
+            <span class="s">f&quot;Coluna alvo &#x27;{config.TARGET_COLUMN}&#x27; ausente na base.&quot;</span>
+        )
+
+    unexpected = <span class="b">set</span>(data[config.TARGET_COLUMN].unique()) - <span class="b">set</span>(config.TARGET_MAPPING)
+    <span class="k">if</span> unexpected:
+        <span class="k">raise</span> DatasetValidationError(
+            <span class="s">f&quot;Valores inesperados em &#x27;{config.TARGET_COLUMN}&#x27;: {sorted(unexpected)}. &quot;</span>
+            <span class="s">f&quot;Esperado: {sorted(config.TARGET_MAPPING)}.&quot;</span>
+        )
+    data[config.TARGET_COLUMN] = data[config.TARGET_COLUMN].map(config.TARGET_MAPPING)
+
+    _validate(data)
+    <span class="k">return</span> data</code></pre><p class="feito-nota">A validação roda depois da limpeza, não antes: se o arquivo mudar de forma, o pipeline para aqui em vez de treinar sobre dados que não são o que o código supõe.</p></div><figure><img src="../figures/01_balanceamento_classes.png" alt="Distribuição dos diagnósticos" loading="lazy"><figcaption><b class="titulo-figura">Distribuição dos diagnósticos</b><span class="leitura">62,7% benignos contra 37,3% malignos. O desbalanceamento é leve, mas suficiente para inutilizar a acurácia como métrica isolada: responder sempre benigno já acertaria 62,7% dos casos.</span></figcaption></figure></section><section id="wisconsin-03"><h2 data-numero="03">Análise exploratória</h2><figure><img src="../figures/02_distribuicoes_mean.png" alt="Distribuição das medidas médias por diagnóstico" loading="lazy"><figcaption><b class="titulo-figura">Distribuição das medidas médias por diagnóstico</b><span class="leitura">Medidas de tamanho e irregularidade deslocam-se claramente entre as classes. Suavidade, simetria e dimensão fractal quase não separam os grupos isoladamente.</span></figcaption></figure><figure><img src="../figures/03_boxplots_worst.png" alt="Dispersão das medidas worst por diagnóstico" loading="lazy"><figcaption><b class="titulo-figura">Dispersão das medidas worst por diagnóstico</b><span class="leitura">O grupo worst separa melhor que o mean: o que caracteriza malignidade não é o tecido médio, mas a existência de células com morfologia mais agressiva. Os outliers são casos malignos graves reais e foram preservados.</span></figcaption></figure><div class="feito"><div class="feito-cabeca"><span class="feito-etiqueta">Como foi feito</span><code class="feito-ref">src/eda.py · separation_ranking()</code></div><pre class="codigo"><code><span class="k">def</span> <span class="d">separation_ranking</span>(X: pd.DataFrame, y: pd.Series) -&gt; pd.DataFrame:
+    benigno, maligno = X[y == <span class="n">0</span>], X[y == <span class="n">1</span>]
+    n_b, n_m = <span class="b">len</span>(benigno), <span class="b">len</span>(maligno)
+
+    pooled_std = np.sqrt(
+        ((n_b - <span class="n">1</span>) * benigno.var(ddof=<span class="n">1</span>) + (n_m - <span class="n">1</span>) * maligno.var(ddof=<span class="n">1</span>))
+        / (n_b + n_m - <span class="n">2</span>)
+    )
+    cohens_d = (maligno.mean() - benigno.mean()) / pooled_std
+
+    ranking = pd.DataFrame(
+        {
+            <span class="s">&quot;feature&quot;</span>: X.columns,
+            <span class="s">&quot;media_benigno&quot;</span>: benigno.mean().to_numpy().<span class="b">round</span>(<span class="n">4</span>),
+            <span class="s">&quot;media_maligno&quot;</span>: maligno.mean().to_numpy().<span class="b">round</span>(<span class="n">4</span>),
+            <span class="s">&quot;cohens_d&quot;</span>: cohens_d.to_numpy().<span class="b">round</span>(<span class="n">3</span>),
+        }
+    )
+    <span class="k">return</span> ranking.reindex(
+        ranking[<span class="s">&quot;cohens_d&quot;</span>].abs().sort_values(ascending=<span class="k">False</span>).index
+    ).reset_index(drop=<span class="k">True</span>)</code></pre><p class="feito-nota">O d de Cohen é adimensional: mede a distância entre as médias das classes em desvios padrão, e por isso compara features de escalas incomparáveis entre si.</p></div><figure><img src="../figures/04_separacao_features.png" alt="Poder de separação por feature (d de Cohen)" loading="lazy"><figcaption><b class="titulo-figura">Poder de separação por feature (d de Cohen)</b><span class="leitura">Concavidade e pontos côncavos lideram, seguidos das medidas de tamanho. Todos os valores do topo são positivos: as medidas são sistematicamente maiores nos tumores malignos.</span></figcaption></figure></section><section id="wisconsin-04"><h2 data-numero="04">Pré-processamento e correlação</h2><p>Pipeline do scikit-learn com imputação de mediana, defensiva, e <code>StandardScaler</code>. A padronização vive <strong>dentro</strong> do pipeline: ajustá-la antes da separação treino/teste faria a média e o desvio carregarem informação do teste — vazamento de dados que infla as métricas e não se sustenta em produção.</p><div class="feito"><div class="feito-cabeca"><span class="feito-etiqueta">Como foi feito</span><code class="feito-ref">src/preprocessing.py · build_preprocessor() · build_pipeline() · split_data()</code></div><pre class="codigo"><code><span class="k">def</span> <span class="d">build_preprocessor</span>() -&gt; Pipeline:
+    <span class="k">return</span> Pipeline(
+        steps=[
+            (<span class="s">&quot;imputer&quot;</span>, SimpleImputer(strategy=<span class="s">&quot;median&quot;</span>)),
+            (<span class="s">&quot;scaler&quot;</span>, StandardScaler()),
+        ]
+    )
+
+
+<span class="k">def</span> <span class="d">build_pipeline</span>(estimator: BaseEstimator) -&gt; Pipeline:
+    <span class="k">return</span> Pipeline(
+        steps=[
+            (<span class="s">&quot;preprocessor&quot;</span>, build_preprocessor()),
+            (<span class="s">&quot;estimator&quot;</span>, estimator),
+        ]
+    )
+
+
+<span class="k">def</span> <span class="d">split_data</span>(
+    X: pd.DataFrame,
+    y: pd.Series,
+    test_size: <span class="b">float</span> = config.TEST_SIZE,
+    seed: <span class="b">int</span> = config.SEED,
+) -&gt; <span class="b">tuple</span>[pd.DataFrame, pd.DataFrame, pd.Series, pd.Series]:
+    <span class="k">return</span> train_test_split(
+        X,
+        y,
+        test_size=test_size,
+        random_state=seed,
+        stratify=y,
+    )</code></pre><p class="feito-nota">Todo modelo do projeto nasce de build_pipeline(), então nenhum código externo precisa lembrar de padronizar antes de treinar — e o scaler é reajustado dentro de cada dobra da validação cruzada, com os dados de treino daquela dobra.</p></div><div class="rolagem"><table><caption>Separação estratificada 80/20</caption><thead><tr><th>Conjunto</th><th>Amostras</th><th>Benigno</th><th>Maligno</th><th>Proporção maligno</th></tr></thead><tbody><tr><td>Treino</td><td>455</td><td>285</td><td>170</td><td>0,3736</td></tr><tr><td>Teste</td><td>114</td><td>72</td><td>42</td><td>0,3684</td></tr></tbody></table></div><figure><img src="../figures/05_correlacao.png" alt="Correlação entre as features" loading="lazy"><figcaption><b class="titulo-figura">Correlação entre as features</b><span class="leitura">Vinte e um pares superam 0,9 de correlação. Raio, perímetro e área chegam a 0,998 — não por acaso estatístico, mas por geometria: as três medem a mesma grandeza. Nenhuma feature foi removida; a regularização trata a redundância.</span></figcaption></figure><figure><img src="../figures/06_correlacao_alvo.png" alt="Correlação com o diagnóstico" loading="lazy"><figcaption><b class="titulo-figura">Correlação com o diagnóstico</b><span class="leitura">Nenhuma feature isolada passa de 0,79. Não existe atalho de variável única: a classificação depende da combinação de várias medidas.</span></figcaption></figure></section><section id="wisconsin-05"><h2 data-numero="05">Modelagem</h2><p>Três técnicas com fundamentos distintos: <strong>Regressão Logística</strong> (baseline linear e interpretável), <strong>KNN</strong> (não paramétrico, sensível a escala) e <strong>Random Forest</strong> (não linear, com importância nativa). A comparação usa validação cruzada estratificada de 5 folds <strong>dentro do treino</strong>; o conjunto de teste permanece intocado.</p><p>A seleção usa <strong>F1</strong>, não recall puro: otimizar recall isolado premiaria um classificador que chama quase tudo de maligno. O recall é otimizado depois, pelo ajuste do limiar.</p><div class="feito"><div class="feito-cabeca"><span class="feito-etiqueta">Como foi feito</span><code class="feito-ref">src/models.py · get_models() · select_best()</code></div><pre class="codigo"><code><span class="k">def</span> <span class="d">get_models</span>() -&gt; <span class="b">dict</span>[<span class="b">str</span>, Pipeline]:
+    <span class="k">return</span> {
+        <span class="s">&quot;Regressão Logística&quot;</span>: build_pipeline(
+            LogisticRegression(max_iter=<span class="n">5000</span>, random_state=config.SEED)
+        ),
+        <span class="s">&quot;KNN&quot;</span>: build_pipeline(KNeighborsClassifier()),
+        <span class="s">&quot;Random Forest&quot;</span>: build_pipeline(
+            RandomForestClassifier(n_estimators=<span class="n">300</span>, random_state=config.SEED, n_jobs=-<span class="n">1</span>)
+        ),
+    }
+
+
+<span class="k">def</span> <span class="d">select_best</span>(cv_results: pd.DataFrame, metric: <span class="b">str</span> = SELECTION_METRIC) -&gt; <span class="b">str</span>:
+    <span class="k">if</span> metric <span class="k">not</span> <span class="k">in</span> cv_results.columns:
+        <span class="k">raise</span> ValueError(<span class="s">f&quot;Metrica &#x27;{metric}&#x27; ausente na tabela de resultados.&quot;</span>)
+    <span class="k">return</span> <span class="b">str</span>(cv_results.loc[cv_results[metric].idxmax(), <span class="s">&quot;modelo&quot;</span>])</code></pre><p class="feito-nota">Os três modelos são criados pela mesma função de pipeline, então a comparação mede o algoritmo, não diferenças de pré-processamento entre eles.</p></div><div class="rolagem"><table><caption>Validação cruzada no conjunto de treino</caption><thead><tr><th>Modelo</th><th>Acurácia</th><th>Precisão</th><th>Recall</th><th>F1</th><th>AUC</th></tr></thead><tbody><tr class="destacada"><td>Regressão Logística</td><td>0,974</td><td>0,977</td><td>0,953</td><td>0,964</td><td>0,996</td></tr><tr><td>KNN</td><td>0,965</td><td>0,988</td><td>0,918</td><td>0,951</td><td>0,987</td></tr><tr><td>Random Forest</td><td>0,960</td><td>0,958</td><td>0,935</td><td>0,946</td><td>0,988</td></tr></tbody></table></div></section><section id="wisconsin-06"><h2 data-numero="06">Resultados no teste</h2><div class="indicadores"><div class="indicador marcado"><span class="valor">0,929</span><span class="rotulo">recall (maligno)</span></div><div class="indicador"><span class="valor">0,951</span><span class="rotulo">F1</span></div><div class="indicador"><span class="valor">0,996</span><span class="rotulo">AUC</span></div><div class="indicador alerta"><span class="valor">3</span><span class="rotulo">falsos negativos</span></div></div><div class="feito"><div class="feito-cabeca"><span class="feito-etiqueta">Como foi feito</span><code class="feito-ref">src/evaluation.py · evaluate()</code></div><pre class="codigo"><code><span class="k">def</span> <span class="d">evaluate</span>(model: Pipeline, X_test: pd.DataFrame, y_test: pd.Series) -&gt; <span class="b">dict</span>:
+    y_pred = model.predict(X_test)
+    y_proba = model.predict_proba(X_test)[:, <span class="n">1</span>]
+    tn, fp, fn, tp = confusion_matrix(y_test, y_pred).ravel()
+
+    <span class="k">return</span> {
+        <span class="s">&quot;accuracy&quot;</span>: <span class="b">round</span>(<span class="b">float</span>(accuracy_score(y_test, y_pred)), <span class="n">4</span>),
+        <span class="s">&quot;precision&quot;</span>: <span class="b">round</span>(<span class="b">float</span>(precision_score(y_test, y_pred)), <span class="n">4</span>),
+        <span class="s">&quot;recall&quot;</span>: <span class="b">round</span>(<span class="b">float</span>(recall_score(y_test, y_pred)), <span class="n">4</span>),
+        <span class="s">&quot;f1&quot;</span>: <span class="b">round</span>(<span class="b">float</span>(f1_score(y_test, y_pred)), <span class="n">4</span>),
+        <span class="s">&quot;roc_auc&quot;</span>: <span class="b">round</span>(<span class="b">float</span>(roc_auc_score(y_test, y_proba)), <span class="n">4</span>),
+        <span class="s">&quot;verdadeiros_negativos&quot;</span>: <span class="b">int</span>(tn),
+        <span class="s">&quot;falsos_positivos&quot;</span>: <span class="b">int</span>(fp),
+        <span class="s">&quot;falsos_negativos&quot;</span>: <span class="b">int</span>(fn),
+        <span class="s">&quot;verdadeiros_positivos&quot;</span>: <span class="b">int</span>(tp),
+    }</code></pre><p class="feito-nota">A matriz de confusão é desempacotada em tn, fp, fn, tp e os falsos negativos entram no resultado como número próprio: é a quantidade que decide este projeto, não um detalhe a ser lido dentro de um gráfico.</p></div><div class="rolagem"><table><caption>Desempenho no conjunto de teste</caption><thead><tr><th>Modelo</th><th>Acurácia</th><th>Precisão</th><th>Recall</th><th>F1</th><th>AUC</th><th>Falsos negativos</th></tr></thead><tbody><tr class="destacada"><td>Regressão Logística</td><td>0,965</td><td>0,975</td><td>0,929</td><td>0,951</td><td>0,996</td><td>3</td></tr><tr><td>Random Forest</td><td>0,965</td><td>1,000</td><td>0,905</td><td>0,950</td><td>0,995</td><td>4</td></tr><tr><td>KNN</td><td>0,939</td><td>0,973</td><td>0,857</td><td>0,911</td><td>0,983</td><td>6</td></tr></tbody></table></div><figure><img src="../figures/07_matriz_confusao.png" alt="Matriz de confusão do modelo escolhido" loading="lazy"><figcaption><b class="titulo-figura">Matriz de confusão do modelo escolhido</b><span class="leitura">71 verdadeiros negativos, 39 verdadeiros positivos, 1 falso positivo e 3 falsos negativos. Os falsos negativos são o número que importa: tumores malignos que passaram despercebidos.</span></figcaption></figure><figure><img src="../figures/08_curvas_roc.png" alt="Curvas ROC" loading="lazy"><figcaption><b class="titulo-figura">Curvas ROC</b><span class="leitura">AUC entre 0,983 e 0,996. AUC alta com recall de 0,929 no limiar padrão indica que o modelo separa bem as classes e o que está mal calibrado é o corte.</span></figcaption></figure><figure><img src="../figures/09_comparacao_modelos.png" alt="Comparação dos modelos por métrica" loading="lazy"><figcaption><b class="titulo-figura">Comparação dos modelos por métrica</b><span class="leitura">A Random Forest alcança precisão perfeita, mas com mais falsos negativos. Trocar um falso positivo por um falso negativo é mau negócio: o primeiro custa um exame, o segundo custa um diagnóstico perdido.</span></figcaption></figure></section><section id="wisconsin-07"><h2 data-numero="07">Limiar de decisão</h2><p>O limiar de 0,5 é apenas a convenção do <code>predict()</code>, não uma escolha clínica. Baixá-lo para 0,30 melhora todas as métricas ao mesmo tempo e reduz os falsos negativos de 3 para 1, sem aumento de falsos positivos.</p><div class="feito"><div class="feito-cabeca"><span class="feito-etiqueta">Como foi feito</span><code class="feito-ref">src/evaluation.py · threshold_analysis()</code></div><pre class="codigo"><code><span class="k">def</span> <span class="d">threshold_analysis</span>(
+    model: Pipeline,
+    X_test: pd.DataFrame,
+    y_test: pd.Series,
+    thresholds: <span class="b">tuple</span>[<span class="b">float</span>, ...] = (<span class="n">0.20</span>, <span class="n">0.30</span>, <span class="n">0.40</span>, <span class="n">0.50</span>, <span class="n">0.60</span>, <span class="n">0.70</span>),
+) -&gt; pd.DataFrame:
+    y_proba = model.predict_proba(X_test)[:, <span class="n">1</span>]
+    linhas = []
+
+    <span class="k">for</span> limiar <span class="k">in</span> thresholds:
+        y_pred = (y_proba &gt;= limiar).astype(<span class="b">int</span>)
+        tn, fp, fn, tp = confusion_matrix(y_test, y_pred).ravel()
+        linhas.append(
+            {
+                <span class="s">&quot;limiar&quot;</span>: limiar,
+                <span class="s">&quot;recall&quot;</span>: <span class="b">round</span>(<span class="b">float</span>(recall_score(y_test, y_pred, zero_division=<span class="n">0</span>)), <span class="n">4</span>),
+                <span class="s">&quot;precisao&quot;</span>: <span class="b">round</span>(<span class="b">float</span>(precision_score(y_test, y_pred, zero_division=<span class="n">0</span>)), <span class="n">4</span>),
+                <span class="s">&quot;f1&quot;</span>: <span class="b">round</span>(<span class="b">float</span>(f1_score(y_test, y_pred, zero_division=<span class="n">0</span>)), <span class="n">4</span>),
+                <span class="s">&quot;falsos_negativos&quot;</span>: <span class="b">int</span>(fn),
+                <span class="s">&quot;falsos_positivos&quot;</span>: <span class="b">int</span>(fp),
+            }
+        )
+    <span class="k">return</span> pd.DataFrame(linhas)</code></pre><p class="feito-nota">O corte não é retreinado a cada limiar: as probabilidades saem uma vez de predict_proba e só a régua muda. O modelo é o mesmo; o que se decide é onde parar de chamar de benigno.</p></div><figure><img src="../figures/10_limiar_decisao.png" alt="Recall e precisão em função do limiar" loading="lazy"><figcaption><b class="titulo-figura">Recall e precisão em função do limiar</b><span class="leitura">A direção do ajuste é defensável pelo custo assimétrico dos erros. O valor exato, porém, é frágil: com 114 casos de teste, uma diferença de dois falsos negativos pode não se repetir em outra amostra.</span></figcaption><details class="dados"><summary>Ver os números por limiar</summary><div class="rolagem"><table><caption>Efeito do limiar sobre as métricas</caption><thead><tr><th>Limiar</th><th>Recall</th><th>Precisão</th><th>F1</th><th>Falsos negativos</th><th>Falsos positivos</th></tr></thead><tbody><tr><td>0,2000</td><td>0,9762</td><td>0,9111</td><td>0,9425</td><td>1</td><td>4</td></tr><tr><td>0,3000</td><td>0,9762</td><td>0,9762</td><td>0,9762</td><td>1</td><td>1</td></tr><tr><td>0,4000</td><td>0,9524</td><td>0,9756</td><td>0,9639</td><td>2</td><td>1</td></tr><tr><td>0,5000</td><td>0,9286</td><td>0,9750</td><td>0,9512</td><td>3</td><td>1</td></tr><tr><td>0,6000</td><td>0,9048</td><td>1,0000</td><td>0,9500</td><td>4</td><td>0</td></tr><tr><td>0,7000</td><td>0,9048</td><td>1,0000</td><td>0,9500</td><td>4</td><td>0</td></tr></tbody></table></div></details></figure></section><section id="wisconsin-08"><h2 data-numero="08">Explicabilidade</h2><p>Um sistema de apoio ao diagnóstico que não explica sua previsão não é utilizável na prática: o médico precisa poder concordar ou discordar com base no raciocínio. Três técnicas complementares foram aplicadas, e as três convergem nas mesmas medidas.</p><div class="feito"><div class="feito-cabeca"><span class="feito-etiqueta">Como foi feito</span><code class="feito-ref">src/explain.py · permutation_scores()</code></div><pre class="codigo"><code><span class="k">def</span> <span class="d">permutation_scores</span>(
+    model: Pipeline,
+    X_test: pd.DataFrame,
+    y_test: pd.Series,
+    scoring: <span class="b">str</span> = <span class="s">&quot;recall&quot;</span>,
+    n_repeats: <span class="b">int</span> = <span class="n">30</span>,
+) -&gt; pd.DataFrame:
+    resultado = permutation_importance(
+        model,
+        X_test,
+        y_test,
+        scoring=scoring,
+        n_repeats=n_repeats,
+        random_state=config.SEED,
+        n_jobs=-<span class="n">1</span>,
+    )
+    tabela = pd.DataFrame(
+        {
+            <span class="s">&quot;feature&quot;</span>: X_test.columns,
+            <span class="s">&quot;queda_media&quot;</span>: resultado.importances_mean.<span class="b">round</span>(<span class="n">4</span>),
+            <span class="s">&quot;desvio&quot;</span>: resultado.importances_std.<span class="b">round</span>(<span class="n">4</span>),
+        }
+    )
+    <span class="k">return</span> tabela.sort_values(<span class="s">&quot;queda_media&quot;</span>, ascending=<span class="k">False</span>).reset_index(drop=<span class="k">True</span>)</code></pre><p class="feito-nota">A permutação é medida em recall, não em acurácia. A escolha importa: uma feature pode ser importante para o acerto geral e irrelevante para detectar casos malignos, que é o objetivo aqui.</p></div><figure><img src="../figures/11_coeficientes.png" alt="Coeficientes do modelo" loading="lazy"><figcaption><b class="titulo-figura">Coeficientes do modelo</b><span class="leitura">O maior coeficiente é texture_worst, não concave points_worst, que liderava a análise exploratória. A causa é a multicolinearidade: features redundantes dividem o peso entre si. Coeficiente alto significa informação única ao modelo, não importância clínica.</span></figcaption><details class="dados"><summary>Ver coeficientes e razões de chances</summary><div class="rolagem"><table><caption>Maiores coeficientes</caption><thead><tr><th>Feature</th><th>Coeficiente</th><th>Razão de chances</th></tr></thead><tbody><tr><td>texture_worst</td><td>1,434</td><td>4,196</td></tr><tr><td>radius_se</td><td>1,233</td><td>3,433</td></tr><tr><td>symmetry_worst</td><td>1,061</td><td>2,890</td></tr><tr><td>concave points_mean</td><td>0,953</td><td>2,593</td></tr><tr><td>concavity_worst</td><td>0,911</td><td>2,488</td></tr><tr><td>area_se</td><td>0,909</td><td>2,482</td></tr><tr><td>compactness_se</td><td>-0,907</td><td>0,404</td></tr><tr><td>area_worst</td><td>0,900</td><td>2,461</td></tr><tr><td>radius_worst</td><td>0,897</td><td>2,452</td></tr><tr><td>concavity_mean</td><td>0,782</td><td>2,186</td></tr><tr><td>perimeter_se</td><td>0,748</td><td>2,113</td></tr><tr><td>perimeter_worst</td><td>0,723</td><td>2,061</td></tr><tr><td>concave points_worst</td><td>0,704</td><td>2,022</td></tr><tr><td>fractal_dimension_se</td><td>-0,594</td><td>0,552</td></tr><tr><td>texture_mean</td><td>0,482</td><td>1,620</td></tr></tbody></table></div></details></figure><figure><img src="../figures/12_importancia_permutacao.png" alt="Importância por permutação, medida em recall" loading="lazy"><figcaption><b class="titulo-figura">Importância por permutação, medida em recall</b><span class="leitura">Embaralhar texture_worst derruba o recall em 5,4 pontos percentuais. Da quinta feature em diante a queda é praticamente nula: o modelo se apoia em poucas medidas.</span></figcaption><details class="dados"><summary>Ver a queda de recall por feature</summary><div class="rolagem"><table><caption>Importância por permutação</caption><thead><tr><th>Feature</th><th>Queda média</th><th>Desvio</th></tr></thead><tbody><tr><td>texture_worst</td><td>0,0540</td><td>0,0212</td></tr><tr><td>concavity_worst</td><td>0,0421</td><td>0,0243</td></tr><tr><td>symmetry_worst</td><td>0,0278</td><td>0,0185</td></tr><tr><td>concave points_worst</td><td>0,0262</td><td>0,0188</td></tr><tr><td>radius_worst</td><td>0,0040</td><td>0,0205</td></tr><tr><td>concave points_mean</td><td>0,0024</td><td>0,0198</td></tr><tr><td>area_worst</td><td>0,0024</td><td>0,0188</td></tr><tr><td>smoothness_worst</td><td>0,0024</td><td>0,0128</td></tr><tr><td>perimeter_worst</td><td>0,0016</td><td>0,0194</td></tr><tr><td>radius_mean</td><td>0,0008</td><td>0,0168</td></tr><tr><td>concavity_mean</td><td>0,0008</td><td>0,0168</td></tr><tr><td>perimeter_mean</td><td>0,0000</td><td>0,0174</td></tr><tr><td>area_mean</td><td>0,0000</td><td>0,0184</td></tr><tr><td>symmetry_mean</td><td>-0,0008</td><td>0,0075</td></tr><tr><td>fractal_dimension_worst</td><td>-0,0008</td><td>0,0043</td></tr></tbody></table></div></details></figure><figure><img src="../figures/13_shap_beeswarm.png" alt="SHAP — visão global" loading="lazy"><figcaption><b class="titulo-figura">SHAP — visão global</b><span class="leitura">Cada ponto é uma paciente. Para quase todas as features do topo, valores altos empurram a previsão para maligno, exatamente como a literatura médica descreve.</span></figcaption><details class="dados"><summary>Ver a importância média por feature</summary><div class="rolagem"><table><caption>Importância SHAP</caption><thead><tr><th>Feature</th><th>SHAP médio</th></tr></thead><tbody><tr><td>texture_worst</td><td>1,2507</td></tr><tr><td>radius_se</td><td>0,7611</td></tr><tr><td>symmetry_worst</td><td>0,7406</td></tr><tr><td>concave points_mean</td><td>0,7228</td></tr><tr><td>radius_worst</td><td>0,7125</td></tr><tr><td>concavity_worst</td><td>0,6937</td></tr><tr><td>compactness_se</td><td>0,6887</td></tr><tr><td>area_worst</td><td>0,6846</td></tr><tr><td>concave points_worst</td><td>0,5749</td></tr><tr><td>perimeter_worst</td><td>0,5614</td></tr><tr><td>concavity_mean</td><td>0,5603</td></tr><tr><td>area_se</td><td>0,4826</td></tr><tr><td>perimeter_se</td><td>0,4263</td></tr><tr><td>texture_mean</td><td>0,3904</td></tr><tr><td>fractal_dimension_se</td><td>0,3904</td></tr></tbody></table></div></details></figure><figure><img src="../figures/14_shap_caso_falso_negativo.png" alt="SHAP — um tumor maligno não detectado" loading="lazy"><figcaption><b class="titulo-figura">SHAP — um tumor maligno não detectado</b><span class="leitura">Praticamente todas as medidas desta paciente estão abaixo da média da base. O modelo não errou por acaso: viu um tumor maligno de morfologia pouco característica. É o limite que nenhum ajuste de hiperparâmetro resolve.</span></figcaption></figure></section><section id="wisconsin-09"><h2 data-numero="09">Decisões e o contrafactual</h2><p>Cada decisão abaixo tinha um caminho oposto plausível. O que a justifica não é o resultado que ela produziu, e sim o custo do caminho que não foi tomado — por isso os dois aparecem lado a lado.</p><div class="decisoes"><article class="decisao"><h4>Maligno é a classe positiva (M = 1)</h4><p class="porque"><span class="marca">Por quê</span>É o evento que se quer detectar, e essa escolha define o significado de recall em todo o resto do projeto.</p><p class="contra"><span class="marca">Se fosse ao contrário</span>Com benigno como positivo, um recall alto passaria a medir o acerto no caso barato e esconderia exatamente o erro caro.</p></article><article class="decisao"><h4>StandardScaler dentro do Pipeline</h4><p class="porque"><span class="marca">Por quê</span>Assim ele é reajustado a cada dobra da validação cruzada, usando só os dados de treino daquela dobra.</p><p class="contra"><span class="marca">Se fosse ao contrário</span>Ajustado sobre a base inteira antes da separação, a média e o desvio carregariam informação do teste: as métricas subiriam sem o modelo melhorar em nada.</p></article><article class="decisao"><h4>Seleção do modelo por F1, não por recall puro</h4><p class="porque"><span class="marca">Por quê</span>F1 é a média harmônica entre precisão e recall, e penaliza quem compra recall com falsos positivos em excesso.</p><p class="contra"><span class="marca">Se fosse ao contrário</span>Otimizando recall isolado, um classificador que chamasse toda paciente de maligna venceria a comparação com recall 1,000 — e seria inútil numa triagem.</p></article><article class="decisao"><h4>Outliers preservados</h4><p class="porque"><span class="marca">Por quê</span>São casos malignos extremos reais, não erros de medição: a cauda longa é a própria assinatura da doença.</p><p class="contra"><span class="marca">Se fosse ao contrário</span>Removê-los melhoraria as métricas descartando justamente as pacientes que o sistema mais precisa identificar. O número ficaria melhor e o modelo, pior.</p></article><article class="decisao"><h4>Nenhuma feature removida, apesar da multicolinearidade</h4><p class="porque"><span class="marca">Por quê</span>Com 569 amostras e 30 features não há alta dimensionalidade, e a regularização L2 já distribui o peso entre as medidas redundantes.</p><p class="contra"><span class="marca">Se fosse ao contrário</span>Uma seleção manual seria um corte arbitrário sem ganho esperado, e trocaria um problema documentado — coeficientes difíceis de ler — por um não documentado.</p></article><article class="decisao"><h4>O limiar é reportado, não embutido no código</h4><p class="porque"><span class="marca">Por quê</span>A curva de trade-off entre recall e falsos positivos é entregue para que a instituição escolha o corte.</p><p class="contra"><span class="marca">Se fosse ao contrário</span>Fixar 0,30 dentro do modelo esconderia uma decisão de política clínica dentro de uma constante, tomada por quem não responde pelo desfecho.</p></article></div></section></div></div></div><div class="painel" id="painel-imagens" role="tabpanel" aria-labelledby="aba-imagens" hidden><div class="corpo"><nav class="indice" aria-label="Seções desta análise"><h2>Nesta análise</h2><ol><li><a href="#imagens-01"><span class="numero">01</span><span>A base de imagens</span></a></li><li><a href="#imagens-02"><span class="numero">02</span><span>Duplicatas e vazamento</span></a></li><li><a href="#imagens-03"><span class="numero">03</span><span>Arquiteturas e resultados</span></a></li><li><a href="#imagens-04"><span class="numero">04</span><span>Explicabilidade: onde a rede olhou</span></a></li><li><a href="#imagens-05"><span class="numero">05</span><span>Decisões e o contrafactual</span></a></li></ol></nav><div class="conteudo"><section id="imagens-01"><h2 data-numero="01">A base de imagens</h2><div class="indicadores"><div class="indicador"><span class="valor">780</span><span class="rotulo">imagens</span></div><div class="indicador"><span class="valor">668</span><span class="rotulo">exames distintos</span></div><div class="indicador"><span class="valor">3</span><span class="rotulo">classes</span></div><div class="indicador marcado"><span class="valor">malignant</span><span class="rotulo">classe positiva</span></div></div><p><strong>BUSI — Breast Ultrasound Images.</strong> Ultrassons mamários em três classes, sob licença CC BY 4.0. Ao contrário do dataset tabular, aqui não há nenhuma medida extraída por especialista: a rede recebe o mesmo que o médico vê na tela do aparelho.</p><h3>O caminho dos dados</h3><div class="fluxo"><div class="etapa"><span class="ordem">01</span><span class="nome">Leitura</span><span class="detalhe">uma pasta por classe, máscaras descartadas</span></div><div class="etapa"><span class="ordem">02</span><span class="nome">Auditoria</span><span class="detalhe">hash perceptual detecta quadros repetidos</span></div><div class="etapa"><span class="ordem">03</span><span class="nome">Partição</span><span class="detalhe">por grupo e por classe, 556/112/112</span></div><div class="etapa"><span class="ordem">04</span><span class="nome">Treino</span><span class="detalhe">pesos de classe e parada antecipada</span></div><div class="etapa"><span class="ordem">05</span><span class="nome">Ajuste fino</span><span class="detalhe">60 camadas finais liberadas</span></div><div class="etapa"><span class="ordem">06</span><span class="nome">Grad-CAM</span><span class="detalhe">onde a rede olhou</span></div></div><div class="feito"><div class="feito-cabeca"><span class="feito-etiqueta">Como foi feito</span><code class="feito-ref">src/vision/dataset.py · is_mask() · find_masks()</code></div><pre class="codigo"><code><span class="k">def</span> <span class="d">is_mask</span>(arquivo: Path) -&gt; <span class="b">bool</span>:
+    nome = arquivo.stem.lower()
+    <span class="k">return</span> any(marcador <span class="k">in</span> nome <span class="k">for</span> marcador <span class="k">in</span> MARCADORES_DE_MASCARA)
+
+
+<span class="k">def</span> <span class="d">find_masks</span>(root: Path | <span class="k">None</span> = <span class="k">None</span>) -&gt; <span class="b">list</span>[Path]:
+    diretorio = root <span class="k">or</span> config.IMAGES_DIR
+    <span class="k">return</span> [
+        arquivo
+        <span class="k">for</span> arquivo <span class="k">in</span> diretorio.rglob(<span class="s">&quot;*&quot;</span>)
+        <span class="k">if</span> arquivo.suffix.lower() <span class="k">in</span> EXTENSOES <span class="k">and</span> is_mask(arquivo)
+    ]</code></pre><p class="feito-nota">O BUSI distribui as máscaras de segmentação na mesma pasta das imagens. O carregador do Keras lê tudo o que encontra no diretório: mantidas ali, elas entrariam como se fossem exames. O carregamento detecta e interrompe com instrução.</p></div><figure><img src="../figures/20_imagens_por_classe.png" alt="Imagens por classe" loading="lazy"><figcaption><b class="titulo-figura">Imagens por classe</b><span class="leitura">A base é desbalanceada: 56% benignas, 27% malignas e 17% normais. O treino usa pesos de classe para compensar, evitando que a rede aprenda a favorecer a classe majoritária.</span></figcaption><details class="dados"><summary>Ver a contagem por classe</summary><div class="rolagem"><table><caption>Distribuição por classe</caption><thead><tr><th>Classe</th><th>Imagens</th><th>Proporção</th></tr></thead><tbody><tr><td>benign</td><td>437</td><td>0,5603</td></tr><tr><td>malignant</td><td>210</td><td>0,2692</td></tr><tr><td>normal</td><td>133</td><td>0,1705</td></tr></tbody></table></div></details></figure><figure><img src="../figures/21_amostras_imagens.png" alt="Exemplos de ultrassom por classe" loading="lazy"><figcaption><b class="titulo-figura">Exemplos de ultrassom por classe</b><span class="leitura">A rede parte do pixel cru e precisa aprender sozinha o que distingue as lesões.</span></figcaption></figure></section><section id="imagens-02"><h2 data-numero="02">Duplicatas e vazamento</h2><div class="indicadores"><div class="indicador alerta"><span class="valor">112</span><span class="rotulo">imagens redundantes</span></div><div class="indicador"><span class="valor">95</span><span class="rotulo">grupos com repetição</span></div><div class="indicador alerta"><span class="valor">7</span><span class="rotulo">rótulos contraditórios</span></div></div><p>Antes de reportar qualquer desempenho foi preciso resolver um defeito da base. O BUSI contém vários quadros do mesmo exame, praticamente indistinguíveis. Uma auditoria por <em>hash</em> perceptual encontrou <strong>112 imagens redundantes</strong> entre as 780 — e, distribuídas ao acaso, 62 pares caíam em partições diferentes.</p><p>Na prática, a rede era avaliada em imagens que já tinha visto no treino. É vazamento de dados, o mesmo problema que o pipeline tabular evita ao manter o <code>StandardScaler</code> dentro do <code>Pipeline</code>.</p><p class="nota">Sete grupos têm rótulos contraditórios: imagens praticamente idênticas catalogadas com diagnósticos diferentes, incluindo um par byte a byte igual que aparece como benigno e como maligno. Sem o laudo original não há como decidir qual está correto, então os casos foram mantidos e registrados — é um limite da base, não do modelo.</p><p>A correção foi tratar cada grupo como unidade indivisível na partição, com <code>StratifiedGroupKFold</code>: preserva a proporção das classes e nunca separa um grupo.</p><div class="feito"><div class="feito-cabeca"><span class="feito-etiqueta">Como foi feito</span><code class="feito-ref">src/vision/dataset.py · stratified_split()</code></div><pre class="codigo"><code><span class="k">def</span> <span class="d">stratified_split</span>(
+    root: Path | <span class="k">None</span> = <span class="k">None</span>,
+    validation_split: <span class="b">float</span> = config.VALIDATION_SPLIT,
+    seed: <span class="b">int</span> = config.SEED,
+) -&gt; <span class="b">tuple</span>[<span class="b">dict</span>[<span class="b">str</span>, <span class="b">tuple</span>[<span class="b">list</span>[<span class="b">str</span>], <span class="b">list</span>[<span class="b">int</span>]]], <span class="b">list</span>[<span class="b">str</span>]]:
+    <span class="k">from</span> sklearn.model_selection <span class="k">import</span> StratifiedGroupKFold
+
+    caminhos, rotulos, class_names = list_images(root)
+    grupos = duplicate_groups(caminhos)
+
+    <span class="c"># Duas dobras de 1/k formam validacao e teste; para `validation_split` de</span>
+    <span class="c"># 0,3 isso da k = 7, ou seja, cerca de 14% para cada uma.</span>
+    n_dobras = <span class="b">max</span>(<span class="n">3</span>, <span class="b">round</span>(<span class="n">2</span> / validation_split))
+    dobrador = StratifiedGroupKFold(n_splits=n_dobras, shuffle=<span class="k">True</span>, random_state=seed)
+    dobras = [indices <span class="k">for</span> _, indices <span class="k">in</span> dobrador.split(caminhos, rotulos, groups=grupos)]
+
+    indices_validacao, indices_teste = <span class="b">set</span>(dobras[<span class="n">0</span>]), <span class="b">set</span>(dobras[<span class="n">1</span>])
+    indices_treino = [
+        i
+        <span class="k">for</span> i <span class="k">in</span> <span class="b">range</span>(<span class="b">len</span>(caminhos))
+        <span class="k">if</span> i <span class="k">not</span> <span class="k">in</span> indices_validacao <span class="k">and</span> i <span class="k">not</span> <span class="k">in</span> indices_teste
+    ]
+
+    <span class="k">def</span> <span class="d">recortar</span>(indices):
+        indices = <span class="b">sorted</span>(indices)
+        <span class="k">return</span> [caminhos[i] <span class="k">for</span> i <span class="k">in</span> indices], [rotulos[i] <span class="k">for</span> i <span class="k">in</span> indices]
+
+    particoes = {
+        <span class="s">&quot;treino&quot;</span>: recortar(indices_treino),
+        <span class="s">&quot;validacao&quot;</span>: recortar(indices_validacao),
+        <span class="s">&quot;teste&quot;</span>: recortar(indices_teste),
+    }
+    <span class="k">return</span> particoes, class_names</code></pre><p class="feito-nota">Estratificar e agrupar são exigências simultâneas: a proporção de casos malignos precisa se manter em cada conjunto e nenhum grupo de quadros repetidos pode ser dividido. StratifiedGroupKFold atende às duas ao mesmo tempo.</p></div><div class="rolagem"><table><caption>Composição das partições</caption><thead><tr><th>Conjunto</th><th>Imagens</th><th>Benigno</th><th>Maligno</th><th>Normal</th><th>Proporção maligna</th></tr></thead><tbody><tr><td>treino</td><td>556</td><td>311</td><td>150</td><td>95</td><td>0,2698</td></tr><tr><td>validacao</td><td>112</td><td>63</td><td>30</td><td>19</td><td>0,2679</td></tr><tr><td>teste</td><td>112</td><td>63</td><td>30</td><td>19</td><td>0,2679</td></tr></tbody></table></div></section><section id="imagens-03"><h2 data-numero="03">Arquiteturas e resultados</h2><p>Três configurações com fundamentos distintos: uma <strong>CNN treinada do zero</strong>, a <strong>MobileNetV2 congelada</strong> com cabeça nova, e a mesma rede com <strong>ajuste fino</strong> das 60 camadas finais.</p><div class="indicadores"><div class="indicador marcado"><span class="valor">0,900</span><span class="rotulo">recall (maligno)</span></div><div class="indicador"><span class="valor">0,839</span><span class="rotulo">acurácia</span></div><div class="indicador"><span class="valor">0,821</span><span class="rotulo">F1 macro</span></div><div class="indicador alerta"><span class="valor">3 de 30</span><span class="rotulo">malignos não detectados</span></div></div><div class="rolagem"><table><caption>Desempenho no conjunto de teste</caption><thead><tr><th>Modelo</th><th>Acurácia</th><th>F1 macro</th><th>Recall maligno</th><th>Precisão maligno</th><th>Não detectados</th></tr></thead><tbody><tr class="destacada"><td>MobileNetV2 (ajuste fino)</td><td>0,839</td><td>0,821</td><td>0,900</td><td>0,771</td><td>3</td></tr><tr><td>MobileNetV2 (transferência)</td><td>0,759</td><td>0,751</td><td>0,767</td><td>0,622</td><td>7</td></tr><tr><td>CNN do zero</td><td>0,562</td><td>0,240</td><td>0,000</td><td>0,000</td><td>30</td></tr></tbody></table></div><p><strong>A CNN treinada do zero não aprendeu a tarefa.</strong> Com 56,3% de acurácia, não detectou nenhum dos 30 casos malignos: aprendeu a responder benigno, que é a resposta mais frequente. É a demonstração mais direta do que a análise tabular já argumentava sobre a acurácia como métrica isolada.</p><p>A transferência de aprendizado torna a tarefa viável, e o ajuste fino a torna razoável: liberar as camadas finais elevou o recall maligno de 0,767 para 0,900. As features da ImageNet servem de ponto de partida, mas texturas de ultrassom não se parecem com fotografias naturais.</p><div class="feito"><div class="feito-cabeca"><span class="feito-etiqueta">Como foi feito</span><code class="feito-ref">src/vision/model.py · enable_fine_tuning()</code></div><pre class="codigo"><code><span class="k">def</span> <span class="d">enable_fine_tuning</span>(modelo, n_camadas: <span class="b">int</span> = <span class="n">40</span>, learning_rate: <span class="b">float</span> = <span class="n">1e-5</span>):
+    <span class="k">from</span> tensorflow <span class="k">import</span> keras
+    <span class="k">from</span> tensorflow.keras <span class="k">import</span> layers
+
+    <span class="c"># Cuidado necessario: a camada de aumento de dados tambem e um modelo</span>
+    <span class="c"># (Sequential herda de Model). A base pre-treinada e a unica submodelo</span>
+    <span class="c"># funcional, entao e por ai que ela se distingue.</span>
+    base = <span class="b">next</span>(
+        (
+            camada
+            <span class="k">for</span> camada <span class="k">in</span> modelo.layers
+            <span class="k">if</span> <span class="b">isinstance</span>(camada, keras.Model) <span class="k">and</span> <span class="k">not</span> <span class="b">isinstance</span>(camada, keras.Sequential)
+        ),
+        <span class="k">None</span>,
+    )
+    <span class="k">if</span> base <span class="k">is</span> <span class="k">None</span>:
+        <span class="k">raise</span> TypeError(<span class="s">&quot;Modelo sem base pré-treinada: nada a liberar para ajuste fino.&quot;</span>)
+
+    base.trainable = <span class="k">True</span>
+    <span class="k">for</span> camada <span class="k">in</span> base.layers[:-n_camadas]:
+        camada.trainable = <span class="k">False</span>
+    <span class="k">for</span> camada <span class="k">in</span> base.layers:
+        <span class="k">if</span> <span class="b">isinstance</span>(camada, layers.BatchNormalization):
+            camada.trainable = <span class="k">False</span>
+
+    n_classes = <span class="n">2</span> <span class="k">if</span> modelo.output_shape[-<span class="n">1</span>] == <span class="n">1</span> <span class="k">else</span> modelo.output_shape[-<span class="n">1</span>]
+    _, _, perda = _saida(n_classes)
+
+    modelo.compile(
+        optimizer=keras.optimizers.Adam(learning_rate),
+        loss=perda,
+        metrics=_metricas(n_classes),
+    )
+    <span class="k">return</span> modelo</code></pre><p class="feito-nota">A busca pela base pré-treinada exclui Sequential de propósito. A primeira versão usava só isinstance(camada, Model), e a camada de aumento de dados é um Sequential — que também é um Model. O código liberava o bloco de aumento em vez da MobileNetV2, sem acusar erro nenhum.</p></div><figure><img src="../figures/22_curvas_treino.png" alt="Curvas de treino" loading="lazy"><figcaption><b class="titulo-figura">Curvas de treino</b><span class="leitura">A perda de validação da CNN do zero mal se move. O ajuste fino é uma segunda etapa, que continua de onde a transferência parou — por isso sua contagem de épocas recomeça e sua perda já nasce baixa.</span></figcaption><details class="dados"><summary>Ver o resumo do treino</summary><div class="rolagem"><table><caption>Treino por arquitetura</caption><thead><tr><th>Modelo</th><th>Parâmetros</th><th>Épocas</th><th>Melhor época</th><th>Acurácia val.</th><th>Perda val.</th><th>Segundos</th></tr></thead><tbody><tr><td>CNN do zero</td><td>110147</td><td>14</td><td>8</td><td>0,5625</td><td>0,9992</td><td>92,8000</td></tr><tr><td>MobileNetV2 (transferência)</td><td>2261827</td><td>26</td><td>20</td><td>0,8036</td><td>0,5275</td><td>135,7000</td></tr><tr><td>MobileNetV2 (ajuste fino)</td><td>2261827</td><td>12</td><td>6</td><td>0,8661</td><td>0,4234</td><td>78,4000</td></tr></tbody></table></div></details></figure><figure><img src="../figures/23_matriz_confusao_imagens.png" alt="Matriz de confusão — MobileNetV2 (ajuste fino)" loading="lazy"><figcaption><b class="titulo-figura">Matriz de confusão — MobileNetV2 (ajuste fino)</b><span class="leitura">Dos 30 casos malignos, 27 foram corretamente identificados e nenhum foi confundido com tecido normal. Do lado dos falsos alarmes, 8 benignos foram apontados como malignos: custo real, mas incomparavelmente menor que o de um diagnóstico perdido.</span></figcaption></figure></section><section id="imagens-04"><h2 data-numero="04">Explicabilidade: onde a rede olhou</h2><p>O pipeline tabular responde “por que esta paciente?” com SHAP, decompondo a previsão em contribuições por medida. Em imagem não existem medidas, existem pixels — e a pergunta equivalente é <strong>onde a rede olhou</strong>. O Grad-CAM responde isso ponderando o último mapa de ativação pelo gradiente da classe prevista.</p><p class="nota">O mapa mostra onde, não por quê. Não afirma que a rede reconheceu uma margem espiculada — apenas que aquela região pesou. Ainda assim, é o que permite a um médico discordar de forma fundamentada.</p><div class="feito"><div class="feito-cabeca"><span class="feito-etiqueta">Como foi feito</span><code class="feito-ref">src/vision/explain.py · gradcam()</code></div><pre class="codigo"><code><span class="k">def</span> <span class="d">gradcam</span>(
+    modelo,
+    imagem: np.ndarray,
+    classe: <span class="b">int</span> | <span class="k">None</span> = <span class="k">None</span>,
+    nome_camada: <span class="b">str</span> | <span class="k">None</span> = <span class="k">None</span>,
+):
+    <span class="k">import</span> tensorflow <span class="k">as</span> tf
+
+    alvo = nome_camada <span class="k">or</span> last_conv_layer(modelo)
+    entrada = tf.convert_to_tensor(imagem[<span class="k">None</span>], dtype=tf.float32)
+
+    <span class="k">with</span> tf.GradientTape() <span class="k">as</span> fita:
+        x = entrada
+        ativacao = <span class="k">None</span>
+        <span class="k">for</span> camada <span class="k">in</span> modelo.layers:
+            <span class="k">if</span> camada.__class__.__name__ == <span class="s">&quot;InputLayer&quot;</span>:
+                <span class="k">continue</span>
+            x = camada(x, training=<span class="k">False</span>)
+            <span class="k">if</span> camada.name == alvo:
+                ativacao = x
+                fita.watch(ativacao)
+
+        previsao = x
+        <span class="k">if</span> previsao.shape[-<span class="n">1</span>] == <span class="n">1</span>:  <span class="c"># binario</span>
+            indice = <span class="n">0</span>
+            probabilidade = <span class="b">float</span>(previsao[<span class="n">0</span>, <span class="n">0</span>])
+        <span class="k">else</span>:
+            indice = <span class="b">int</span>(tf.argmax(previsao[<span class="n">0</span>])) <span class="k">if</span> classe <span class="k">is</span> <span class="k">None</span> <span class="k">else</span> classe
+            probabilidade = <span class="b">float</span>(previsao[<span class="n">0</span>, indice])
+        pontuacao = previsao[:, indice]
+
+    gradientes = fita.gradient(pontuacao, ativacao)
+    pesos = tf.reduce_mean(gradientes, axis=(<span class="n">0</span>, <span class="n">1</span>, <span class="n">2</span>))
+
+    mapa = tf.reduce_sum(ativacao[<span class="n">0</span>] * pesos, axis=-<span class="n">1</span>)
+    mapa = tf.nn.relu(mapa)  <span class="c"># so contribuicoes que empurram *a favor* da classe</span>
+
+    maximo = <span class="b">float</span>(tf.reduce_max(mapa))
+    mapa = mapa / maximo <span class="k">if</span> maximo &gt; <span class="n">0</span> <span class="k">else</span> mapa
+    <span class="k">return</span> mapa.numpy(), indice, probabilidade</code></pre><p class="feito-nota">A normalização precisa ser uma camada, não uma função aplicada ao tensor: aplicada como função ela é absorvida pelo grafo e some de model.layers, e o Grad-CAM, que percorre camadas, alimentava a rede com pixels de 0 a 255 onde ela espera valores de −1 a 1. Os mapas eram ruído com aparência plausível.</p></div><figure><img src="../figures/25_gradcam_acertos.png" alt="Grad-CAM — casos malignos detectados" loading="lazy"><figcaption><b class="titulo-figura">Grad-CAM — casos malignos detectados</b><span class="leitura">O mapa de calor mostra a região que sustentou a decisão. É o equivalente em imagem da análise SHAP do pipeline tabular: responde onde a rede olhou, não apenas o que ela respondeu.</span></figcaption></figure><figure><img src="../figures/26_gradcam_erros.png" alt="Grad-CAM — casos malignos que escaparam" loading="lazy"><figcaption><b class="titulo-figura">Grad-CAM — casos malignos que escaparam</b><span class="leitura">Nos erros, o mapa revela se a rede olhou para o lugar errado ou se a lesão realmente não se distingue do tecido ao redor — informação que um médico consegue julgar, ao contrário de um número de acurácia.</span></figcaption></figure><p>Nos casos detectados, <strong>o calor se concentra sobre a lesão</strong>. Nos que escapam, o padrão se inverte: a lesão permanece fria e a atenção migra para uma região de sombra sem relevância diagnóstica. O modelo não avaliou mal a lesão — não a considerou.</p><p>Duas observações fecham a análise. As imagens trazem <strong>anotações gravadas em pixel</strong>, feitas pelo profissional que já identificou a lesão suspeita: elas carregam informação do diagnóstico, e uma rede que aprendesse a reconhecê-las teria desempenho alto e valor clínico nulo. E as duas primeiras colunas dos erros são o mesmo exame, em quadros quase idênticos, ambos no teste — exatamente o que o agrupamento garante.</p></section><section id="imagens-05"><h2 data-numero="05">Decisões e o contrafactual</h2><p>As decisões desta entrega são quase todas defensivas: a base tem defeitos, e boa parte do trabalho foi impedir que eles virassem métrica boa.</p><div class="decisoes"><article class="decisao"><h4>Partição por grupos de quadros quase idênticos</h4><p class="porque"><span class="marca">Por quê</span>A auditoria por hash perceptual achou 112 imagens redundantes; cada grupo passou a cair inteiro num único conjunto.</p><p class="contra"><span class="marca">Se fosse ao contrário</span>Com partição aleatória, a rede é avaliada em imagens que já viu no treino. O recall reportado seria otimista e não se repetiria em exame novo.</p></article><article class="decisao"><h4>Máscaras detectadas, com o carregamento interrompido</h4><p class="porque"><span class="marca">Por quê</span>O Keras carrega tudo o que está na pasta, então o código verifica antes e para com instrução explícita.</p><p class="contra"><span class="marca">Se fosse ao contrário</span>Mantidas ali, as máscaras entrariam como exames e as métricas subiriam sobre imagens binárias que não existem clinicamente.</p></article><article class="decisao"><h4>Transferência primeiro, ajuste fino depois</h4><p class="porque"><span class="marca">Por quê</span>A cabeça de classificação converge com a base congelada, e só então as camadas finais são liberadas com taxa de aprendizado 10× menor.</p><p class="contra"><span class="marca">Se fosse ao contrário</span>Liberadas sobre pesos aleatórios, os gradientes da cabeça recém-inicializada apagariam as features da ImageNet na primeira época.</p></article><article class="decisao"><h4>Aumento de dados apenas geométrico</h4><p class="porque"><span class="marca">Por quê</span>Espelhamento, rotação leve, zoom e translação: transformações que preservam o conteúdo diagnóstico da imagem.</p><p class="contra"><span class="marca">Se fosse ao contrário</span>Distorcer brilho e contraste ensinaria a rede a ignorar a intensidade — que em ultrassom é justamente parte do sinal que separa as classes.</p></article><article class="decisao"><h4>Execução determinística</h4><p class="porque"><span class="marca">Por quê</span>Sementes fixas e enable_op_determinism(): duas execuções produzem exatamente as mesmas métricas.</p><p class="contra"><span class="marca">Se fosse ao contrário</span>Sem isso não há como saber se uma melhora veio do ajuste fino ou da inicialização dos pesos daquela rodada.</p></article><article class="decisao"><h4>Rótulos contraditórios mantidos e registrados</h4><p class="porque"><span class="marca">Por quê</span>São 7 grupos com imagens quase idênticas catalogadas com diagnósticos diferentes, e não há laudo original para arbitrar qual está certo.</p><p class="contra"><span class="marca">Se fosse ao contrário</span>Descartá-los, ou escolher um rótulo por conta própria, produziria um número melhor escondendo um defeito da base dentro do resultado.</p></article></div></section></div></div></div><div class="painel" id="painel-comparacao" role="tabpanel" aria-labelledby="aba-comparacao" hidden><div class="corpo"><nav class="indice" aria-label="Seções desta análise"><h2>Nesta análise</h2><ol><li><a href="#comparacao-01"><span class="numero">01</span><span>As duas abordagens</span></a></li><li><a href="#comparacao-02"><span class="numero">02</span><span>Onde cada uma falha</span></a></li><li><a href="#comparacao-03"><span class="numero">03</span><span>Uso na prática</span></a></li><li><a href="#comparacao-04"><span class="numero">04</span><span>Limitações e próximos passos</span></a></li></ol></nav><div class="conteudo"><section id="comparacao-01"><h2 data-numero="01">As duas abordagens</h2><p>As duas entregas resolvem o mesmo problema clínico por caminhos opostos, e a comparação só é honesta se essa diferença ficar explícita.</p><div class="rolagem"><table><caption>Tabular contra imagem</caption><thead><tr><th>Critério</th><th>Wisconsin (tabular)</th><th>BUSI (imagem)</th></tr></thead><tbody><tr><td>Entrada</td><td>30 medidas extraídas por especialista</td><td>pixels do exame</td></tr><tr><td>Recall da classe maligna</td><td>0,929</td><td>0,900</td></tr><tr><td>Amostras</td><td>569</td><td>780 (668 exames distintos)</td></tr><tr><td>Dependência humana prévia</td><td>alta — exige medição manual</td><td>nenhuma</td></tr><tr><td>Explicabilidade</td><td>coeficientes, permutação e SHAP</td><td>Grad-CAM sobre a imagem</td></tr></tbody></table></div><p><strong>O modelo tabular tem métricas melhores, mas resolve um problema mais fácil.</strong> Ele recebe medidas que um profissional já extraiu da imagem: automatiza o julgamento, não a medição, e por isso não reduz a carga de trabalho especializada.</p><p>O modelo de imagem opera sobre o dado bruto, sem etapa manual anterior. Está mais próximo de um sistema de triagem real — e mais longe de estar pronto.</p></section><section id="comparacao-02"><h2 data-numero="02">Onde cada uma falha</h2><p>Os dois modelos erram, e os erros são de naturezas diferentes. Vale olhar para eles, porque é neles que está o limite do que este projeto entrega.</p><ul><li><strong>No tabular</strong>, o falso negativo analisado por SHAP é um tumor maligno cujas medidas estão quase todas abaixo da média. O modelo não errou por acaso: viu um caso que genuinamente se parece com os benignos nas 30 medidas disponíveis.</li><li><strong>Na imagem</strong>, o Grad-CAM mostra que nos casos perdidos a lesão sequer entra no campo de atenção da rede. O erro não é de julgamento, é de percepção.</li></ul><p>Em ambos, a explicação torna o erro discutível com um profissional — que é exatamente o que um número de acurácia não faz.</p></section><section id="comparacao-03"><h2 data-numero="03">Uso na prática</h2><p>O sistema é utilizável como <strong>apoio</strong>, não como decisor. Três cenários concretos, em ordem crescente de exigência:</p><div class="rolagem"><table><caption>Cenários de uso</caption><thead><tr><th>Cenário</th><th>Como funcionaria</th><th>Por que agrega valor</th></tr></thead><tbody><tr><td>Priorização de fila</td><td>ordenar casos pendentes pela probabilidade prevista</td><td>casos de alto risco chegam antes ao especialista</td></tr><tr><td>Segunda opinião</td><td>exibir previsão e explicação junto ao laudo em elaboração</td><td>contraponto estruturado antes da assinatura</td></tr><tr><td>Sinalização de discordância</td><td>alertar quando modelo e laudo preliminar divergem</td><td>rede de segurança contra desatenção</td></tr></tbody></table></div><p class="nota">Em todos os cenários, o laudo é assinado por um médico. O sistema nunca emite diagnóstico, nunca dispensa uma paciente e nunca é a última etapa do fluxo.</p><p><strong>O limiar de decisão é uma escolha clínica, não técnica.</strong> Quem define quantos exames adicionais se aceita realizar para não deixar um tumor maligno passar é a instituição de saúde. O que a análise entrega é a curva de trade-off que torna essa decisão informada em vez de arbitrária.</p></section><section id="comparacao-04"><h2 data-numero="04">Limitações e próximos passos</h2><p>Quatro limitações são intransponíveis com os dados disponíveis:</p><ul><li><strong>Origem única e volume pequeno.</strong> 569 registros clínicos e 668 exames de imagem, de fontes únicas. Nada garante que o desempenho se mantenha em outra população ou com outro equipamento.</li><li><strong>O modelo tabular não parte de dados crus.</strong> Depende de um especialista ter medido os núcleos celulares antes.</li><li><strong>Existem tumores malignos morfologicamente discretos.</strong> Nenhum ajuste de hiperparâmetro resolve isso: a informação necessária não está nos dados.</li><li><strong>A base de imagens tem defeitos de catalogação</strong> — quadros repetidos e rótulos contraditórios — que limitam o quanto se pode confiar na medição.</li></ul><h3>Riscos de implantação</h3><ul><li><strong>Excesso de confiança.</strong> Um sistema que acerta com frequência induz o profissional a aceitar previsões sem revisar — o efeito que a explicabilidade combate.</li><li><strong>Degradação silenciosa.</strong> Mudanças de equipamento ou população deslocam a distribuição sem gerar erro visível. Uso real exigiria monitoramento contínuo.</li><li><strong>Tradução equivocada da importância das variáveis.</strong> Comunicar que “a textura é o que mais importa no diagnóstico” seria um erro grave de leitura da estatística para a medicina.</li><li><strong>Responsabilidade legal e ética.</strong> Dados sensíveis de saúde exigem conformidade com a LGPD, rastreabilidade das previsões e definição explícita de responsabilidade sobre o desfecho.</li></ul><h3>Próximos passos técnicos</h3><ul><li>Validação externa em base de outra instituição — o teste decisivo que estes dados não permitem.</li><li>Calibração do limiar por validação cruzada no treino, e não observando o teste.</li><li>Calibração de probabilidade, para que o valor previsto seja lido como risco real.</li><li>Remoção das anotações gravadas nas imagens, que carregam informação do diagnóstico.</li></ul><p class="nota">O valor prático deste trabalho não está em substituir o julgamento médico, mas em torná-lo mais rápido e mais informado. Reconhecer os limites faz parte de entregar o sistema de forma responsável.</p></section></div></div></div></main>
 
 <footer class="rodape">
-  <span>Relatório gerado automaticamente por <code>src/report.py</code></span>
-  <span>Todos os números vêm de <code>results/metrics.json</code></span>
+  <span>Gerado por <code>src/report.py</code> a partir de <code>results/metrics.json</code></span>
+  <span>Figuras em <code>results/figures/</code> · reproduzível com <code>scripts/run_wisconsin.py</code></span>
 </footer>
 
 </div>
 <script>
-const abas = document.querySelectorAll('.aba');
-abas.forEach(function (aba) {
-  aba.addEventListener('click', function () {
+(function () {
+  // Alternador de tema. Dois estados apenas: claro e escuro. Na primeira
+  // visita o estado inicial vem da preferencia do sistema, mas passa a ser
+  // explicito para que um clique so ja inverta o tema. A escolha fica no
+  // navegador de quem le, entao sobrevive a recarga e nao afeta mais ninguem.
+  var ROTULOS = { claro: 'Claro', escuro: 'Escuro' };
+  var botao = document.querySelector('.tema');
+
+  function aplicar(estado, guardar) {
+    document.documentElement.setAttribute('data-tema', estado);
+
+    if (botao) {
+      botao.dataset.estado = estado;
+      botao.querySelector('.rotulo-tema').textContent = ROTULOS[estado];
+      botao.setAttribute('aria-pressed', String(estado === 'escuro'));
+      botao.setAttribute(
+        'aria-label',
+        'Tema ' + ROTULOS[estado] + '. Clique para usar o tema ' +
+        (estado === 'escuro' ? 'claro' : 'escuro') + '.'
+      );
+    }
+
+    if (guardar) {
+      try { localStorage.setItem('tema', estado); } catch (erro) { /* modo privado */ }
+    }
+  }
+
+  if (botao) {
+    var salvo = null;
+    try { salvo = localStorage.getItem('tema'); } catch (erro) { /* modo privado */ }
+
+    var inicial = salvo === 'claro' || salvo === 'escuro' ? salvo : null;
+    if (!inicial) {
+      var escuroNoSistema = window.matchMedia
+        && window.matchMedia('(prefers-color-scheme: dark)').matches;
+      inicial = escuroNoSistema ? 'escuro' : 'claro';
+    }
+    aplicar(inicial, false);
+
+    botao.addEventListener('click', function () {
+      aplicar(botao.dataset.estado === 'escuro' ? 'claro' : 'escuro', true);
+    });
+  }
+})();
+
+(function () {
+  var abas = Array.prototype.slice.call(document.querySelectorAll('.aba'));
+  var ancora = document.getElementById('ancora-abas');
+
+  // Posicao da barra de abas no documento. A ancora e um elemento comum, e
+  // nao a barra em si: a barra e `sticky`, entao o seu retangulo devolve a
+  // posicao grudada no topo, nao a posicao real no fluxo da pagina.
+  function topoDasAbas() {
+    if (!ancora) { return 0; }
+    return ancora.getBoundingClientRect().top + window.pageYOffset;
+  }
+
+  function selecionar(aba, mover) {
+    // Trocar de aba recomeca a leitura: a pagina vai para o inicio da aba, que
+    // e a propria barra de abas — nunca para o topo do documento, senao a capa
+    // e o resumo executivo voltariam a ocupar a tela a cada troca.
     abas.forEach(function (outra) {
       var ativa = outra === aba;
       outra.setAttribute('aria-selected', String(ativa));
+      outra.tabIndex = ativa ? 0 : -1;
       document.getElementById(outra.dataset.painel).hidden = !ativa;
     });
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    if (mover) { aba.focus({ preventScroll: true }); }
+
+    // Aba curta demais para sustentar essa posicao: o navegador pararia antes.
+    var maximo = Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
+    window.scrollTo({ top: Math.min(topoDasAbas(), maximo), behavior: 'instant' });
+  }
+
+  abas.forEach(function (aba, indice) {
+    aba.addEventListener('click', function () { selecionar(aba, false); });
+    aba.addEventListener('keydown', function (evento) {
+      var passo = evento.key === 'ArrowRight' ? 1 : evento.key === 'ArrowLeft' ? -1 : 0;
+      if (!passo) { return; }
+      evento.preventDefault();
+      selecionar(abas[(indice + passo + abas.length) % abas.length], true);
+    });
   });
-});
+
+  // Indice lateral: marca a secao visivel enquanto a pagina rola.
+  var secoes = Array.prototype.slice.call(document.querySelectorAll('section[id]'));
+  var elos = {};
+  document.querySelectorAll('.indice a').forEach(function (elo) {
+    elos[elo.getAttribute('href').slice(1)] = elo;
+  });
+
+  if ('IntersectionObserver' in window) {
+    var visiveis = new Set();
+    var observador = new IntersectionObserver(function (entradas) {
+      entradas.forEach(function (entrada) {
+        if (entrada.isIntersecting) { visiveis.add(entrada.target.id); }
+        else { visiveis.delete(entrada.target.id); }
+      });
+
+      var atual = secoes.filter(function (s) { return visiveis.has(s.id); })[0];
+      Object.keys(elos).forEach(function (id) {
+        elos[id].setAttribute('aria-current', String(Boolean(atual) && atual.id === id));
+      });
+    }, { rootMargin: '-90px 0px -65% 0px' });
+
+    secoes.forEach(function (secao) { observador.observe(secao); });
+  }
+})();
 </script>
 </body>
 </html>

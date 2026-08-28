@@ -91,6 +91,35 @@ Carrega e valida os dados, gera as figuras da análise exploratória, separa tre
 os três modelos por validação cruzada, ajusta hiperparâmetros, avalia no teste, calcula as
 explicações e gera o relatório HTML. É idempotente: rodar de novo regenera todos os artefatos.
 
+### Com Docker
+
+Sem instalar Python nem dependências na máquina:
+
+```bash
+docker build -t ml-breast-cancer .
+docker run --rm -v "$(pwd)/results:/app/results" ml-breast-cancer
+```
+
+> `$(pwd)` funciona no PowerShell, no cmd do Linux e no macOS. No **Git Bash** o caminho é
+> convertido para o formato Unix antes de chegar ao Docker; prefixe com `MSYS_NO_PATHCONV=1` ou
+> escreva o caminho completo no formato do Windows.
+
+O container **executa a análise**, não a serve: roda o mesmo `scripts/run_wisconsin.py` e grava as
+14 figuras, o `metrics.json` e o `index.html` no `results/` montado. Terminada a execução, o
+relatório abre por duplo clique como sempre.
+
+A imagem instala exatamente o `requirements.txt` do passo anterior, então o que roda no container é
+o que roda localmente — e o `metrics.json` gerado no Linux é idêntico ao gerado no Windows, campo a
+campo. Um efeito colateral útil: **no container o SHAP funciona**, porque o bloqueio da DLL do
+`numba` é uma política do Windows (veja a nota no fim desta seção), então as duas figuras SHAP são
+regeradas junto com as demais.
+
+Para rodar os testes na mesma imagem:
+
+```bash
+docker run --rm ml-breast-cancer pytest -q
+```
+
 ### Relatório visual
 
 ```
@@ -135,6 +164,14 @@ instalação principal leve:
 ```bash
 pip install -r requirements-vision.txt
 python scripts/run_vision.py
+```
+
+Com Docker, é um estágio à parte do mesmo `Dockerfile` — o TensorFlow leva a imagem de 1,4 GB para
+3,2 GB, e a base BUSI não é versionada, então precisa ser montada:
+
+```bash
+docker build --target vision -t ml-breast-cancer:vision .
+docker run --rm -v "$(pwd)/results:/app/results"            -v "$(pwd)/data/raw/images:/app/data/raw/images"            ml-breast-cancer:vision
 ```
 
 **Base utilizada: BUSI — Breast Ultrasound Images Dataset** (Al-Dhabyani et al., 2020). São 780
@@ -201,6 +238,7 @@ ML-breast-cancer/
 │   ├── metrics_vision.json    # métricas do pipeline de imagem
 │   └── reports/index.html     # relatório visual, com as duas análises
 ├── docs/relatorio_tecnico.md  # relatório técnico completo
+├── Dockerfile                 # pipeline tabular; estágio `vision` para a entrega extra
 ├── requirements.txt
 └── requirements-vision.txt    # dependências da entrega extra
 ```
@@ -232,4 +270,5 @@ crítica sobre o uso do modelo na prática.
 
 Semente fixa (`SEED = 42`) na separação treino/teste, na validação cruzada e nos modelos. As
 dependências estão com versão fixada em `requirements.txt`. Executar o pipeline duas vezes produz
-o mesmo `metrics.json`.
+o mesmo `metrics.json` — e rodá-lo no container Linux produz o mesmo arquivo que a execução local
+no Windows, verificado campo a campo.

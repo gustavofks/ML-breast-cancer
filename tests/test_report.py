@@ -154,6 +154,13 @@ def test_tabelas_de_dados_ficam_recolhidas_sob_as_figuras(pagina):
     assert "<summary>" in pagina
 
 
+precisa_dos_artefatos = pytest.mark.skipif(
+    not config.METRICS_FILE.exists() or not config.FIGURES_DIR.exists(),
+    reason="depende dos artefatos de results/; rode scripts/run_wisconsin.py antes",
+)
+
+
+@precisa_dos_artefatos
 def test_relatorio_referencia_apenas_figuras_existentes(pagina):
     referencias = re.findall(r'<img src="\.\./figures/([^"]+)"', pagina)
 
@@ -277,6 +284,7 @@ def test_aba_de_imagens_e_montada_a_partir_das_metricas(tmp_path):
     assert "0,900" in pagina
 
 
+@precisa_dos_artefatos
 def test_relatorio_le_metrics_json_por_padrao(tmp_path):
     metricas = json.loads(config.METRICS_FILE.read_text(encoding="utf-8"))
     destino = build_report(metricas, tmp_path / "index.html")

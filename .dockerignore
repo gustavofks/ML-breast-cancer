@@ -1,0 +1,27 @@
+# O contexto de build carrega tudo o que nao estiver listado aqui. Fora dele
+# ficam o ambiente virtual, o historico do Git, a base de imagens (256 MB, nao
+# versionada) e os artefatos gerados — que o proprio pipeline regenera dentro
+# do container.
+
+.venv/
+.git/
+.gitignore
+.github/
+
+**/__pycache__
+**/*.py[codz]
+**/.pytest_cache
+**/.ipynb_checkpoints
+
+# Artefatos: regerados por scripts/run_wisconsin.py na propria execucao.
+results/
+
+# Base de imagens da entrega extra: montada como volume, nunca copiada.
+data/raw/images/
+
+# Nao participam da execucao do pipeline.
+notebooks/
+docs/
+README.md
+Dockerfile
+.dockerignore

@@ -226,8 +226,14 @@ docs/superpowers/
 # Material de apoio da disciplina (instrucoes do desafio, referencias)
 docs/referencias/
 
-# Roteiro pessoal da gravacao do video
+# Roteiros pessoais da gravacao do video
 docs/roteiro_video.md
+docs/roteiro_video_fala.md
+
+# Relatorio de sintese e exportacoes em Word: entregues a parte, no PDF enviado
+# ao curso. O repositorio versiona apenas docs/relatorio_tecnico.md.
+docs/relatorio_sintese.md
+docs/*.docx
 
 # Base de imagens da entrega extra (grande demais para o repositorio; ver README)
 data/raw/images/

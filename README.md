@@ -237,7 +237,8 @@ ML-breast-cancer/
 │   ├── metrics.json           # métricas do pipeline tabular
 │   ├── metrics_vision.json    # métricas do pipeline de imagem
 │   └── reports/index.html     # relatório visual, com as duas análises
-├── docs/relatorio_tecnico.md  # relatório técnico completo
+├── docs/relatorio_tecnico.pdf # relatório técnico completo
+├── docs/relatorio_sintese.pdf # relatório de síntese entregue ao curso
 ├── Dockerfile                 # pipeline tabular; estágio `vision` para a entrega extra
 ├── requirements.txt
 └── requirements-vision.txt    # dependências da entrega extra
@@ -258,13 +259,14 @@ analisa **o modelo**, e `plotting.py` guarda o que os dois compartilham.
 | Nenhuma feature removida | há 21 pares com correlação > 0,9, mas a regularização trata a redundância |
 | Três técnicas de explicabilidade | coeficientes, permutação e SHAP convergem por caminhos independentes |
 
-Todas estão detalhadas no [relatório técnico](docs/relatorio_tecnico.md).
+Todas estão detalhadas no [relatório técnico](docs/relatorio_tecnico.pdf).
 
 ## Documentação
 
-O **[relatório técnico](docs/relatorio_tecnico.md)** reúne a análise exploratória, as estratégias de
+O **[relatório técnico](docs/relatorio_tecnico.pdf)** reúne a análise exploratória, as estratégias de
 pré-processamento, os modelos e suas justificativas, os resultados, a explicabilidade e a discussão
-crítica sobre o uso do modelo na prática.
+crítica sobre o uso do modelo na prática. O **[relatório de síntese](docs/relatorio_sintese.pdf)**
+condensa o mesmo conteúdo no formato entregue ao curso.
 
 ## Reprodutibilidade
 

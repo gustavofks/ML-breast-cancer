@@ -233,5 +233,11 @@ docs/*.md
 docs/*.docx
 docs/build_docx.py
 
+# Documentacao de processo e instrucoes para agentes de IA: specs de design e
+# CLAUDE.md. Servem ao desenvolvimento, nao a entrega, entao ficam locais pelo
+# mesmo criterio aplicado aos relatorios.
+docs/specs/
+CLAUDE.md
+
 # Base de imagens da entrega extra (grande demais para o repositorio; ver README)
 data/raw/images/

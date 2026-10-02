@@ -90,6 +90,27 @@ LIMIAR_MAX = 0.95
 GENETIC_SEEDS = (42, 43, 44)
 
 
+# ---------------------------------------------------------------------------
+# Fase 2: camada de modelo de linguagem
+# ---------------------------------------------------------------------------
+LLM_DIR = RESULTS_DIR / "llm"
+LLM_CACHE_DIR = LLM_DIR / "cache"
+
+# Modelo local servido pelo Ollama. Trocar o modelo e mudar esta linha: toda a
+# camada fala com um Protocol, nunca com um cliente especifico.
+LLM_MODELO = "llama3.1:8b"
+LLM_URL = "http://localhost:11434/api/generate"
+
+# Temperatura zero e semente fixa. O texto que entra no relatorio precisa ser o
+# mesmo a cada execucao, pela mesma regra que vale para results/metrics.json.
+LLM_TEMPERATURA = 0.0
+LLM_SEED = SEED
+
+# Contrato de saida: o texto e para ser lido na tela, ao lado do grafico SHAP.
+LLM_LIMITE_DE_PALAVRAS = 220
+LLM_TIMEOUT = 300
+
+
 def ensure_output_dirs() -> None:
     """Cria os diretorios de saida caso ainda nao existam."""
     for directory in (FIGURES_DIR, REPORTS_DIR):

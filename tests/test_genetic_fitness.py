@@ -109,6 +109,49 @@ def test_limiar_baixo_reduz_falsos_negativos(treino):
     assert cauteloso.falsos_positivos >= permissivo.falsos_positivos
 
 
+def test_reavaliacao_com_a_mesma_semente_nao_tem_queda(treino, individuo):
+    """Semente igual, particoes iguais, fitness igual: a queda e zero por construcao."""
+    X_train, y_train = treino
+    original = fit.avaliar(individuo, X_train, y_train, cv_seed=config.SEED)
+
+    estabilidade = fit.reavaliar_estabilidade(
+        individuo, original, X_train, y_train, cv_seed=config.SEED
+    )
+
+    assert estabilidade.queda == pytest.approx(0.0)
+    assert estabilidade.fitness_revalidado == pytest.approx(original.fitness)
+
+
+def test_queda_positiva_significa_piora(treino, individuo):
+    """Sinal declarado: queda > 0 e sobreajuste as particoes da busca."""
+    X_train, y_train = treino
+    original = fit.avaliar(individuo, X_train, y_train, cv_seed=config.SEED)
+
+    estabilidade = fit.reavaliar_estabilidade(
+        individuo, original, X_train, y_train, cv_seed=config.SEED + 100
+    )
+
+    assert estabilidade.queda == pytest.approx(
+        original.fitness - estabilidade.fitness_revalidado
+    )
+
+
+def test_reavaliacao_em_lote_preserva_a_ordem_recebida(treino):
+    """O relatorio cita "o terceiro melhor": a ordem nao pode embaralhar."""
+    X_train, y_train = treino
+    rng = np.random.default_rng(5)
+    individuos = [cromo.sortear("KNN", rng) for _ in range(3)]
+    avaliacoes = [fit.avaliar(i, X_train, y_train) for i in individuos]
+
+    lote = fit.reavaliar_lote(
+        list(zip(individuos, avaliacoes)), X_train, y_train, cv_seed=config.SEED + 100
+    )
+
+    assert len(lote) == 3
+    for estabilidade, avaliacao in zip(lote, avaliacoes):
+        assert estabilidade.fitness_original == pytest.approx(avaliacao.fitness)
+
+
 def test_semente_de_validacao_diferente_produz_avaliacao_independente(treino, individuo):
     """Base da verificacao de estabilidade da secao 4.7 do design."""
     X_train, y_train = treino

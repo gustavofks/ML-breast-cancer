@@ -134,3 +134,56 @@ def avaliar(
         n_amostras=int(len(y)),
         n_features=len(selecionadas),
     )
+
+
+@dataclass(frozen=True)
+class Estabilidade:
+    """Comparacao entre o fitness da busca e o de outra particao.
+
+    `queda` positiva significa piora, e e o sinal de sobreajuste as particoes
+    especificas que a busca otimizou. Centenas de avaliacoes sobre as mesmas
+    cinco dobras bastam para que o algoritmo aprenda a particao, nao o problema,
+    e a secao 4.7 do design exige medir isso em vez de supor que nao aconteceu.
+    """
+
+    fitness_original: float
+    fitness_revalidado: float
+    queda: float
+
+
+def reavaliar_estabilidade(
+    individuo: Individuo,
+    avaliacao: Avaliacao,
+    X: pd.DataFrame,
+    y: pd.Series,
+    *,
+    custo: CustoClinico | None = None,
+    cv_seed: int,
+) -> Estabilidade:
+    """Reavalia o individuo com outra semente de validacao cruzada.
+
+    `cv_seed` e obrigatorio e nao tem default de proposito: reavaliar com a
+    mesma semente da busca nao mede nada, e um default silencioso convidaria
+    exatamente esse erro.
+    """
+    revalidada = avaliar(individuo, X, y, custo=custo, cv_seed=cv_seed)
+    return Estabilidade(
+        fitness_original=avaliacao.fitness,
+        fitness_revalidado=revalidada.fitness,
+        queda=avaliacao.fitness - revalidada.fitness,
+    )
+
+
+def reavaliar_lote(
+    melhores: list[tuple[Individuo, Avaliacao]],
+    X: pd.DataFrame,
+    y: pd.Series,
+    *,
+    custo: CustoClinico | None = None,
+    cv_seed: int,
+) -> list[Estabilidade]:
+    """Reavalia os cinco melhores de uma execucao, preservando a ordem."""
+    return [
+        reavaliar_estabilidade(individuo, avaliacao, X, y, custo=custo, cv_seed=cv_seed)
+        for individuo, avaliacao in melhores
+    ]

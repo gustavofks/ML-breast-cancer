@@ -63,6 +63,33 @@ EPOCHS = 50
 VALIDATION_SPLIT = 0.3  # metade vira validacao, metade vira teste
 
 
+# ---------------------------------------------------------------------------
+# Fase 2: algoritmo genetico
+# ---------------------------------------------------------------------------
+GENETIC_DIR = RESULTS_DIR / "genetic"
+
+# Custo clinico assimetrico. A razao 10:1 traduz a politica descrita na secao
+# 4.2 do relatorio da Fase 1: o falso negativo (tumor maligno classificado como
+# benigno) e incomparavelmente mais grave que o falso positivo, que no fluxo
+# clinico custa um exame adicional. A razao e decisao da instituicao de saude,
+# entao vive aqui como parametro, nunca embutida no codigo do fitness.
+CUSTO_FALSO_NEGATIVO = 10.0
+CUSTO_FALSO_POSITIVO = 1.0
+
+# Peso do termo de parcimonia. Serve de desempate: entre duas solucoes
+# igualmente seguras, prefere a que exige menos medidas do patologista.
+PENALIDADE_PARCIMONIA = 0.05
+
+# Faixa util do limiar de decisao. Fora dela o classificador degenera em
+# "tudo maligno" ou "tudo benigno", que nao e solucao candidata.
+LIMIAR_MIN = 0.05
+LIMIAR_MAX = 0.95
+
+# Algoritmo genetico e estocastico: execucao unica nao e resultado. Toda
+# configuracao roda com estas tres sementes, e o relatorio traz media e desvio.
+GENETIC_SEEDS = (42, 43, 44)
+
+
 def ensure_output_dirs() -> None:
     """Cria os diretorios de saida caso ainda nao existam."""
     for directory in (FIGURES_DIR, REPORTS_DIR):

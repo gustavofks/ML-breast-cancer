@@ -92,9 +92,17 @@ ESPACOS: dict[str, tuple[Gene, ...]] = {
         GeneCategorico("p", (1, 2)),
     ),
     "Random Forest": (
-        # Teto de 500 arvores: acima disso o ganho e ruido e o experimento
-        # inteiro fica lento, risco registrado na secao 12 do design.
-        GeneInteiro("n_estimators", 50, 500),
+        # Teto de 300 arvores, e nao 500, por custo medido: uma avaliacao de
+        # fitness do Random Forest custa 2,54 s contra 0,056 s da regressao
+        # logistica, 45 vezes mais. Com 500 os quatro experimentos sobre as tres
+        # familias passariam de 12 horas; com 300, caem para cerca de 8. E a
+        # mitigacao que a secao 12 do design prescreveu para esse risco.
+        #
+        # O teto para exatamente em 300 porque e o valor da Fase 1, declarado em
+        # PADROES. Como `reparar` corta todo gene para dentro do dominio, um teto
+        # menor substituiria o padrao da Fase 1 em silencio, e o braco de
+        # comparacao deixaria de reproduzir o modelo original.
+        GeneInteiro("n_estimators", 50, 300),
         GeneCategorico("max_depth", (None, 2, 4, 6, 8, 10, 14, 20)),
         GeneInteiro("min_samples_leaf", 1, 10),
         GeneCategorico("max_features", ("sqrt", "log2", 0.3, 0.5, 0.7, 1.0)),

@@ -32,6 +32,40 @@ def test_espacos_cobrem_as_tres_familias_da_fase_1():
     assert set(cromo.CONSTRUTORES) == set(cromo.ESPACOS)
 
 
+def test_teto_de_arvores_do_random_forest_e_decisao_de_custo_medido():
+    """O teto de 300 arvores vem de medicao, nao de teoria.
+
+    Uma avaliacao de fitness do Random Forest custou 2,54 s contra 0,056 s da
+    regressao logistica, 45 vezes mais. Com o teto original de 500, os quatro
+    experimentos sobre as tres familias passariam de 12 horas; com 300, caem
+    para cerca de 8. E a mitigacao que a secao 12 do design prescreveu para o
+    risco de lentidao, e o relatorio precisa poder citar o limite exato.
+
+    O teto nao desce abaixo de 300 porque e esse o valor da Fase 1, e ele tem
+    que continuar dentro do espaco de busca — ver o teste da invariante abaixo.
+    """
+    genes = {gene.nome: gene for gene in cromo.ESPACOS["Random Forest"]}
+
+    assert genes["n_estimators"].maximo == 300
+    assert genes["n_estimators"].minimo == 50
+
+
+@pytest.mark.parametrize("familia", ["Regressão Logística", "KNN", "Random Forest"])
+def test_padrao_da_fase_1_sobrevive_ao_reparo(familia):
+    """O braco congelado tem que reproduzir o modelo da Fase 1, nao um parecido.
+
+    O reparo corta todo gene para dentro do dominio declarado, inclusive nos
+    segmentos congelados. Se `PADROES` cair fora de `ESPACOS`, o valor da Fase 1
+    e substituido em silencio e a comparacao "original versus otimizado" passa a
+    medir duas coisas diferentes — justamente o que a secao 3.2 do design
+    proibe. Aconteceu de verdade: com o teto em 200, as 300 arvores da Fase 1
+    viravam 200 sem erro nenhum.
+    """
+    congelado = cromo.sortear(familia, np.random.default_rng(0), segmentos=frozenset())
+
+    assert congelado.hiperparametros == cromo.PADROES[familia]
+
+
 @pytest.mark.parametrize("familia", ["Regressão Logística", "KNN", "Random Forest"])
 def test_sorteio_devolve_individuo_dentro_do_espaco(familia):
     rng = np.random.default_rng(0)

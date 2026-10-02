@@ -18,6 +18,35 @@ def test_curva_de_convergencia_tem_uma_linha_por_execucao(payload_ag):
     assert eixo.get_ylabel()
 
 
+def test_legenda_traz_uma_entrada_por_experimento_e_nao_por_execucao(payload_ag):
+    """A execucao completa tem 45 buscas: legenda com 45 entradas nao se le.
+
+    Cada semente continua desenhada — a dispersao entre elas e informacao — mas a
+    legenda identifica o experimento, que e a variavel que o leitor compara.
+    """
+    payloads = [
+        payload_ag(experimento="E1 base", semente=semente) for semente in (42, 43, 44)
+    ] + [payload_ag(experimento="E2 exploração", semente=semente) for semente in (42, 43)]
+
+    figura = plots.figura_convergencia(payloads)
+    eixo = figura.axes[0]
+
+    rotulos = [texto.get_text() for texto in eixo.get_legend().get_texts()]
+
+    assert len(eixo.lines) == 5
+    assert sorted(rotulos) == ["E1 base", "E2 exploração"]
+
+
+def test_execucoes_do_mesmo_experimento_compartilham_a_cor(payload_ag):
+    """Cor e o que liga as sementes de um experimento no grafico."""
+    payloads = [payload_ag(experimento="E1 base", semente=s) for s in (42, 43)]
+
+    figura = plots.figura_convergencia(payloads)
+    cores = {linha.get_color() for linha in figura.axes[0].lines}
+
+    assert len(cores) == 1
+
+
 def test_fronteira_relaciona_custo_e_numero_de_features(payload_ag):
     payloads = [
         payload_ag(features=("a",), fn=8),

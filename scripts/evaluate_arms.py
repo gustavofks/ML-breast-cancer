@@ -62,8 +62,24 @@ def bracos_de_referencia() -> dict[str, Pipeline]:
     }
 
 
-def _metricas(y_true, probabilidades, limiar: float, n_features: int, braco: str) -> dict:
-    """Metricas tradicionais mais o custo clinico, que e o que decide aqui."""
+def _metricas(
+    y_true,
+    probabilidades,
+    limiar: float,
+    n_features: int,
+    braco: str,
+    *,
+    experimento: str,
+    familia: str,
+) -> dict:
+    """Metricas tradicionais mais o custo clinico, que e o que decide aqui.
+
+    `experimento` e `familia` declaram a procedencia de cada linha. O melhor
+    "AG, completo" pode ser um Random Forest do E2, enquanto as ablacoes rodam so
+    em E1 sobre a regressao logistica: sem a procedencia, a tabela aparenta
+    comparar bracos em pe de igualdade quando um deles veio de outra configuracao
+    e de outro modelo.
+    """
     previsoes = (probabilidades >= limiar).astype(int)
     tn, fp, fn, tp = confusion_matrix(y_true, previsoes, labels=[0, 1]).ravel()
     custo = (
@@ -72,6 +88,8 @@ def _metricas(y_true, probabilidades, limiar: float, n_features: int, braco: str
 
     return {
         "braco": braco,
+        "experimento": experimento,
+        "familia": familia,
         "recall": round(float(recall_score(y_true, previsoes, zero_division=0)), 4),
         "f1": round(float(f1_score(y_true, previsoes, zero_division=0)), 4),
         "roc_auc": round(float(roc_auc_score(y_true, probabilidades)), 4),
@@ -99,7 +117,13 @@ def avaliar_braco_de_referencia(braco: str) -> dict:
 
     probabilidades = modelo.predict_proba(X_avaliacao)[:, 1]
     return _metricas(
-        y_avaliacao, probabilidades, LIMIAR_DE_REFERENCIA, X_train.shape[1], braco
+        y_avaliacao,
+        probabilidades,
+        LIMIAR_DE_REFERENCIA,
+        X_train.shape[1],
+        braco,
+        experimento="Fase 1",
+        familia=FAMILIA_DE_REFERENCIA,
     )
 
 
@@ -125,7 +149,13 @@ def avaliar_individuo(payload: dict, braco: str) -> dict:
 
     probabilidades = modelo.predict_proba(X_avaliacao.loc[:, selecionadas])[:, 1]
     return _metricas(
-        y_avaliacao, probabilidades, individuo.limiar, len(selecionadas), braco
+        y_avaliacao,
+        probabilidades,
+        individuo.limiar,
+        len(selecionadas),
+        braco,
+        experimento=payload["experimento"],
+        familia=payload["familia"],
     )
 
 
@@ -164,7 +194,8 @@ def main() -> None:
         print(
             f"{linha['braco']:<24} custo {linha['custo_clinico']:.4f} | "
             f"recall {linha['recall']:.4f} | FN {linha['falsos_negativos']:>2} | "
-            f"FP {linha['falsos_positivos']:>2} | features {linha['n_features']:>2}"
+            f"FP {linha['falsos_positivos']:>2} | features {linha['n_features']:>2} | "
+            f"{linha['experimento']} / {linha['familia']}"
         )
     print(f"Gravado em {destino}")
 

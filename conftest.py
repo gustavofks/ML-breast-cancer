@@ -8,6 +8,8 @@ arquivo de teste para outro exigiria transformar `tests/` em pacote, com
 
 import pytest
 
+from src.genetic.chromosome import PADROES
+
 
 @pytest.fixture
 def payload_ag():
@@ -58,7 +60,11 @@ def payload_ag():
                 "n_features": len(features),
                 "features": list(features),
                 "mascara": [1] * len(features) + [0] * (30 - len(features)),
-                "hiperparametros": {"C": 1.0},
+                # Hiperparametros coerentes com a familia: um payload de KNN com
+                # o `C` da regressao logistica passaria nos testes de agregacao,
+                # que so leem numeros, e quebraria no primeiro teste que de fato
+                # construisse o modelo.
+                "hiperparametros": dict(PADROES[familia]),
                 "limiar": 0.25,
             },
             "avaliacao": {

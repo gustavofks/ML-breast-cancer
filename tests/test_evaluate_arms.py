@@ -75,6 +75,29 @@ def test_avaliacao_reporta_custo_clinico_e_nao_so_as_metricas_tradicionais(scrip
     assert resultado["limiar"] == 0.5
 
 
+def test_linha_do_braco_declara_de_onde_a_solucao_veio(script, tmp_path, payload_ag):
+    """O melhor "AG, completo" pode ser um Random Forest do E2.
+
+    As ablacoes rodam so em E1 sobre a regressao logistica. Sem dizer o
+    experimento e a familia de cada linha, a tabela parece comparar quatro bracos
+    em pe de igualdade quando um deles veio de outra configuracao e outro modelo.
+    """
+    payload = payload_ag(experimento="E2 exploração", familia="KNN")
+
+    linha = script.avaliar_individuo(payload, "AG, completo")
+
+    assert linha["experimento"] == "E2 exploração"
+    assert linha["familia"] == "KNN"
+
+
+def test_bracos_de_referencia_declaram_a_propria_procedencia(script):
+    """A referencia e a Fase 1; a coluna existe para toda linha, sem buraco."""
+    linha = script.avaliar_braco_de_referencia("Original")
+
+    assert linha["experimento"] == "Fase 1"
+    assert linha["familia"] == script.FAMILIA_DE_REFERENCIA
+
+
 def test_execucao_completa_grava_a_tabela_comparativa(script, tmp_path, monkeypatch):
     destino = tmp_path / "comparacao_final.json"
     monkeypatch.setattr(

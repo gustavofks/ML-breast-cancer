@@ -38,16 +38,40 @@ def figura_convergencia(payloads: list[dict[str, Any]]) -> plt.Figure:
 
     A curva e a diferenca entre afirmar que houve convergencia e mostrar que
     houve. Sem elitismo a linha cai, e e isso que o experimento E4 mede.
+
+    Cada semente e desenhada — a dispersao entre elas e informacao, nao ruido a
+    esconder atras de uma media — mas a legenda identifica o **experimento**. A
+    execucao completa tem 45 buscas, e uma legenda com 45 entradas nao se le.
     """
     apply_style()
     figura, eixo = plt.subplots(figsize=(7.6, 4.6))
+
+    ciclo = plt.rcParams["axes.prop_cycle"].by_key().get("color", [COLOR_BENIGNO])
+    experimentos = sorted({payload["experimento"] for payload in payloads})
+    cor_por_experimento = {
+        nome: ciclo[indice % len(ciclo)] for indice, nome in enumerate(experimentos)
+    }
+    ja_rotulados: set[str] = set()
 
     for payload in payloads:
         historico = payload["historico"]
         geracoes = [registro["geracao"] for registro in historico]
         melhores = [registro["melhor_fitness"] for registro in historico]
-        rotulo = f"{payload['experimento']} | semente {payload['semente']}"
-        eixo.plot(geracoes, melhores, linewidth=1.2, label=rotulo)
+
+        experimento = payload["experimento"]
+        # Rotula a primeira execucao de cada experimento; as demais entram sem
+        # rotulo, e o matplotlib as mantem fora da legenda.
+        rotulo = experimento if experimento not in ja_rotulados else None
+        ja_rotulados.add(experimento)
+
+        eixo.plot(
+            geracoes,
+            melhores,
+            linewidth=1.2,
+            alpha=0.85,
+            color=cor_por_experimento[experimento],
+            label=rotulo,
+        )
 
     eixo.set_xlabel("Geração")
     eixo.set_ylabel("Melhor fitness da geração")

@@ -27,7 +27,14 @@ from src import config  # noqa: E402
 from src.data import load_dataset  # noqa: E402
 from src.genetic import engine, experiments  # noqa: E402
 from src.genetic.chromosome import SEGMENTOS  # noqa: E402
+from src.genetic.fitness import CustoClinico, reavaliar_lote  # noqa: E402
 from src.preprocessing import split_data  # noqa: E402
+
+# Deslocamento da semente usada na verificacao de estabilidade. Fixo, e nao
+# sorteado, para que o artefato continue reprodutivel entre execucoes.
+DESLOCAMENTO_DA_ESTABILIDADE = 100
+
+Execucao = tuple[engine.ConfiguracaoAG, str, int, frozenset[str], CustoClinico]
 
 CONFIGURACAO_SMOKE = engine.ConfiguracaoAG(
     nome="smoke",
@@ -40,30 +47,65 @@ CONFIGURACAO_SMOKE = engine.ConfiguracaoAG(
 )
 
 
-def montar_execucoes(
-    smoke: bool,
-) -> list[tuple[engine.ConfiguracaoAG, str, int, frozenset[str]]]:
-    """Lista de (configuracao, familia, semente, segmentos) a executar.
+def montar_execucoes(smoke: bool) -> list[Execucao]:
+    """Execucoes dos experimentos e dos bracos, na politica de custo padrao.
+
+    Os quatro experimentos variam **apenas** parametros do algoritmo genetico; a
+    funcao fitness fica fixa. E isso que torna a comparacao entre eles
+    interpretavel, e por isso o custo e o mesmo em todas estas execucoes.
 
     No modo completo sao os quatro experimentos sobre as tres familias com tres
     sementes, mais os bracos de ablacao sobre a regressao logistica.
     """
+    padrao = CustoClinico()
+
     if smoke:
-        return [(CONFIGURACAO_SMOKE, "Regressão Logística", config.SEED, SEGMENTOS)]
+        return [(CONFIGURACAO_SMOKE, "Regressão Logística", config.SEED, SEGMENTOS, padrao)]
 
     execucoes = [
-        (configuracao, familia, semente, SEGMENTOS)
+        (configuracao, familia, semente, SEGMENTOS, padrao)
         for configuracao in experiments.EXPERIMENTOS
         for familia in experiments.FAMILIAS
         for semente in experiments.SEMENTES
     ]
     execucoes += [
-        (experiments.EXPERIMENTOS[0], experiments.FAMILIA_DOS_BRACOS, semente, segmentos)
+        (
+            experiments.EXPERIMENTOS[0],
+            experiments.FAMILIA_DOS_BRACOS,
+            semente,
+            segmentos,
+            padrao,
+        )
         for nome, segmentos in experiments.BRACOS.items()
         if nome != "AG, completo"
         for semente in experiments.SEMENTES
     ]
     return execucoes
+
+
+def montar_varredura(smoke: bool = False) -> list[Execucao]:
+    """Varredura da secao 4.5.1: E1 na regressao logistica, nove politicas de custo.
+
+    Analise separada, que nao entra na contagem de experimentos do enunciado. A
+    configuracao do algoritmo fica fixa justamente para que a unica coisa que
+    varie seja a politica clinica — a razao de custo e o peso de parcimonia sao
+    decisao da instituicao de saude, e a varredura entrega a curva que torna essa
+    decisao informada.
+    """
+    configuracao = CONFIGURACAO_SMOKE if smoke else experiments.CONFIGURACAO_DA_VARREDURA
+    return [
+        (configuracao, experiments.FAMILIA_DOS_BRACOS, semente, SEGMENTOS, custo)
+        for custo in experiments.VARREDURA_CUSTO
+        for semente in experiments.SEMENTES
+    ]
+
+
+def nome_do_braco(segmentos: frozenset[str]) -> str:
+    """Nome legivel do braco, para a tabela comparativa do relatorio."""
+    for nome, candidato in experiments.BRACOS.items():
+        if candidato == segmentos:
+            return nome
+    return "AG, completo"
 
 
 def main() -> None:
@@ -72,6 +114,11 @@ def main() -> None:
         "--smoke",
         action="store_true",
         help="execucao minima, para verificar o encanamento sem esperar horas",
+    )
+    parser.add_argument(
+        "--sweep",
+        action="store_true",
+        help="roda a varredura de sensibilidade da funcao fitness, nao os experimentos",
     )
     parser.add_argument(
         "--saida",
@@ -86,11 +133,16 @@ def main() -> None:
     X_train, _, y_train, _ = split_data(X, y)
     colunas = list(X_train.columns)
 
-    execucoes = montar_execucoes(argumentos.smoke)
+    if argumentos.sweep:
+        execucoes = montar_varredura(argumentos.smoke)
+    else:
+        execucoes = montar_execucoes(argumentos.smoke)
     print(f"{len(execucoes)} execucoes, {len(y_train)} amostras de treino")
 
     payloads = []
-    for indice, (configuracao, familia, semente, segmentos) in enumerate(execucoes, start=1):
+    for indice, (configuracao, familia, semente, segmentos, custo) in enumerate(
+        execucoes, start=1
+    ):
         rotulo = f"{configuracao.nome} | {familia} | semente {semente} | {sorted(segmentos)}"
         print(f"{indice}/{len(execucoes)}  {rotulo}")
         inicio = time.perf_counter()
@@ -101,10 +153,31 @@ def main() -> None:
             X_train,
             y_train,
             semente=semente,
+            custo=custo,
             segmentos=segmentos,
         )
 
-        payloads.append(engine.para_dicionario(resultado, colunas))
+        payload = engine.para_dicionario(resultado, colunas)
+        payload["braco"] = nome_do_braco(segmentos)
+        payload["custo"] = {
+            "falso_negativo": custo.falso_negativo,
+            "falso_positivo": custo.falso_positivo,
+            "parcimonia": custo.parcimonia,
+        }
+        # Verificacao de estabilidade da secao 4.7: os cinco melhores sao
+        # reavaliados sob outra particao. Queda acentuada denuncia que a busca
+        # aprendeu as dobras, e nao o problema.
+        payload["estabilidade"] = [
+            vars(item)
+            for item in reavaliar_lote(
+                resultado.melhores,
+                X_train,
+                y_train,
+                custo=custo,
+                cv_seed=config.SEED + DESLOCAMENTO_DA_ESTABILIDADE,
+            )
+        ]
+        payloads.append(payload)
 
         # O tempo decorrido vai para o log, nunca para o artefato: cronometro de
         # parede muda a cada execucao e quebraria a garantia de que rodar duas

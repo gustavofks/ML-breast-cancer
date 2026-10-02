@@ -100,6 +100,11 @@ def montar_varredura(smoke: bool = False) -> list[Execucao]:
     ]
 
 
+def _gravar(payloads: list[dict], destino: Path) -> None:
+    """Grava o artefato inteiro, sobrescrevendo o anterior."""
+    destino.write_text(json.dumps(payloads, indent=2, ensure_ascii=False), encoding="utf-8")
+
+
 def nome_do_braco(segmentos: frozenset[str]) -> str:
     """Nome legivel do braco, para a tabela comparativa do relatorio."""
     for nome, candidato in experiments.BRACOS.items():
@@ -138,6 +143,9 @@ def main() -> None:
     else:
         execucoes = montar_execucoes(argumentos.smoke)
     print(f"{len(execucoes)} execucoes, {len(y_train)} amostras de treino")
+
+    destino = argumentos.saida or (config.GENETIC_DIR / "execucoes.json")
+    destino.parent.mkdir(parents=True, exist_ok=True)
 
     payloads = []
     for indice, (configuracao, familia, semente, segmentos, custo) in enumerate(
@@ -178,6 +186,9 @@ def main() -> None:
             )
         ]
         payloads.append(payload)
+        # Regravado a cada execucao concluida. A execucao completa leva horas, e
+        # gravar so no fim transformaria qualquer interrupcao em perda total.
+        _gravar(payloads, destino)
 
         # O tempo decorrido vai para o log, nunca para o artefato: cronometro de
         # parede muda a cada execucao e quebraria a garantia de que rodar duas
@@ -192,9 +203,6 @@ def main() -> None:
             f"limiar {resultado.melhor.limiar:.3f} | {segundos}s"
         )
 
-    destino = argumentos.saida or (config.GENETIC_DIR / "execucoes.json")
-    destino.parent.mkdir(parents=True, exist_ok=True)
-    destino.write_text(json.dumps(payloads, indent=2, ensure_ascii=False), encoding="utf-8")
     print(f"Gravado em {destino}")
 
 

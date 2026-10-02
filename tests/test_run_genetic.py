@@ -121,6 +121,34 @@ def test_payload_registra_a_estabilidade_dos_cinco_melhores(script, tmp_path, mo
         assert "queda" in item
 
 
+def test_progresso_sobrevive_a_falha_no_meio_da_execucao(script, tmp_path, monkeypatch):
+    """A execucao completa leva horas: queda na ultima nao pode perder as outras.
+
+    Gravar so no fim transforma qualquer interrupcao em perda total de uma noite
+    de maquina. O arquivo e regravado a cada execucao concluida.
+    """
+    destino = tmp_path / "parcial.json"
+    evoluir_original = script.engine.evoluir
+    duas_execucoes = script.montar_execucoes(smoke=True) * 2
+    chamadas = {"n": 0}
+
+    def evoluir_com_falha(*args, **kwargs):
+        chamadas["n"] += 1
+        if chamadas["n"] > 1:
+            raise RuntimeError("falha simulada na segunda execucao")
+        return evoluir_original(*args, **kwargs)
+
+    monkeypatch.setattr(script.engine, "evoluir", evoluir_com_falha)
+    monkeypatch.setattr(script, "montar_execucoes", lambda smoke: duas_execucoes)
+    monkeypatch.setattr("sys.argv", ["run_genetic.py", "--smoke", "--saida", str(destino)])
+
+    with pytest.raises(RuntimeError, match="falha simulada"):
+        script.main()
+
+    assert destino.exists()
+    assert len(json.loads(destino.read_text(encoding="utf-8"))) == 1
+
+
 def test_payload_nomeia_o_braco_pelo_conjunto_de_segmentos(script, tmp_path, monkeypatch):
     """A tabela comparativa agrupa por braco; o nome tem que vir do artefato."""
     destino = tmp_path / "exec.json"

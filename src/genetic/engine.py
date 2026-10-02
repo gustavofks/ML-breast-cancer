@@ -40,6 +40,40 @@ class ConfiguracaoAG:
     torneio: int
     elitismo: int = 2
 
+    def __post_init__(self) -> None:
+        """Rejeita configuracao invalida na construcao, nao no meio do laco.
+
+        O caso que motiva a validacao e `elitismo >= populacao`: a elite ocuparia
+        a geracao inteira, nenhum filho seria gerado, e o laco repetiria a mesma
+        populacao sem erro nenhum — um algoritmo genetico que nao evolui e um
+        relatorio afirmando convergencia que nunca houve. Os demais limites estao
+        aqui pelo mesmo motivo: falhar com mensagem clara custa menos que
+        depurar um estouro obscuro trinta geracoes adiante.
+        """
+        if self.populacao < 2:
+            raise ValueError(
+                f"populacao deve ser pelo menos 2 para haver dois pais, "
+                f"recebido {self.populacao}."
+            )
+        if self.geracoes < 1:
+            raise ValueError(f"geracoes deve ser pelo menos 1, recebido {self.geracoes}.")
+        if not 0 <= self.elitismo < self.populacao:
+            raise ValueError(
+                f"elitismo deve ficar entre 0 e populacao - 1 "
+                f"({self.populacao - 1}), recebido {self.elitismo}."
+            )
+        if not 1 <= self.torneio <= self.populacao:
+            raise ValueError(
+                f"torneio deve ficar entre 1 e a populacao ({self.populacao}), "
+                f"recebido {self.torneio}."
+            )
+        for nome_taxa, taxa in (
+            ("taxa_mutacao", self.taxa_mutacao),
+            ("taxa_cruzamento", self.taxa_cruzamento),
+        ):
+            if not 0.0 <= taxa <= 1.0:
+                raise ValueError(f"{nome_taxa} deve ficar em [0, 1], recebido {taxa}.")
+
 
 @dataclass(frozen=True)
 class RegistroGeracao:

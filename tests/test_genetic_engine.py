@@ -126,6 +126,62 @@ def test_segmentos_congelados_permanecem_no_padrao(treino, config_minima):
     assert resultado.melhor.hiperparametros == cromo.PADROES["KNN"]
 
 
+def test_elitismo_nao_pode_ocupar_a_populacao_inteira():
+    """Elitismo maior ou igual a populacao copiaria tudo, e o AG nao evoluiria.
+
+    O defeito seria silencioso: nenhum erro, nenhuma excecao, so um laco que
+    repete a mesma populacao e um relatorio afirmando convergencia que nunca
+    aconteceu. Por isso a configuracao e rejeitada na construcao, antes de
+    qualquer execucao.
+    """
+    with pytest.raises(ValueError, match="elitismo"):
+        engine.ConfiguracaoAG(
+            nome="elite demais",
+            populacao=6,
+            geracoes=3,
+            taxa_mutacao=0.1,
+            taxa_cruzamento=0.8,
+            torneio=2,
+            elitismo=6,
+        )
+
+
+@pytest.mark.parametrize(
+    "campo,valor",
+    [
+        ("geracoes", 0),
+        ("populacao", 1),
+        ("torneio", 0),
+        ("taxa_mutacao", 1.5),
+        ("taxa_cruzamento", -0.1),
+    ],
+)
+def test_configuracao_invalida_falha_na_construcao(campo, valor):
+    """Erro claro na configuracao, em vez de estouro obscuro no meio do laco."""
+    campos = {
+        "nome": "invalida",
+        "populacao": 6,
+        "geracoes": 3,
+        "taxa_mutacao": 0.1,
+        "taxa_cruzamento": 0.8,
+        "torneio": 2,
+        "elitismo": 2,
+    }
+    campos[campo] = valor
+
+    with pytest.raises(ValueError, match=campo):
+        engine.ConfiguracaoAG(**campos)
+
+
+def test_experimentos_do_enunciado_sao_configuracoes_validas():
+    """A validacao roda na importacao: configuracao invalida nao chega a existir."""
+    from src.genetic import experiments
+
+    for configuracao in experiments.EXPERIMENTOS:
+        assert configuracao.elitismo < configuracao.populacao
+        assert configuracao.geracoes >= 1
+
+
 def test_historico_serializa_para_json(treino, config_minima):
     X_train, y_train = treino
 

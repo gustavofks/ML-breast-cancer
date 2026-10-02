@@ -49,6 +49,58 @@ def test_agregacao_separa_experimentos_e_familias(payload_ag):
     assert len(linhas) == 3
 
 
+def test_agregacao_separa_bracos_dentro_do_mesmo_experimento(payload_ag):
+    """Os bracos de ablacao rodam com o nome e a familia de E1.
+
+    Sem separar por braco, as 12 execucoes de E1 na regressao logistica — tres do
+    braco completo e nove das ablacoes — virariam um grupo so, e a tabela
+    reportaria "12 sementes" para uma configuracao que rodou com tres.
+    """
+    payloads = [
+        payload_ag(braco="AG, completo", semente=42),
+        payload_ag(braco="AG, completo", semente=43),
+        payload_ag(braco="AG, só limiar", semente=42, segmentos=("limiar",)),
+    ]
+
+    linhas = artifacts.agregar_por_experimento(payloads)
+
+    assert len(linhas) == 2
+    por_braco = {linha["braco"]: linha for linha in linhas}
+    assert por_braco["AG, completo"]["sementes"] == 2
+    assert por_braco["AG, só limiar"]["sementes"] == 1
+
+
+def test_tabela_de_bracos_compara_so_onde_as_ablacoes_rodaram(payload_ag):
+    """Comparar 3 execucoes de um braco com 36 de outro nao e comparacao.
+
+    As ablacoes rodam apenas em E1 sobre a regressao logistica. O braco completo
+    roda nos quatro experimentos e nas tres familias, e incluir tudo na mesma
+    tabela confrontaria conjuntos de tamanhos e condicoes diferentes.
+    """
+    payloads = [
+        payload_ag(braco="AG, só limiar", experimento="E1 base", segmentos=("limiar",)),
+        payload_ag(braco="AG, completo", experimento="E1 base"),
+        payload_ag(braco="AG, completo", experimento="E2 exploração"),
+        payload_ag(braco="AG, completo", experimento="E1 base", familia="KNN"),
+    ]
+
+    tabela = artifacts.tabela_de_bracos(payloads)
+
+    por_braco = {linha["braco"]: linha for linha in tabela}
+    assert set(por_braco) == {"AG, só limiar", "AG, completo"}
+    assert por_braco["AG, completo"]["sementes"] == 1
+
+
+def test_tabela_de_bracos_sem_ablacao_usa_tudo_que_recebeu(payload_ag):
+    """Sem braco de ablacao nao ha recorte a inferir, e o smoke tem que funcionar."""
+    payloads = [payload_ag(braco="AG, completo"), payload_ag(braco="AG, completo")]
+
+    tabela = artifacts.tabela_de_bracos(payloads)
+
+    assert len(tabela) == 1
+    assert tabela[0]["sementes"] == 2
+
+
 def test_tabela_de_bracos_ordena_pelo_menor_custo_clinico(payload_ag):
     """A pergunta da secao 4.6 e qual braco erra menos, nao qual tem maior fitness."""
     payloads = [

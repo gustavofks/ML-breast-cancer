@@ -39,18 +39,29 @@ def _desvio(valores: list[float]) -> float:
     return float(pstdev(valores)) if len(valores) > 1 else 0.0
 
 
+def _braco(payload: dict[str, Any]) -> str:
+    """Nome do braco, com default para artefatos gravados antes do campo existir."""
+    return payload.get("braco", "AG, completo")
+
+
 def agregar_por_experimento(payloads: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    """Uma linha por (experimento, familia), com media e desvio entre sementes.
+    """Uma linha por (experimento, familia, braco), com media e desvio entre sementes.
 
     Algoritmo genetico e estocastico, e resultado de execucao unica nao e
     resultado. A tabela do relatorio e esta.
+
+    O braco entra na chave porque as ablacoes rodam sob o nome e a familia de E1:
+    sem ele, as doze execucoes de E1 na regressao logistica — tres do braco
+    completo e nove das ablacoes — virariam um grupo so, e a tabela reportaria
+    doze sementes para uma configuracao que rodou com tres.
     """
-    grupos: dict[tuple[str, str], list[dict[str, Any]]] = {}
+    grupos: dict[tuple[str, str, str], list[dict[str, Any]]] = {}
     for payload in payloads:
-        grupos.setdefault((payload["experimento"], payload["familia"]), []).append(payload)
+        chave = (payload["experimento"], payload["familia"], _braco(payload))
+        grupos.setdefault(chave, []).append(payload)
 
     linhas = []
-    for (experimento, familia), execucoes in grupos.items():
+    for (experimento, familia, braco), execucoes in grupos.items():
         fitnesses = [p["avaliacao"]["fitness"] for p in execucoes]
         custos = [custo_clinico(p) for p in execucoes]
         features = [p["avaliacao"]["n_features"] for p in execucoes]
@@ -59,6 +70,7 @@ def agregar_por_experimento(payloads: list[dict[str, Any]]) -> list[dict[str, An
             {
                 "experimento": experimento,
                 "familia": familia,
+                "braco": braco,
                 "sementes": len(execucoes),
                 "fitness_medio": round(mean(fitnesses), 6),
                 "fitness_desvio": round(_desvio(fitnesses), 6),
@@ -69,7 +81,32 @@ def agregar_por_experimento(payloads: list[dict[str, Any]]) -> list[dict[str, An
             }
         )
 
-    return sorted(linhas, key=lambda linha: (linha["experimento"], linha["familia"]))
+    return sorted(
+        linhas, key=lambda linha: (linha["experimento"], linha["familia"], linha["braco"])
+    )
+
+
+def _recorte_das_ablacoes(payloads: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Restringe a comparacao ao (experimento, familia) onde as ablacoes rodaram.
+
+    As ablacoes rodam apenas em E1 sobre a regressao logistica, enquanto o braco
+    completo roda nos quatro experimentos e nas tres familias. Confrontar 3
+    execucoes de um braco com 36 de outro nao e comparacao: o recorte e inferido
+    de onde as ablacoes de fato existem, e nao fixado no codigo, para que mudar o
+    desenho dos bracos nao exija mudar isto aqui.
+    """
+    condicoes = {
+        (payload["experimento"], payload["familia"])
+        for payload in payloads
+        if _braco(payload) != "AG, completo"
+    }
+    if not condicoes:
+        return payloads
+    return [
+        payload
+        for payload in payloads
+        if (payload["experimento"], payload["familia"]) in condicoes
+    ]
 
 
 def tabela_de_bracos(payloads: list[dict[str, Any]]) -> list[dict[str, Any]]:
@@ -80,8 +117,8 @@ def tabela_de_bracos(payloads: list[dict[str, Any]]) -> list[dict[str, Any]]:
     veja o que cada braco cobra do patologista.
     """
     grupos: dict[str, list[dict[str, Any]]] = {}
-    for payload in payloads:
-        grupos.setdefault(payload.get("braco", "AG, completo"), []).append(payload)
+    for payload in _recorte_das_ablacoes(payloads):
+        grupos.setdefault(_braco(payload), []).append(payload)
 
     linhas = []
     for braco, execucoes in grupos.items():

@@ -29,12 +29,14 @@ def payload_ag():
         fp=16,
         n=455,
         features=("texture_worst", "area_worst"),
+        segmentos=("hiperparametros", "limiar", "mascara"),
     ):
         return {
             "experimento": experimento,
             "familia": familia,
             "semente": semente,
             "braco": braco,
+            "segmentos": sorted(segmentos),
             "historico": [
                 {
                     "geracao": 0,

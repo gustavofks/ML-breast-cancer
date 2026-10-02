@@ -120,19 +120,31 @@ def frequencia_de_features(
     matematicamente distinto: se ele reencontra as mesmas features, isso e
     confirmacao independente, e e por isso que a posicao no ranking SHAP viaja
     junto com a contagem.
+
+    **So entram execucoes que de fato otimizaram a mascara.** Nos bracos de
+    ablacao que congelam esse segmento, as 30 medidas aparecem por construcao, e
+    conta-las infla toda frequencia: o grafico ficaria plausivel enquanto mede
+    outra coisa que nao a escolha do algoritmo. O filtro vive aqui, e nao no
+    chamador, porque esquecer de aplica-lo nao gera erro nenhum.
     """
     posicoes = {item["feature"]: posicao for posicao, item in enumerate(shap_global, start=1)}
 
+    com_busca = [
+        payload for payload in payloads if "mascara" in payload.get("segmentos", ["mascara"])
+    ]
+    if not com_busca:
+        return []
+
     contador: Counter = Counter()
-    for payload in payloads:
+    for payload in com_busca:
         contador.update(payload["melhor"]["features"])
 
     return [
         {
             "feature": feature,
             "selecoes": vezes,
-            "execucoes": len(payloads),
-            "frequencia": round(vezes / len(payloads), 4),
+            "execucoes": len(com_busca),
+            "frequencia": round(vezes / len(com_busca), 4),
             "posicao_shap": posicoes.get(feature),
         }
         for feature, vezes in contador.most_common()

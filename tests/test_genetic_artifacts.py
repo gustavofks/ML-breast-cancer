@@ -84,6 +84,41 @@ def test_frequencia_de_features_cruza_com_o_ranking_shap(payload_ag):
     assert primeira["posicao_shap"] == 1
 
 
+def test_frequencia_ignora_execucoes_com_a_mascara_congelada(payload_ag):
+    """Braco que nao otimiza features "seleciona" as 30 por construcao.
+
+    Contar essas execucoes infla toda frequencia e faz o grafico dizer algo
+    diferente do que o rotulo promete: nao e escolha do algoritmo, e o valor
+    fixo do braco. O numero sairia plausivel e errado, sem erro nenhum.
+    """
+    buscadas = [
+        payload_ag(semente=42, features=("texture_worst",)),
+        payload_ag(semente=43, features=("texture_worst",)),
+    ]
+    congeladas = [
+        payload_ag(
+            semente=42,
+            braco="AG, só limiar",
+            segmentos=("limiar",),
+            features=tuple(f"m{i}" for i in range(30)),
+        ),
+    ]
+
+    linhas = artifacts.frequencia_de_features(buscadas + congeladas, shap_global=[])
+
+    assert linhas[0]["feature"] == "texture_worst"
+    assert linhas[0]["execucoes"] == 2
+    assert linhas[0]["frequencia"] == pytest.approx(1.0)
+    assert all(not linha["feature"].startswith("m") for linha in linhas)
+
+
+def test_frequencia_sem_nenhuma_execucao_de_mascara_devolve_tabela_vazia(payload_ag):
+    """Varredura so de limiar nao responde nada sobre selecao de features."""
+    congeladas = [payload_ag(segmentos=("limiar",), features=("texture_worst",))]
+
+    assert artifacts.frequencia_de_features(congeladas, shap_global=[]) == []
+
+
 def test_feature_fora_do_ranking_shap_nao_quebra_a_tabela(payload_ag):
     """Base defensiva: `metrics.json` traz um recorte, nao as 30 medidas."""
     linhas = artifacts.frequencia_de_features(

@@ -92,6 +92,20 @@ def test_varredura_mantem_a_configuracao_do_algoritmo_fixa(script):
     assert familias == {experiments.FAMILIA_DOS_BRACOS}
 
 
+def test_varredura_nao_sobrescreve_o_artefato_dos_experimentos(script):
+    """As duas buscas gravam em arquivos distintos por padrao.
+
+    Com o mesmo destino, rodar a varredura depois dos experimentos apagaria horas
+    de execucao sem erro nenhum: o arquivo continuaria valido, so que com outras
+    execucoes dentro, e o relatorio seria gerado em cima delas.
+    """
+    experimentos = script.destino_padrao(sweep=False)
+    varredura = script.destino_padrao(sweep=True)
+
+    assert experimentos != varredura
+    assert experimentos.parent == varredura.parent == config.GENETIC_DIR
+
+
 def test_payload_registra_a_politica_de_custo_usada(script, tmp_path, monkeypatch):
     """Sem isso, as nove varreduras viram nove numeros sem rotulo."""
     destino = tmp_path / "sweep.json"

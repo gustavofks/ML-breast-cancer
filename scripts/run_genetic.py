@@ -100,6 +100,16 @@ def montar_varredura(smoke: bool = False) -> list[Execucao]:
     ]
 
 
+def destino_padrao(sweep: bool) -> Path:
+    """Arquivo de saida quando `--saida` nao e passado.
+
+    Cada busca tem o seu. Com destino unico, rodar a varredura depois dos
+    experimentos sobrescreveria horas de execucao sem erro: o arquivo continuaria
+    valido, so que com outras execucoes dentro.
+    """
+    return config.GENETIC_DIR / ("varredura.json" if sweep else "execucoes.json")
+
+
 def _gravar(payloads: list[dict], destino: Path) -> None:
     """Grava o artefato inteiro, sobrescrevendo o anterior."""
     destino.write_text(json.dumps(payloads, indent=2, ensure_ascii=False), encoding="utf-8")
@@ -129,7 +139,10 @@ def main() -> None:
         "--saida",
         type=Path,
         default=None,
-        help="arquivo JSON de saida (padrao: results/genetic/execucoes.json)",
+        help=(
+            "arquivo JSON de saida (padrao: results/genetic/execucoes.json, "
+            "ou varredura.json com --sweep)"
+        ),
     )
     argumentos = parser.parse_args()
 
@@ -144,7 +157,7 @@ def main() -> None:
         execucoes = montar_execucoes(argumentos.smoke)
     print(f"{len(execucoes)} execucoes, {len(y_train)} amostras de treino")
 
-    destino = argumentos.saida or (config.GENETIC_DIR / "execucoes.json")
+    destino = argumentos.saida or destino_padrao(argumentos.sweep)
     destino.parent.mkdir(parents=True, exist_ok=True)
 
     payloads = []

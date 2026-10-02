@@ -98,6 +98,25 @@ def test_bracos_de_referencia_declaram_a_propria_procedencia(script):
     assert linha["familia"] == script.FAMILIA_DE_REFERENCIA
 
 
+def test_tabela_declara_o_tamanho_do_conjunto_avaliado(script):
+    """Contagem sem denominador convida a sobreleitura.
+
+    O conjunto de teste tem pouco mais de cem casos. Uma diferenca de um falso
+    negativo entre dois bracos parece resultado quando aparece sozinha numa
+    coluna, e e ruido amostral. O denominador fica na propria linha.
+    """
+    linha = script.avaliar_braco_de_referencia("Original")
+
+    assert linha["n_amostras"] > 0
+    soma = (
+        linha["verdadeiros_negativos"]
+        + linha["falsos_positivos"]
+        + linha["falsos_negativos"]
+        + linha["verdadeiros_positivos"]
+    )
+    assert soma == linha["n_amostras"]
+
+
 def test_execucao_completa_grava_a_tabela_comparativa(script, tmp_path, monkeypatch):
     destino = tmp_path / "comparacao_final.json"
     monkeypatch.setattr(

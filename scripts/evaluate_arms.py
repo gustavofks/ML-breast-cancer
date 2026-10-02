@@ -98,6 +98,10 @@ def _metricas(
         "verdadeiros_negativos": int(tn),
         "verdadeiros_positivos": int(tp),
         "custo_clinico": round(float(custo), 6),
+        # O denominador fica na linha: o conjunto de teste tem pouco mais de cem
+        # casos, e uma diferenca de um falso negativo entre dois bracos parece
+        # resultado quando aparece sozinha numa coluna de contagem.
+        "n_amostras": int(len(y_true)),
         "n_features": int(n_features),
         "limiar": round(float(limiar), 4),
     }

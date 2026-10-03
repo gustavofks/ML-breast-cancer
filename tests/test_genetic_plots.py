@@ -82,3 +82,27 @@ def test_figuras_sao_gravadas_no_diretorio_do_algoritmo_genetico(payload_ag, tmp
 
     assert caminho.exists()
     assert caminho.parent == tmp_path
+
+
+def test_varredura_desenha_uma_curva_por_parcimonia_em_cada_painel(payload_ag):
+    """Eixo x e a razao de custo; cada linha e um alfa. Limiar e medidas, lado a lado."""
+    payloads = []
+    for razao in (5, 10, 20):
+        for alfa in (0.0, 0.15):
+            payload = payload_ag(features=("a",) * (1 + razao // 5))
+            payload["melhor"]["limiar"] = 0.5 - razao / 100
+            payload["custo"] = {
+                "falso_negativo": float(razao),
+                "falso_positivo": 1.0,
+                "parcimonia": alfa,
+            }
+            payloads.append(payload)
+
+    figura = plots.figura_varredura(payloads)
+    eixos = figura.axes
+
+    assert len(eixos) == 2
+    for eixo in eixos:
+        assert len(eixo.get_lines()) == 2
+        for linha in eixo.get_lines():
+            assert list(linha.get_xdata()) == [5.0, 10.0, 20.0]

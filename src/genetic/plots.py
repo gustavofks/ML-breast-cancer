@@ -19,7 +19,7 @@ from typing import Any
 import matplotlib.pyplot as plt
 
 from src import config
-from src.genetic.artifacts import custo_clinico, frequencia_de_features
+from src.genetic.artifacts import custo_clinico, frequencia_de_features, tabela_da_varredura
 from src.plotting import COLOR_BENIGNO, COLOR_MALIGNO, INK_MUTED, apply_style
 
 
@@ -148,4 +148,48 @@ def figura_frequencia(
     eixo.set_title("Frequência de seleção, destacando o topo do ranking SHAP")
     eixo.grid(axis="y", visible=False)
     eixo.spines[["top", "right"]].set_visible(False)
+    return figura
+
+
+def figura_varredura(payloads: list[dict[str, Any]]) -> plt.Figure:
+    """Limiar e numero de medidas contra a razao de custo, uma linha por alfa.
+
+    E a curva da secao 4.5.1. A razao de custo e decisao de politica clinica, e
+    nao parametro tecnico: a figura mostra a instituicao o que cada escolha
+    desloca — quanto o limiar desce e quantas medidas entram quando o falso
+    negativo passa a pesar mais. Custo e fitness ficam de fora pelo mesmo motivo
+    de `tabela_da_varredura`: cada politica os mede na propria moeda.
+    """
+    apply_style()
+    linhas = tabela_da_varredura(payloads)
+
+    figura, (eixo_limiar, eixo_features) = plt.subplots(1, 2, figsize=(9.6, 4.2))
+
+    for parcimonia in sorted({linha["parcimonia"] for linha in linhas}):
+        grupo = [linha for linha in linhas if linha["parcimonia"] == parcimonia]
+        razoes = [linha["razao_custo"] for linha in grupo]
+        rotulo = f"α = {parcimonia:g}"
+        eixo_limiar.plot(
+            razoes, [linha["limiar_medio"] for linha in grupo], marker="o", label=rotulo
+        )
+        eixo_features.plot(
+            razoes, [linha["features_medio"] for linha in grupo], marker="o", label=rotulo
+        )
+
+    # As razoes dobram a cada passo (5, 10, 20): em escala log ficam
+    # equidistantes, e as marcas ficam so onde ha medida.
+    razoes_medidas = sorted({linha["razao_custo"] for linha in linhas})
+    for eixo in (eixo_limiar, eixo_features):
+        eixo.set_xscale("log")
+        eixo.set_xticks(razoes_medidas, [f"{razao:g}" for razao in razoes_medidas])
+        eixo.minorticks_off()
+        eixo.set_xlabel("Razão de custo (falso negativo / falso positivo)")
+        eixo.spines[["top", "right"]].set_visible(False)
+    eixo_limiar.set_ylabel("Limiar médio encontrado")
+    eixo_limiar.set_title("Limiar de decisão")
+    eixo_features.set_ylabel("Número médio de medidas")
+    eixo_features.set_title("Medidas selecionadas")
+    eixo_features.legend(fontsize=8, loc="best")
+    figura.suptitle("Sensibilidade à política de custo clínico")
+    figura.tight_layout()
     return figura

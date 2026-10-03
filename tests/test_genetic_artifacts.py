@@ -186,3 +186,63 @@ def test_summary_reune_as_tres_tabelas(payload_ag):
 
     assert set(resumo) == {"experimentos", "bracos", "features", "execucoes"}
     assert resumo["execucoes"] == 1
+
+
+def _da_varredura(payload_ag, *, razao, alfa, semente=42, limiar=0.25, features=("a",), fn=2):
+    """Payload de varredura: o da fabrica com a politica de custo registrada."""
+    payload = payload_ag(semente=semente, features=features, fn=fn)
+    payload["melhor"]["limiar"] = limiar
+    payload["custo"] = {
+        "falso_negativo": float(razao),
+        "falso_positivo": 1.0,
+        "parcimonia": alfa,
+    }
+    return payload
+
+
+def test_varredura_agrega_uma_linha_por_politica_de_custo(payload_ag):
+    """Sementes da mesma politica viram uma linha; politicas diferentes, nao."""
+    payloads = [
+        _da_varredura(payload_ag, razao=5, alfa=0.0, semente=s, limiar=limiar)
+        for s, limiar in ((42, 0.30), (43, 0.40))
+    ] + [_da_varredura(payload_ag, razao=20, alfa=0.0)]
+
+    linhas = artifacts.tabela_da_varredura(payloads)
+
+    assert [(l["razao_custo"], l["parcimonia"], l["sementes"]) for l in linhas] == [
+        (5.0, 0.0, 2),
+        (20.0, 0.0, 1),
+    ]
+    assert linhas[0]["limiar_medio"] == pytest.approx(0.35)
+
+
+def test_varredura_ordena_pela_razao_dentro_de_cada_parcimonia(payload_ag):
+    """A leitura da tabela e a curva: como a solucao se desloca quando a razao sobe."""
+    payloads = [
+        _da_varredura(payload_ag, razao=razao, alfa=alfa)
+        for razao in (20, 5, 10)
+        for alfa in (0.15, 0.0)
+    ]
+
+    chaves = [(l["parcimonia"], l["razao_custo"]) for l in artifacts.tabela_da_varredura(payloads)]
+
+    assert chaves == sorted(chaves)
+
+
+def test_varredura_nao_compara_custo_entre_politicas(payload_ag):
+    """Cada politica mede o erro na propria moeda.
+
+    Custo de 0,05 sob razao 5 e custo de 0,05 sob razao 20 nao sao o mesmo erro,
+    e uma coluna de custo ou fitness convidaria a ordenar politicas por um numero
+    que nao as compara. A tabela traz o que e comparavel: limiar, medidas, erros.
+    """
+    linha = artifacts.tabela_da_varredura([_da_varredura(payload_ag, razao=5, alfa=0.0)])[0]
+
+    assert not any("custo_medio" in chave or "fitness" in chave for chave in linha)
+    assert {"limiar_medio", "features_medio", "falsos_negativos_medio"} <= set(linha)
+
+
+def test_varredura_sem_politica_registrada_falha_em_vez_de_assumir_uma(payload_ag):
+    """Um default de 10:1 juntaria todas as execucoes numa politica so, sem erro."""
+    with pytest.raises(KeyError):
+        artifacts.tabela_da_varredura([payload_ag()])

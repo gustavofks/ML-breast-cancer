@@ -188,6 +188,52 @@ def frequencia_de_features(
     ]
 
 
+def tabela_da_varredura(payloads: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Uma linha por politica de custo, ordenada por parcimonia e depois por razao.
+
+    E a tabela da secao 4.5.1: como a solucao se desloca quando a instituicao
+    muda o peso do falso negativo ou da parcimonia.
+
+    **Nao ha coluna de custo nem de fitness.** Cada politica mede o erro na
+    propria moeda — custo 0,05 sob razao 5 e custo 0,05 sob razao 20 nao sao o
+    mesmo erro —, e uma coluna assim convidaria a ordenar politicas por um numero
+    que nao as compara. Ficam as grandezas comparaveis: limiar, medidas, erros.
+
+    A politica e lida de `payload["custo"]` sem default. Assumir 10:1 quando o
+    campo falta juntaria todas as execucoes numa politica so, sem erro nenhum.
+    """
+    grupos: dict[tuple[float, float], list[dict[str, Any]]] = {}
+    for payload in payloads:
+        politica = payload["custo"]
+        razao = politica["falso_negativo"] / politica["falso_positivo"]
+        grupos.setdefault((float(politica["parcimonia"]), float(razao)), []).append(payload)
+
+    linhas = []
+    for (parcimonia, razao), execucoes in sorted(grupos.items()):
+        limiares = [p["melhor"]["limiar"] for p in execucoes]
+        features = [p["avaliacao"]["n_features"] for p in execucoes]
+        linhas.append(
+            {
+                "razao_custo": razao,
+                "parcimonia": parcimonia,
+                "sementes": len(execucoes),
+                "limiar_medio": round(mean(limiares), 4),
+                "limiar_desvio": round(_desvio(limiares), 4),
+                "features_medio": round(mean(features), 2),
+                "features_desvio": round(_desvio(features), 2),
+                "recall_medio": round(mean(p["avaliacao"]["recall"] for p in execucoes), 6),
+                "falsos_negativos_medio": round(
+                    mean(p["avaliacao"]["falsos_negativos"] for p in execucoes), 2
+                ),
+                "falsos_positivos_medio": round(
+                    mean(p["avaliacao"]["falsos_positivos"] for p in execucoes), 2
+                ),
+            }
+        )
+
+    return linhas
+
+
 def montar_summary(
     payloads: list[dict[str, Any]],
     shap_global: list[dict[str, Any]],

@@ -50,7 +50,7 @@ def test_gera_o_resumo_e_as_tres_figuras(script, entradas, tmp_path):
 
     resumo = script.construir(execucoes, metricas, destino)
 
-    assert set(resumo) == {"execucoes", "experimentos", "bracos", "features"}
+    assert set(resumo) == {"execucoes", "experimentos", "bracos", "features", "varredura"}
     assert (destino / "summary.json").exists()
     for nome in script.FIGURAS.values():
         assert (destino / nome).exists()
@@ -90,3 +90,65 @@ def test_geracao_e_idempotente(script, entradas, tmp_path):
     script.construir(execucoes, metricas, destino)
 
     assert (destino / "summary.json").read_bytes() == primeiro
+
+
+def _varredura_em_disco(tmp_path, payload_ag):
+    """Um `varredura.json` minimo, com duas politicas de custo."""
+    payloads = []
+    for razao in (5, 20):
+        payload = payload_ag()
+        payload["custo"] = {
+            "falso_negativo": float(razao),
+            "falso_positivo": 1.0,
+            "parcimonia": 0.0,
+        }
+        payloads.append(payload)
+
+    caminho = tmp_path / "varredura.json"
+    caminho.write_text(json.dumps(payloads, ensure_ascii=False), encoding="utf-8")
+    return caminho
+
+
+def test_varredura_entra_no_resumo_e_ganha_figura_propria(
+    script, entradas, tmp_path, payload_ag
+):
+    """Secao 4.5.1: a curva que torna a escolha da razao de custo informada."""
+    execucoes, metricas = entradas
+    destino = tmp_path / "saida"
+
+    resumo = script.construir(
+        execucoes, metricas, destino, varredura=_varredura_em_disco(tmp_path, payload_ag)
+    )
+
+    assert [linha["razao_custo"] for linha in resumo["varredura"]] == [5.0, 20.0]
+    assert (destino / script.FIGURA_VARREDURA).exists()
+
+
+def test_sem_varredura_o_resumo_declara_a_ausencia(script, entradas, tmp_path):
+    """A varredura roda separada; sem ela, o resumo diz que nao ha, e nao some.
+
+    Lista vazia explicita, e nenhuma figura: uma figura em branco seria lida
+    como resultado.
+    """
+    execucoes, metricas = entradas
+    destino = tmp_path / "saida"
+
+    resumo = script.construir(
+        execucoes, metricas, destino, varredura=tmp_path / "nao_existe.json"
+    )
+
+    assert resumo["varredura"] == []
+    assert not (destino / script.FIGURA_VARREDURA).exists()
+
+
+def test_varredura_nao_se_mistura_aos_experimentos(script, entradas, tmp_path, payload_ag):
+    """As execucoes da varredura nao entram na contagem nem na tabela de bracos."""
+    execucoes, metricas = entradas
+
+    sem = script.construir(execucoes, metricas, tmp_path / "a")
+    com = script.construir(
+        execucoes, metricas, tmp_path / "b", varredura=_varredura_em_disco(tmp_path, payload_ag)
+    )
+
+    assert com["execucoes"] == sem["execucoes"]
+    assert com["bracos"] == sem["bracos"]

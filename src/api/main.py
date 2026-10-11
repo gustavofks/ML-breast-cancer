@@ -14,12 +14,20 @@ from __future__ import annotations
 import os
 from pathlib import Path
 
+import pandas as pd
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 
 from src import config
-from src.api import monitoring, registro
+from src.api import explicacao, monitoring, registro
 from src.api import servico as dominio
+from src.llm import narrator, prompts
+from src.llm.provider import CacheVazioError, CachedProvider
+
+# Template das explicacoes por paciente. E o mesmo que `scripts/run_llm.py` usa
+# no lote: a chave do cache inclui o prompt, entao outro template nunca acharia
+# o texto gravado.
+TEMPLATE_DO_PACIENTE = "explicacao_paciente_v2"
 
 
 class Medidas(BaseModel):
@@ -80,5 +88,53 @@ def criar_app(
             "classe": previsao.classe,
             "alertas": [vars(alerta) for alerta in alertas],
         }
+
+    @app.post("/explain")
+    def explain(corpo: Medidas):
+        previsao, alertas = prever(corpo.medidas)
+        pares = explicacao.contribuicoes(modelo, pd.DataFrame([corpo.medidas]))
+        texto, motivo = texto_do_cache(previsao, pares)
+        return {
+            "probabilidade": previsao.probabilidade,
+            "limiar": previsao.limiar,
+            "classe": previsao.classe,
+            "alertas": [vars(alerta) for alerta in alertas],
+            "contribuicoes": [
+                {"feature": nome, "contribuicao": valor}
+                for nome, valor in sorted(pares, key=lambda par: abs(par[1]), reverse=True)
+            ],
+            "texto": texto,
+            "texto_motivo": motivo,
+        }
+
+    def texto_do_cache(previsao, pares) -> tuple[str | None, str | None]:
+        """Texto gerado offline para este caso, se existir e se passou nas verificacoes.
+
+        O cache e consultado pela mesma chave que `run_llm.py` gravou: mesmo
+        contexto, mesmo template, mesmo modelo de linguagem. Sem provedor por
+        tras, nada e gerado aqui — a geracao ao vivo esta fora do escopo, porque a
+        camada gratuita da nuvem nao comporta modelo de linguagem.
+
+        Texto reprovado nao e devolvido. Uma frase que falhou a verificacao de
+        seguranca nao chega a tela de um medico; o motivo diz qual falhou.
+        """
+        contexto = narrator.contexto_do_paciente(
+            probabilidade=previsao.probabilidade, limiar=previsao.limiar, contribuicoes=pares
+        )
+        try:
+            narrativa = narrator.narrar(
+                prompts.TEMPLATES[TEMPLATE_DO_PACIENTE],
+                contexto,
+                CachedProvider(None, app.state.diretorio_cache),
+            )
+        except CacheVazioError:
+            return None, "texto gerado apenas para os casos processados por scripts/run_llm.py"
+
+        if not narrativa.qualidade.aprovado:
+            reprovadas = [
+                nome for nome, v in narrativa.qualidade.verificacoes.items() if not v.aprovado
+            ]
+            return None, f"texto reprovado nas verificações: {', '.join(reprovadas)}"
+        return narrativa.texto, None
 
     return app

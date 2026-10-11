@@ -81,3 +81,86 @@ def test_predict_com_medida_fora_da_distribuicao_alerta_e_ainda_responde(cliente
 
     assert [a["feature"] for a in corpo["alertas"]] == ["area_worst"]
     assert "probabilidade" in corpo
+
+
+# ---------------------------------------------------------------------------
+# /explain
+# ---------------------------------------------------------------------------
+import pandas as pd  # noqa: E402
+
+from src.api import explicacao  # noqa: E402
+from src.llm import narrator, prompts  # noqa: E402
+from src.llm.provider import CachedProvider, FakeProvider  # noqa: E402
+
+TEXTO_APROVAVEL = """## Leitura do caso
+Texto de teste.
+
+## Medidas que mais pesaram
+Pesaram {citacao}.
+
+## Ressalva
+Esta leitura é apoio à decisão e não substitui a avaliação do médico responsável.
+"""
+
+
+def _semear_cache(modelo, caso, diretorio, texto):
+    """Grava no cache o que `run_llm.py` gravaria para este caso."""
+    pares = explicacao.contribuicoes(modelo, pd.DataFrame([caso]))
+    previsao = modelo.prever(caso)
+    contexto = narrator.contexto_do_paciente(
+        probabilidade=previsao.probabilidade, limiar=previsao.limiar, contribuicoes=pares
+    )
+    citacao = ", ".join(c["feature"] for c in contexto["maiores_contribuicoes"])
+    narrator.narrar(
+        prompts.TEMPLATES["explicacao_paciente_v2"],
+        contexto,
+        CachedProvider(FakeProvider([texto.format(citacao=citacao)]), diretorio),
+    )
+
+
+def test_explain_traz_contribuicoes_ordenadas_por_peso(cliente, caso):
+    corpo = cliente.post("/explain", json={"medidas": caso}).json()
+
+    pesos = [abs(c["contribuicao"]) for c in corpo["contribuicoes"]]
+    assert pesos == sorted(pesos, reverse=True)
+    assert len(corpo["contribuicoes"]) == 30
+    assert {"probabilidade", "limiar", "classe", "alertas"} <= set(corpo)
+
+
+def test_explain_sem_texto_no_cache_diz_por_que(cliente, caso):
+    """Geracao e offline; caso que run_llm.py nao processou nao tem texto."""
+    corpo = cliente.post("/explain", json={"medidas": caso}).json()
+
+    assert corpo["texto"] is None
+    assert "run_llm.py" in corpo["texto_motivo"]
+
+
+def test_explain_devolve_o_texto_gerado_offline(modelo, caso, tmp_path):
+    """O cache gravado offline e encontrado pela mesma chave, online."""
+    cache = tmp_path / "cache"
+    _semear_cache(modelo, caso, cache, TEXTO_APROVAVEL)
+    cliente = TestClient(main.criar_app(modelo, diretorio_cache=cache))
+
+    corpo = cliente.post("/explain", json={"medidas": caso}).json()
+
+    assert corpo["texto"] is not None
+    assert "não substitui" in corpo["texto"]
+    assert corpo["texto_motivo"] is None
+
+
+def test_texto_reprovado_nas_verificacoes_nao_chega_a_tela(modelo, caso, tmp_path):
+    """Texto que falhou a verificacao de seguranca nao e mostrado a um medico."""
+    cache = tmp_path / "cache"
+    _semear_cache(modelo, caso, cache, "O diagnóstico é câncer confirmado.")
+    cliente = TestClient(main.criar_app(modelo, diretorio_cache=cache))
+
+    corpo = cliente.post("/explain", json={"medidas": caso}).json()
+
+    assert corpo["texto"] is None
+    assert "seguranca" in corpo["texto_motivo"]
+
+
+def test_explain_com_medida_faltante_responde_422(cliente, caso):
+    incompleto = {k: v for k, v in caso.items() if k != "area_worst"}
+
+    assert cliente.post("/explain", json={"medidas": incompleto}).status_code == 422

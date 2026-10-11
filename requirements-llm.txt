@@ -1,0 +1,7 @@
+# Dependencia da geracao dos textos com o Claude (scripts/run_llm.py).
+# So a maquina de desenvolvimento precisa dela: o container publicado le o cache
+# versionado e nao fala com a API.
+#     pip install -r requirements-llm.txt
+
+# SDK oficial da Anthropic. A versao 1.x usa o httpx2 como cliente HTTP.
+anthropic==1.13.0

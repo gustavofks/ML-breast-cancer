@@ -109,6 +109,25 @@ CMD ["uvicorn", "src.api.main:criar_app", "--factory", "--host", "0.0.0.0", "--p
 
 
 # ---------------------------------------------------------------------------
+# Estagio de geracao dos textos com o Claude. Roda uma vez, na maquina de
+# desenvolvimento, e grava o cache que o estagio `api` serve. A chave entra pelo
+# ambiente, nunca pela imagem:
+#
+#   docker build --target llm -t ml-breast-cancer:llm .
+#   docker run --rm -e ANTHROPIC_API_KEY -v "$(pwd)/results:/app/results" \
+#              ml-breast-cancer:llm python scripts/run_llm.py --casos todos --estimar
+# ---------------------------------------------------------------------------
+FROM api AS llm
+
+USER root
+COPY requirements-llm.txt ./
+RUN pip install --no-cache-dir -r requirements-llm.txt
+USER analise
+
+CMD ["python", "scripts/run_llm.py", "--casos", "todos", "--estimar"]
+
+
+# ---------------------------------------------------------------------------
 # Alvo padrao. Precisa ser o ultimo estagio do arquivo: sem `--target`, o
 # Docker constroi o estagio final — e sem esta linha o padrao seria `vision`,
 # com o TensorFlow inteiro a reboque.

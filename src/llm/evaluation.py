@@ -20,10 +20,16 @@ from typing import Any
 
 from src import config
 
-# Numero decimal com virgula ou ponto, exigindo que a borda esquerda nao seja
-# letra, digito ou underline. Sem essa borda, `fractal_dimension_se2` doaria um
-# "2" ao verificador e reprovaria um texto correto.
-_NUMERO = re.compile(r"(?<![\w.,])(\d+(?:[.,]\d+)?)(?![\w])")
+# Numero decimal com virgula ou ponto, com sinal opcional colado, exigindo que a
+# borda esquerda nao seja letra, digito ou underline. Sem essa borda,
+# `fractal_dimension_se2` doaria um "2" ao verificador e reprovaria um texto
+# correto; e em "3-5" o hifen fica sem borda valida e nao vira sinal.
+#
+# O sinal importa porque metade das contribuicoes SHAP e negativa. Sem ele, o
+# primeiro lote real reprovou um texto correto: "-10.9194" era lido como
+# 10.9194, ausente dos valores permitidos. Aceita o hifen e o sinal de menos
+# tipografico (U+2212), que o modelo as vezes escreve.
+_NUMERO = re.compile(r"(?<![\w.,])([-+−]?)(\d+(?:[.,]\d+)?)(?![\w])")
 
 # Tolerancia da comparacao: 0,9100 e 0,91 sao o mesmo numero, e reprovar essa
 # diferenca seria falso positivo a cada arredondamento.
@@ -91,28 +97,42 @@ def _normalizar(texto: str) -> str:
     return "".join(c for c in sem_acento if not unicodedata.combining(c))
 
 
-def extrair_numeros(texto: str) -> list[tuple[str, float]]:
-    """Todo numero do texto, como (grafia original, valor)."""
+def extrair_numeros(texto: str) -> list[tuple[str, float, bool]]:
+    """Todo numero do texto, como (grafia original, valor, se tinha sinal escrito)."""
     encontrados = []
-    for bruto in _NUMERO.findall(texto):
+    for sinal, bruto in _NUMERO.findall(texto):
         try:
-            encontrados.append((bruto, float(bruto.replace(",", "."))))
+            magnitude = float(bruto.replace(",", "."))
         except ValueError:  # pragma: no cover - a regex ja garante o formato
             continue
+        valor = -magnitude if sinal in ("-", "−") else magnitude
+        encontrados.append((sinal + bruto, valor, bool(sinal)))
     return encontrados
+
+
+def _confere(valor: float, com_sinal: bool, permitidos: list[float]) -> bool:
+    """Numero com sinal escrito confere com sinal; sem sinal, confere a magnitude.
+
+    "Negativa de 10,9194" e fiel a -10.9194: o sinal foi dito por extenso. Ja
+    "+10.9194" para um valor negativo e sinal trocado, e reprova.
+    """
+    if com_sinal:
+        return any(abs(valor - p) <= _TOLERANCIA for p in permitidos)
+    return any(abs(valor - abs(p)) <= _TOLERANCIA for p in permitidos)
 
 
 def verificar_fidelidade(texto: str, *, valores: list[float]) -> Verificacao:
     """Todo numero do texto tem que estar entre os valores fornecidos.
 
     Detecta alucinacao de estatistica: o modelo citando uma probabilidade, um
-    recall ou uma contagem que ninguem lhe deu.
+    recall ou uma contagem que ninguem lhe deu, ou trocando o sinal de uma
+    contribuicao.
     """
     permitidos = [float(v) for v in valores]
     inventados = [
         grafia
-        for grafia, valor in extrair_numeros(texto)
-        if not any(abs(valor - p) <= _TOLERANCIA for p in permitidos)
+        for grafia, valor, com_sinal in extrair_numeros(texto)
+        if not _confere(valor, com_sinal, permitidos)
     ]
 
     return Verificacao(

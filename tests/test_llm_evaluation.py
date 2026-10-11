@@ -200,3 +200,43 @@ def test_texto_vazio_reprova_em_vez_de_passar_por_omissao(vazio):
     relatorio = aval.avaliar(vazio, valores=[0.91], features=FEATURES, secoes=SECOES)
 
     assert not relatorio.aprovado
+
+
+# ---------------------------------------------------------------------------
+# Sinal: contribuicoes negativas sao metade da evidencia
+# ---------------------------------------------------------------------------
+def test_fidelidade_aceita_valor_negativo_citado_com_o_sinal():
+    """Falso alarme achado no primeiro lote real: o extrator ignorava o sinal.
+
+    "-10.9194" virava 10.9194, que nao estava entre os valores permitidos
+    (-10.9194), e um texto correto reprovava. Metade das contribuicoes SHAP e
+    negativa: o defeito reprovaria quase todo texto de paciente.
+    """
+    for grafia in ("-10.9194", "−10,9194", "(-10.9194)"):
+        resultado = aval.verificar_fidelidade(
+            f"A contribuição foi {grafia}.", valores=[-10.9194]
+        )
+        assert resultado.aprovado, grafia
+
+
+def test_fidelidade_aceita_magnitude_com_o_sinal_dito_por_extenso():
+    """ "Negativa de 10,9194" e fiel: o sinal esta na palavra, nao no numero."""
+    resultado = aval.verificar_fidelidade(
+        "Contribuição negativa de 10,9194.", valores=[-10.9194]
+    )
+
+    assert resultado.aprovado
+
+
+def test_fidelidade_pega_sinal_explicito_trocado():
+    """Sinal escrito e errado inverte o sentido da medida: e alucinacao."""
+    for texto, valores in (("Contribuiu +10.9194.", [-10.9194]), ("Valor -0,91.", [0.91])):
+        resultado = aval.verificar_fidelidade(texto, valores=valores)
+        assert not resultado.aprovado, texto
+
+
+def test_hifen_entre_numeros_nao_vira_sinal():
+    """ "entre 3-5" sao dois numeros positivos, nao 3 e menos 5."""
+    resultado = aval.verificar_fidelidade("Algo entre 3-5 casos.", valores=[3, 5])
+
+    assert resultado.aprovado

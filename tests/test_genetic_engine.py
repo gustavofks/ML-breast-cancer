@@ -193,3 +193,51 @@ def test_historico_serializa_para_json(treino, config_minima):
     assert len(payload["historico"]) == config_minima.geracoes
     assert payload["melhor"]["familia"] == "KNN"
     assert "fitness" in payload["avaliacao"]
+
+
+# ---------------------------------------------------------------------------
+# Avaliacao da populacao em paralelo
+# ---------------------------------------------------------------------------
+from src.genetic.chromosome import PADROES  # noqa: E402
+
+
+@pytest.mark.parametrize("familia", ["Regressão Logística", "Random Forest"])
+def test_avaliacao_paralela_da_o_mesmo_resultado_que_a_sequencial(treino, familia):
+    """Paralelizar so pode mudar o tempo, nunca um byte do artefato.
+
+    A avaliacao de um individuo depende so dele e da semente da validacao
+    cruzada, nunca do gerador aleatorio da busca, entao a ordem de sorteio fica
+    intacta. A memoria e preenchida na ordem de primeira aparicao, como na versao
+    sequencial: o ranking dos cinco melhores desempata por essa ordem.
+    """
+    X_train, y_train = treino
+    configuracao = engine.ConfiguracaoAG(
+        nome="paralelo",
+        populacao=8,
+        geracoes=3,
+        taxa_mutacao=0.3,
+        taxa_cruzamento=0.8,
+        torneio=2,
+        elitismo=1,
+    )
+    colunas = list(X_train.columns)
+
+    sequencial = engine.evoluir(configuracao, familia, X_train, y_train, semente=7, n_jobs=1)
+    paralelo = engine.evoluir(configuracao, familia, X_train, y_train, semente=7, n_jobs=2)
+
+    assert engine.para_dicionario(paralelo, colunas) == engine.para_dicionario(
+        sequencial, colunas
+    )
+
+
+def test_floresta_nao_paraleliza_por_dentro():
+    """O paralelismo fica na populacao, nao dentro de cada floresta.
+
+    Com 455 amostras, distribuir as arvores entre threads custa mais do que
+    treina-las: medido, 1,65 s por avaliacao com n_jobs=-1 contra 1,18 s com 1, e
+    fitness identico. Somado ao paralelismo da populacao, multiplicaria os
+    processos pelos nucleos.
+    """
+    floresta = cromo.CONSTRUTORES["Random Forest"](dict(PADROES["Random Forest"]))
+
+    assert floresta.n_jobs == 1

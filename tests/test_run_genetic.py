@@ -306,3 +306,22 @@ def test_sem_retomar_recusa_sobrescrever_artefato_existente(script, tmp_path, mo
         _rodar(script, monkeypatch, execucoes, destino)
 
     assert destino.read_bytes() == antes
+
+
+def test_buscas_avaliam_a_populacao_com_o_paralelismo_configurado(script, tmp_path, monkeypatch):
+    """A execucao completa leva horas em um nucleo; o config decide quantos usar."""
+    recebidos = []
+    original = script.engine.evoluir
+
+    def evoluir_espiao(*args, **kwargs):
+        recebidos.append(kwargs.get("n_jobs"))
+        return original(*args, **kwargs)
+
+    monkeypatch.setattr(script.engine, "evoluir", evoluir_espiao)
+    monkeypatch.setattr(
+        "sys.argv", ["run_genetic.py", "--smoke", "--saida", str(tmp_path / "e.json")]
+    )
+
+    script.main()
+
+    assert recebidos == [config.GENETIC_N_JOBS]

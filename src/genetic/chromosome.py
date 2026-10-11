@@ -127,8 +127,12 @@ CONSTRUTORES: dict[str, Callable[[dict[str, Any]], BaseEstimator]] = {
         max_iter=5000, random_state=config.SEED, **p
     ),
     "KNN": lambda p: KNeighborsClassifier(**p),
+    # n_jobs=1: o paralelismo fica na populacao (`engine.evoluir`), nao dentro de
+    # cada floresta. Com 455 amostras, distribuir arvores entre threads custa
+    # mais que treina-las (1,65 s contra 1,18 s por avaliacao, medido), e o
+    # resultado e identico: com `random_state` fixo, n_jobs nao muda a floresta.
     "Random Forest": lambda p: RandomForestClassifier(
-        random_state=config.SEED, n_jobs=-1, **p
+        random_state=config.SEED, n_jobs=1, **p
     ),
 }
 

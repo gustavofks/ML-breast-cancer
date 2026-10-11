@@ -268,6 +268,7 @@ def main() -> None:
             semente=semente,
             custo=custo,
             segmentos=segmentos,
+            n_jobs=config.GENETIC_N_JOBS,
         )
 
         payload = engine.para_dicionario(resultado, colunas)

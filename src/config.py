@@ -89,6 +89,11 @@ LIMIAR_MAX = 0.95
 # configuracao roda com estas tres sementes, e o relatorio traz media e desvio.
 GENETIC_SEEDS = (42, 43, 44)
 
+# Processos que avaliam a populacao em paralelo; -1 usa todos os nucleos. Nao
+# muda o resultado, so o tempo: a avaliacao de um individuo nao depende do
+# gerador aleatorio da busca.
+GENETIC_N_JOBS = -1
+
 
 # ---------------------------------------------------------------------------
 # Fase 2: camada de modelo de linguagem

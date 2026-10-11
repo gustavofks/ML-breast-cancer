@@ -16,6 +16,7 @@ from typing import Any
 
 import numpy as np
 import pandas as pd
+from joblib import Parallel, delayed
 
 from src import config
 from src.genetic import operators as ops
@@ -123,24 +124,49 @@ def evoluir(
     custo: CustoClinico | None = None,
     segmentos: frozenset[str] = SEGMENTOS,
     cv_seed: int = config.SEED,
+    n_jobs: int = 1,
 ) -> Resultado:
     """Executa uma busca completa e devolve o historico e os cinco melhores.
 
     Os cinco melhores existem para a verificacao de estabilidade da secao 4.7 do
     design: eles sao reavaliados depois com outra semente de validacao cruzada, e
     queda acentuada denuncia sobreajuste as particoes.
+
+    `n_jobs` avalia os individuos novos de cada geracao em paralelo, um por
+    processo. O resultado e identico ao sequencial: a avaliacao depende so do
+    individuo e da semente da validacao cruzada, nunca do gerador da busca, e a
+    memoria e preenchida na mesma ordem de primeira aparicao.
     """
     custo = custo or CustoClinico()
     rng = np.random.default_rng(semente)
     memoria: dict[tuple, Avaliacao] = {}
     individuos_vistos: dict[tuple, Individuo] = {}
 
-    def pontuar(individuo: Individuo) -> Avaliacao:
-        identidade = chave(individuo)
-        if identidade not in memoria:
-            memoria[identidade] = avaliar(individuo, X, y, custo=custo, cv_seed=cv_seed)
+    def pontuar_populacao(populacao: list[Individuo]) -> list[Avaliacao]:
+        # Individuos ainda nao avaliados, na ordem de primeira aparicao e sem
+        # repeticao. A ordem importa: o ranking dos cinco melhores desempata por
+        # ela, e a versao paralela tem de inserir na memoria como a sequencial.
+        novos: dict[tuple, Individuo] = {}
+        for individuo in populacao:
+            identidade = chave(individuo)
+            if identidade not in memoria and identidade not in novos:
+                novos[identidade] = individuo
+
+        if n_jobs == 1:
+            avaliacoes = [
+                avaliar(individuo, X, y, custo=custo, cv_seed=cv_seed)
+                for individuo in novos.values()
+            ]
+        else:
+            avaliacoes = Parallel(n_jobs=n_jobs)(
+                delayed(avaliar)(individuo, X, y, custo=custo, cv_seed=cv_seed)
+                for individuo in novos.values()
+            )
+
+        for (identidade, individuo), avaliacao in zip(novos.items(), avaliacoes, strict=True):
+            memoria[identidade] = avaliacao
             individuos_vistos[identidade] = individuo
-        return memoria[identidade]
+        return [memoria[chave(individuo)] for individuo in populacao]
 
     populacao = [
         sortear(familia, rng, segmentos=segmentos) for _ in range(configuracao.populacao)
@@ -149,7 +175,7 @@ def evoluir(
     melhor_global: tuple[Individuo, Avaliacao] | None = None
 
     for geracao in range(configuracao.geracoes):
-        avaliacoes = [pontuar(individuo) for individuo in populacao]
+        avaliacoes = pontuar_populacao(populacao)
         fitnesses = [avaliacao.fitness for avaliacao in avaliacoes]
 
         indice_melhor = int(np.argmax(fitnesses))

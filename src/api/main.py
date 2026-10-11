@@ -63,9 +63,15 @@ def criar_app(
         segundos = time.perf_counter() - inicio
 
         # Rotulo pelo molde da rota, nunca pelo caminho bruto: uma varredura de
-        # URLs criaria um rotulo por tentativa e explodiria a cardinalidade.
+        # URLs criaria um rotulo por tentativa e explodiria a cardinalidade. Uma
+        # aplicacao montada (o painel) sobrescreve a rota do escopo com a dela;
+        # o prefixo da montagem, em `root_path`, evita que suas paginas sejam
+        # contadas como a raiz.
         rota = request.scope.get("route")
-        nome = rota.path if rota is not None else "nao_encontrada"
+        if rota is None:
+            nome = "nao_encontrada"
+        else:
+            nome = request.scope.get("root_path", "") + rota.path
 
         monitor.registrar(nome, resposta.status_code, segundos)
         registro.requisicao(

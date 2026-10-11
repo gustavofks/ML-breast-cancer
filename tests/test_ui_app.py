@@ -134,3 +134,77 @@ def test_analisar_muitos_casos_nao_acumula_figuras_abertas(api, casos):
         painel.analisar(api, casos, indice)
 
     assert len(plt.get_fignums()) == antes
+
+
+# ---------------------------------------------------------------------------
+# A tela e o servidor unico
+# ---------------------------------------------------------------------------
+def test_aviso_de_apoio_a_decisao_fica_fixo_na_tela(api):
+    """Secao 7: aviso permanente, fora do texto gerado, que pode faltar."""
+    pytest.importorskip("gradio", reason="Fase 2: requer requirements-api.txt")
+    import gradio as gr
+
+    tela = painel.criar_painel(api)
+
+    textos = [b.value for b in tela.blocks.values() if isinstance(b, gr.Markdown)]
+    assert any("diagnóstico final é sempre do médico" in (t or "") for t in textos)
+
+
+def test_painel_e_api_no_mesmo_servidor(api):
+    """Um container, uma porta: o que o Hugging Face Spaces exige."""
+    pytest.importorskip("gradio", reason="Fase 2: requer requirements-api.txt")
+    from fastapi.testclient import TestClient
+
+    from src.api import servico
+
+    modelo = servico.Servico.construir(servico.referencia_da_fase_1())
+    cliente = TestClient(painel.criar_app_com_painel(modelo, url_da_api="http://teste"))
+
+    assert cliente.get("/health").status_code == 200
+    assert cliente.get("/painel/").status_code == 200
+
+
+def test_raiz_leva_ao_painel(api):
+    """Quem abre o endereco do Space cai na tela, nao num JSON."""
+    pytest.importorskip("gradio", reason="Fase 2: requer requirements-api.txt")
+    from fastapi.testclient import TestClient
+
+    from src.api import servico
+
+    modelo = servico.Servico.construir(servico.referencia_da_fase_1())
+    cliente = TestClient(painel.criar_app_com_painel(modelo, url_da_api="http://teste"))
+
+    resposta = cliente.get("/", follow_redirects=False)
+
+    assert resposta.status_code in (302, 307)
+    assert resposta.headers["location"].startswith("/painel")
+
+
+def test_painel_aponta_para_a_porta_do_proprio_processo(monkeypatch):
+    """No Spaces a porta e 7860; localmente, 8000. Vem do ambiente."""
+    monkeypatch.setenv("PORT", "7860")
+
+    assert painel.url_local_da_api() == "http://127.0.0.1:7860"
+
+
+def test_metricas_separam_o_painel_da_raiz(api):
+    """O Gradio montado sobrescreve a rota do escopo com a dele, que e "/".
+
+    Sem o prefixo da montagem, cada pagina do painel seria contada como a raiz,
+    e a metrica diria que o redirecionamento responde 200.
+    """
+    pytest.importorskip("gradio", reason="Fase 2: requer requirements-api.txt")
+    from fastapi.testclient import TestClient
+
+    from src.api import servico
+
+    modelo = servico.Servico.construir(servico.referencia_da_fase_1())
+    cliente = TestClient(painel.criar_app_com_painel(modelo, url_da_api="http://teste"))
+
+    cliente.get("/painel/")
+    cliente.get("/", follow_redirects=False)
+    texto = cliente.get("/metrics").text
+
+    assert 'api_requisicoes_total{rota="/",status="200"}' not in texto
+    assert 'api_requisicoes_total{rota="/painel/",status="200"} 1' in texto
+    assert 'api_requisicoes_total{rota="/",status="307"} 1' in texto

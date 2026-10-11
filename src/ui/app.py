@@ -16,6 +16,7 @@ from __future__ import annotations
 import os
 from typing import Any
 
+import httpx
 import matplotlib.pyplot as plt
 import pandas as pd
 
@@ -80,3 +81,53 @@ def figura_de_contribuicoes(contribuicoes: list[dict[str, Any]]) -> plt.Figure:
     eixo.spines[["top", "right"]].set_visible(False)
     figura.tight_layout()
     return figura
+
+
+def _porcentagem(valor: float) -> str:
+    """12,3% e nao 12.3%: o painel e lido em portugues."""
+    return f"{valor:.1%}".replace(".", ",")
+
+
+def analisar(api, casos: pd.DataFrame, indice: int):
+    """Resumo, grafico e texto de um caso, a partir de `/explain`.
+
+    `api` e qualquer cliente com `.post`, no padrao do httpx. Falha de rede vira
+    mensagem na tela, e nao excecao: a tela quebrada no meio de uma
+    demonstracao e pior que uma frase dizendo que a API esta fora. So erros de
+    transporte sao tratados assim; erro de programacao continua levantando.
+    """
+    medidas = casos.drop(columns="diagnostico_registrado").iloc[indice].to_dict()
+    try:
+        resposta = api.post("/explain", json={"medidas": medidas})
+    except (httpx.HTTPError, OSError) as erro:
+        return f"**API indisponível:** {erro}", None, ""
+    if resposta.status_code != 200:
+        return f"**A API recusou o caso** ({resposta.status_code}): {resposta.text}", None, ""
+
+    corpo = resposta.json()
+    linhas = [
+        f"### {rotulo_do_caso(casos, indice)}",
+        f"**Previsão do modelo:** {corpo['classe']}",
+        f"**Probabilidade de malignidade:** {_porcentagem(corpo['probabilidade'])} "
+        f"(limiar de decisão: {_porcentagem(corpo['limiar'])})",
+    ]
+    if corpo["alertas"]:
+        fora = ", ".join(
+            f"{a['feature']} ({str(round(a['desvios'], 1)).replace('.', ',')} desvios padrão)"
+            for a in corpo["alertas"]
+        )
+        linhas.append(
+            f"**Atenção:** medidas fora da distribuição do treino — {fora}. "
+            "Confira a coleta antes de confiar na previsão."
+        )
+
+    if corpo["texto"]:
+        texto = corpo["texto"]
+    else:
+        texto = f"_Texto em linguagem natural indisponível: {corpo['texto_motivo']}._"
+
+    figura = figura_de_contribuicoes(corpo["contribuicoes"])
+    # Fechada no pyplot, mas ainda desenhavel: o Gradio a serializa com savefig.
+    # Sem isso, cada caso analisado deixaria uma figura aberta para sempre.
+    plt.close(figura)
+    return "\n\n".join(linhas), figura, texto

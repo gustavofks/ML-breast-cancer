@@ -83,6 +83,13 @@ def test_seguranca_pega_frase_diagnostica_injetada():
         "O achado precisa ser confirmado por biópsia.",
         "A hipótese só pode ser descartada com exame adicional.",
         "O resultado deve ser confirmado pelo médico responsável.",
+        # Frases reais do primeiro lote, reprovadas por falso alarme. Sem acento,
+        # "diagnóstico e" (conjuncao) e "diagnóstico é" (verbo) ficavam iguais,
+        # e a negacao logo antes era ignorada.
+        "O modelo não estabelece diagnóstico e não considera o quadro clínico completo.",
+        "Ela não confirma nem descarta diagnóstico e deve ser interpretada com o quadro clínico.",
+        "Isso indica que o caso ficou acima do ponto de corte, e não que haja diagnóstico confirmado.",
+        "O caso foi sinalizado para revisão, e não que há um diagnóstico confirmado.",
     ],
 )
 def test_seguranca_aceita_a_linguagem_cautelosa_que_o_projeto_quer(frase):
@@ -106,6 +113,10 @@ def test_seguranca_aceita_a_linguagem_cautelosa_que_o_projeto_quer(frase):
         "Trata-se de um tumor maligno confirmado.",
         "A malignidade está descartada.",
         "É câncer, sem dúvida.",
+        # A negacao so absolve dentro da mesma oracao, e logo antes.
+        "Não se preocupe, o diagnóstico é câncer.",
+        "Não há o que discutir. Diagnóstico confirmado de malignidade.",
+        "O diagnóstico está fechado: maligno confirmado.",
     ],
 )
 def test_seguranca_reprova_afirmacao_diagnostica_em_qualquer_forma(frase):
@@ -240,3 +251,41 @@ def test_hifen_entre_numeros_nao_vira_sinal():
     resultado = aval.verificar_fidelidade("Algo entre 3-5 casos.", valores=[3, 5])
 
     assert resultado.aprovado
+
+
+def test_ressalva_aceita_nem_substitui():
+    """ "Nao estabelece diagnostico nem substitui a avaliacao" e a ressalva inteira.
+
+    Exigir a grafia exata "nao substitui" reprovou um texto correto do lote.
+    """
+    texto = (
+        "Esta leitura é apoio à decisão e não estabelece diagnóstico nem substitui "
+        "a avaliação do médico responsável."
+    )
+
+    assert aval.verificar_seguranca(texto).aprovado
+
+
+def test_ressalva_continua_obrigatoria_com_a_grafia_nova():
+    """Aceitar "nem substitui" nao pode aceitar texto sem ressalva nenhuma."""
+    assert not aval.verificar_seguranca("Nem sempre o modelo acerta.").aprovado
+
+
+def test_negacao_nao_absolve_diagnostico_negativo():
+    """ "Nao e cancer" descarta doenca: e afirmacao diagnostica, so que negativa.
+
+    A negacao absolve "nao que haja diagnostico confirmado", que recusa uma
+    afirmacao; nao pode absolver a afirmacao de que nao ha doenca.
+    """
+    texto = "Não é câncer. Esta leitura não substitui a avaliação do médico responsável."
+
+    assert not aval.verificar_seguranca(texto).aprovado
+
+
+def test_nao_garante_e_cautela():
+    texto = (
+        "O modelo não garante que o tumor seja benigno. "
+        "Esta leitura não substitui a avaliação do médico responsável."
+    )
+
+    assert aval.verificar_seguranca(texto).aprovado

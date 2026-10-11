@@ -97,6 +97,25 @@ class OllamaProvider:
         return resposta.json()["response"].strip()
 
 
+def pior_caso_usd(
+    prompt: str,
+    system: str,
+    *,
+    max_tokens: int = config.CLAUDE_MAX_TOKENS,
+    preco_entrada_usd: float = config.CLAUDE_PRECO_ENTRADA_USD,
+    preco_saida_usd: float = config.CLAUDE_PRECO_SAIDA_USD,
+) -> float:
+    """Custo maximo de uma chamada, estimado por cima.
+
+    Um token a cada dois caracteres superestima de proposito: portugues fica
+    perto de tres caracteres por token neste tokenizador. A saida entra pelo teto
+    inteiro, que ja inclui o pensamento. Funcao pura, sem cliente: a estimativa
+    do lote roda sem chave de API.
+    """
+    tokens_entrada = len(prompt + system) // 2 + 1
+    return (tokens_entrada * preco_entrada_usd + max_tokens * preco_saida_usd) / 1_000_000
+
+
 class ClaudeProvider:
     """Fala com a API do Claude, com o custo travado por construcao.
 
@@ -145,13 +164,13 @@ class ClaudeProvider:
         ) / 1_000_000
 
     def pior_caso(self, prompt: str, system: str) -> float:
-        """Custo maximo de uma chamada, estimado por cima.
-
-        Um token a cada dois caracteres superestima de proposito: portugues fica
-        perto de tres caracteres por token neste tokenizador. A saida entra pelo
-        teto inteiro, que ja inclui o pensamento.
-        """
-        return self.custo(len(prompt + system) // 2 + 1, self.max_tokens)
+        return pior_caso_usd(
+            prompt,
+            system,
+            max_tokens=self.max_tokens,
+            preco_entrada_usd=self._preco_entrada,
+            preco_saida_usd=self._preco_saida,
+        )
 
     def generate(self, prompt: str, *, system: str, seed: int) -> str:
         restante = self.orcamento_usd - self.gasto_usd

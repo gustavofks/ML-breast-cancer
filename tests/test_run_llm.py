@@ -146,3 +146,109 @@ def test_casos_selecionados_sao_deterministicos(script):
 
     assert primeiro == segundo
     assert len(primeiro) == 3
+
+
+# ---------------------------------------------------------------------------
+# Claude: estimativa antes de gastar, custo gravado depois
+# ---------------------------------------------------------------------------
+from types import SimpleNamespace  # noqa: E402
+
+from src.llm import provider as prov  # noqa: E402
+
+
+class ClienteFalso:
+    """Imita a API do Claude sem rede, contando as chamadas."""
+
+    def __init__(self):
+        self.chamadas = 0
+        self.messages = self
+
+    def create(self, **pedido):
+        self.chamadas += 1
+        return SimpleNamespace(
+            content=[SimpleNamespace(type="text", text="texto de teste")],
+            usage=SimpleNamespace(input_tokens=600, output_tokens=400),
+            stop_reason="end_turn",
+        )
+
+
+@pytest.fixture
+def cliente(script, monkeypatch):
+    falso = ClienteFalso()
+    original = prov.ClaudeProvider
+    monkeypatch.setattr(script, "ClaudeProvider", lambda **kw: original(falso, **kw))
+    return falso
+
+
+def _argv(monkeypatch, tmp_path, *extras):
+    monkeypatch.setattr(
+        "sys.argv",
+        [
+            "run_llm.py",
+            "--casos",
+            "1",
+            "--saida",
+            str(tmp_path / "narrativas.json"),
+            "--comparacao",
+            str(tmp_path / "comparacao.json"),
+            "--cache",
+            str(tmp_path / "cache"),
+            "--custo",
+            str(tmp_path / "custo.json"),
+            *extras,
+        ],
+    )
+
+
+def test_estimativa_nao_chama_a_api_nem_grava_nada(script, cliente, tmp_path, monkeypatch, capsys):
+    """Antes de gastar, o usuario ve quanto pode custar no pior caso."""
+    _argv(monkeypatch, tmp_path, "--estimar")
+
+    script.main()
+
+    assert cliente.chamadas == 0
+    assert not (tmp_path / "narrativas.json").exists()
+    assert not (tmp_path / "cache").exists()
+    assert "US$" in capsys.readouterr().out
+
+
+def test_lote_com_claude_grava_o_custo_somado_do_cache(script, cliente, tmp_path, monkeypatch):
+    _argv(monkeypatch, tmp_path)
+
+    script.main()
+
+    custo = json.loads((tmp_path / "custo.json").read_text(encoding="utf-8"))
+    assert cliente.chamadas > 0
+    assert custo["textos"] == cliente.chamadas
+    assert 0 < custo["custo_usd"] < config.LLM_ORCAMENTO_USD
+    assert custo["modelo"] == config.LLM_MODELO
+
+
+def test_segunda_execucao_nao_paga_nada(script, cliente, tmp_path, monkeypatch):
+    """O cache e a quarta trava de custo: rodar de novo e de graca."""
+    _argv(monkeypatch, tmp_path)
+    script.main()
+    primeira = cliente.chamadas
+
+    script.main()
+
+    assert cliente.chamadas == primeira
+
+
+def test_lote_que_estouraria_o_orcamento_aborta_antes_da_primeira_chamada(
+    script, cliente, tmp_path, monkeypatch
+):
+    """Parar no meio ainda gastaria; a estimativa barra o lote inteiro antes."""
+    monkeypatch.setattr(config, "LLM_ORCAMENTO_USD", 0.000001)
+    _argv(monkeypatch, tmp_path)
+
+    with pytest.raises(SystemExit):
+        script.main()
+
+    assert cliente.chamadas == 0
+
+
+def test_todos_os_casos_e_o_conjunto_de_teste_inteiro(script):
+    """O painel escolhe qualquer caso do teste; todos precisam de texto."""
+    assert script.quantidade_de_casos("todos") == 114
+    assert script.quantidade_de_casos("3") == 3

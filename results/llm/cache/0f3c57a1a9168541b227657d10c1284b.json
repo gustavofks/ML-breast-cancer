@@ -1,0 +1,12 @@
+{
+  "modelo": "claude-haiku-5-5",
+  "system": "Você é um assistente de apoio à decisão clínica. Você explica a saída de um modelo estatístico para profissionais de saúde. Você não emite diagnóstico, não confirma nem descarta doença, e deixa explícito que sua leitura não substitui a avaliação do médico responsável.",
+  "prompt": "Explique a previsão do modelo para este caso, para um médico que vai ler o texto ao lado do gráfico de contribuições.\n\nEvidência:\n{\n  \"probabilidade\": 0.0004,\n  \"limiar\": 0.2274,\n  \"decisao\": \"benigno\",\n  \"maiores_contribuicoes\": [\n    {\n      \"feature\": \"texture_worst\",\n      \"contribuicao\": -5.2325\n    },\n    {\n      \"feature\": \"area_se\",\n      \"contribuicao\": -4.6855\n    },\n    {\n      \"feature\": \"concave points_mean\",\n      \"contribuicao\": -2.0841\n    }\n  ]\n}\n\nRegras:\n- Use apenas os valores fornecidos acima. Não calcule, não arredonde e não estime nenhum número ausente da evidência.\n- Cite nominalmente as três medidas de maior contribuição.\n- Escreva no máximo 220 palavras.\n- Use exatamente estas seções, nesta ordem, como títulos de nível 2: Leitura do caso, Medidas que mais pesaram, Ressalva.\n\nExemplo de resposta bem formada, para um caso diferente deste:\n\n## Leitura do caso\nA probabilidade estimada de malignidade é 0,88, acima do limiar de 0,30 adotado\nneste serviço, então o caso é sinalizado para revisão prioritária.\n\n## Medidas que mais pesaram\nAs três medidas de maior contribuição foram texture_worst, area_worst e\nconcave points_mean, todas acima da faixa típica dos casos benignos desta base.\n\n## Ressalva\nEsta leitura é apoio à decisão e não substitui a avaliação do médico responsável.\n",
+  "resposta": "## Leitura do caso\nA probabilidade estimada de malignidade é 0,0004, abaixo do limiar de 0,2274, e por isso o modelo classificou o caso como benigno.\n\n## Medidas que mais pesaram\nAs três medidas de maior contribuição foram texture_worst (contribuição de -5,2325), area_se (-4,6855) e concave points_mean (-2,0841). As três empurraram a previsão no sentido de benignidade, pois suas contribuições são negativas.\n\n## Ressalva\nEsta leitura é apoio à decisão baseado em um modelo estatístico e não confirma nem descarta nenhuma doença. Ela não substitui a avaliação clínica do médico responsável, que deve considerar o quadro completo do paciente.",
+  "uso": {
+    "modelo": "claude-haiku-5-5",
+    "tokens_entrada": 667,
+    "tokens_saida": 410,
+    "custo_usd": 0.0002717
+  }
+}

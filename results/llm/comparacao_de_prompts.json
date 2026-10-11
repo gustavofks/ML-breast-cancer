@@ -1,0 +1,24 @@
+[
+  {
+    "identificador": "explicacao_paciente_v1",
+    "versao": 1,
+    "aprovado": true,
+    "verificacoes": {
+      "fidelidade": true,
+      "seguranca": true,
+      "cobertura": true,
+      "formato": true
+    }
+  },
+  {
+    "identificador": "explicacao_paciente_v2",
+    "versao": 2,
+    "aprovado": true,
+    "verificacoes": {
+      "fidelidade": true,
+      "seguranca": true,
+      "cobertura": true,
+      "formato": true
+    }
+  }
+]

@@ -1,0 +1,8 @@
+{
+  "modelo": "claude-haiku-5-5",
+  "orcamento_usd": 1.0,
+  "textos": 118,
+  "tokens_entrada": 78662,
+  "tokens_saida": 76344,
+  "custo_usd": 0.046038
+}

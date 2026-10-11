@@ -1,0 +1,12 @@
+{
+  "modelo": "claude-haiku-5-5",
+  "system": "Você é um assistente de apoio à decisão clínica. Você explica a saída de um modelo estatístico para profissionais de saúde. Você não emite diagnóstico, não confirma nem descarta doença, e deixa explícito que sua leitura não substitui a avaliação do médico responsável.",
+  "prompt": "Explique a previsão do modelo para este caso.\n\nEvidência:\n{\n  \"probabilidade\": 0.0003,\n  \"limiar\": 0.2274,\n  \"decisao\": \"benigno\",\n  \"maiores_contribuicoes\": [\n    {\n      \"feature\": \"texture_worst\",\n      \"contribuicao\": -10.9194\n    },\n    {\n      \"feature\": \"area_se\",\n      \"contribuicao\": -6.2107\n    },\n    {\n      \"feature\": \"texture_se\",\n      \"contribuicao\": 5.0448\n    }\n  ]\n}\n\nUse apenas os valores fornecidos acima; não calcule nem estime nenhum número que não esteja na evidência.\nOrganize a resposta nas seções: Leitura do caso, Medidas que mais pesaram, Ressalva.",
+  "resposta": "**Leitura do caso**\n\nO modelo estimou uma probabilidade de 0.0003 para a classe maligna. O limiar de decisão utilizado foi 0.2274. Como a probabilidade ficou abaixo do limiar, a decisão registrada pelo modelo foi \"benigno\".\n\n**Medidas que mais pesaram**\n\nAs três variáveis com maior contribuição para esta previsão foram:\n\n- **texture_worst** (contribuição: -10.9194): empurrou a previsão fortemente na direção de benigno.\n- **area_se** (contribuição: -6.2107): também contribuiu no sentido de benigno.\n- **texture_se** (contribuição: 5.0448): foi a única das três que contribuiu no sentido oposto, em direção a maligno, mas com magnitude menor que as duas anteriores.\n\nPelos valores fornecidos, a soma das contribuições das variáveis indicadas aponta para o resultado benigno. Não é possível informar o peso das demais variáveis, pois a evidência traz apenas estas três.\n\n**Ressalva**\n\nEsta leitura descreve o comportamento do modelo estatístico e não constitui diagnóstico nem confirma ou descarta qualquer doença. A saída do modelo deve ser interpretada junto com o quadro clínico, exames e demais dados do paciente, e não substitui a avaliação do médico responsável.",
+  "uso": {
+    "modelo": "claude-haiku-5-5",
+    "tokens_entrada": 367,
+    "tokens_saida": 468,
+    "custo_usd": 0.0002707
+  }
+}

@@ -252,3 +252,61 @@ def test_todos_os_casos_e_o_conjunto_de_teste_inteiro(script):
     """O painel escolhe qualquer caso do teste; todos precisam de texto."""
     assert script.quantidade_de_casos("todos") == 114
     assert script.quantidade_de_casos("3") == 3
+
+
+# ---------------------------------------------------------------------------
+# O lote narra o modelo servido, e a API encontra o que o lote gravou
+# ---------------------------------------------------------------------------
+def test_evidencias_usam_o_modelo_servido(script, monkeypatch):
+    """Texto offline e API online narram o mesmo modelo, senao o cache nunca acerta."""
+    from src.api import servico
+
+    especificacao = servico.EspecificacaoDoModelo.de_dicionario(
+        {**servico.referencia_da_fase_1().para_dicionario(), "limiar": 0.3}
+    )
+    monkeypatch.setattr(script, "carregar_especificacao", lambda: especificacao)
+
+    evidencias = script.evidencias_por_caso([0])
+
+    assert evidencias[0]["limiar"] == 0.3
+
+
+def test_texto_gravado_pelo_lote_e_encontrado_pela_api(script, cliente, tmp_path, monkeypatch):
+    """A garantia que amarra as duas pontas: mesma conta, mesma chave de cache.
+
+    Se o lote e a API calculassem a probabilidade ou as contribuicoes de jeitos
+    diferentes, mesmo que so no arredondamento, o /explain nunca acharia texto
+    nenhum — e responderia "texto indisponivel" para sempre, sem erro.
+    """
+    pytest.importorskip("fastapi", reason="Fase 2: requer requirements-api.txt")
+    from fastapi.testclient import TestClient
+
+    from src.api import main, servico
+    from src.data import load_dataset
+    from src.preprocessing import split_data
+
+    # Um modelo servido diferente da referencia: com a referencia, lote e API
+    # coincidiriam por acaso, e o teste nao provaria nada.
+    especificacao = servico.EspecificacaoDoModelo.de_dicionario(
+        {
+            **servico.referencia_da_fase_1().para_dicionario(),
+            "features": ["texture_worst", "area_worst", "concave points_mean"],
+            "limiar": 0.3,
+        }
+    )
+    monkeypatch.setattr(script, "carregar_especificacao", lambda: especificacao)
+    _argv(monkeypatch, tmp_path)
+    script.main()
+
+    X, y = load_dataset()
+    _, X_teste, _, _ = split_data(X, y)
+    api = TestClient(
+        main.criar_app(
+            servico.Servico.construir(especificacao), diretorio_cache=tmp_path / "cache"
+        )
+    )
+
+    corpo = api.post("/explain", json={"medidas": X_teste.iloc[0].to_dict()}).json()
+
+    # Achou no cache: o motivo, se houver, e reprovacao, nunca ausencia.
+    assert corpo["texto"] is not None or "run_llm.py" not in corpo["texto_motivo"]

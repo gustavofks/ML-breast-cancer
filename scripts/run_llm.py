@@ -28,9 +28,9 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-import numpy as np  # noqa: E402
-
-from src import config, explain, models  # noqa: E402
+from src import config  # noqa: E402
+from src.api import explicacao  # noqa: E402
+from src.api.servico import Servico, carregar_especificacao  # noqa: E402
 from src.data import load_dataset  # noqa: E402
 from src.llm import narrator, prompts  # noqa: E402
 from src.llm.provider import (  # noqa: E402
@@ -114,29 +114,27 @@ def selecionar_casos(quantidade: int) -> list[int]:
 
 
 def evidencias_por_caso(indices: list[int]) -> list[dict]:
-    """Probabilidade, limiar e contribuicoes SHAP de cada caso pedido.
+    """Probabilidade, limiar e contribuicoes de cada caso, pelo modelo servido.
 
-    Usa o pipeline e o explicador da Fase 1, em vez de recalcular: a explicacao
-    que o texto narra tem de ser a mesma que o grafico mostra, senao o paragrafo
-    e a figura contariam historias diferentes sobre o mesmo caso.
+    Mesma especificacao, mesma previsao e mesma funcao de contribuicoes que a API
+    usa. O cache gravado aqui so e encontrado la se as duas pontas fizerem a
+    mesma conta, ate o arredondamento: qualquer divergencia mudaria o prompt, e
+    com ele a chave, e o /explain responderia "texto indisponivel" para sempre,
+    sem erro nenhum.
     """
+    modelo = Servico.construir(carregar_especificacao())
     X, y = load_dataset()
-    X_train, X_avaliacao, y_train, _ = split_data(X, y)
-
-    modelo = models.get_models()["Regressão Logística"].fit(X_train, y_train)
-    probabilidades = modelo.predict_proba(X_avaliacao)[:, 1]
-
-    explicacao = explain.shap_explanation(modelo, X_train, X_avaliacao)
-    colunas = list(X_avaliacao.columns)
+    _, X_avaliacao, _, _ = split_data(X, y)
 
     evidencias = []
     for indice in indices:
-        valores = np.asarray(explicacao[indice].values).ravel()
+        caso = X_avaliacao.iloc[[indice]]
+        previsao = modelo.prever(caso.iloc[0].to_dict())
         evidencias.append(
             narrator.contexto_do_paciente(
-                probabilidade=float(probabilidades[indice]),
-                limiar=0.5,
-                contribuicoes=list(zip(colunas, (float(v) for v in valores))),
+                probabilidade=previsao.probabilidade,
+                limiar=previsao.limiar,
+                contribuicoes=explicacao.contribuicoes(modelo, caso),
             )
         )
     return evidencias

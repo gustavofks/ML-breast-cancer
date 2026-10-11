@@ -1,0 +1,15 @@
+{
+  "decidida_em": "2026-10-11",
+  "antes_da_avaliacao_no_teste": true,
+  "regra": "Serve o individuo de maior fitness em validacao cruzada no treino entre todas as execucoes do algoritmo genetico, o mesmo criterio que scripts/evaluate_arms.py usa para escolher a execucao avaliada de cada braco.",
+  "trava_de_seguranca": "Se, no conjunto de teste, o individuo escolhido tiver mais falsos negativos que o braco Original (regressao logistica da Fase 1, limiar 0,5), a API serve o braco Original. A trava nao escolhe o melhor modelo pelo teste; so impede que um modelo pior em falsos negativos seja implantado.",
+  "candidato": "AG, completo, E3 explotação, Regressão Logística, semente 44",
+  "evidencia_em_validacao_cruzada": {
+    "fitness": 0.9879,
+    "custo_clinico": 0.0374,
+    "falsos_negativos": 1,
+    "falsos_positivos": 7,
+    "n_features": 5,
+    "queda_na_verificacao_de_estabilidade": 0.0046
+  }
+}

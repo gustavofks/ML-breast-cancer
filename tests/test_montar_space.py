@@ -78,7 +78,7 @@ def test_pacote_nao_leva_testes_chaves_nem_o_sdk_da_api_paga(script, resultados,
     (resultados.parent / ".env").write_text("ANTHROPIC_API_KEY=x", encoding="utf-8")
     destino = tmp_path / "space"
 
-    script.montar(destino, resultados=resultados)
+    script.montar(destino, resultados=resultados, sdk="gradio")
 
     nomes = {p.relative_to(destino).as_posix() for p in destino.rglob("*") if p.is_file()}
     assert not any(n.startswith("tests/") for n in nomes)
@@ -92,7 +92,7 @@ def test_pacote_sem_texto_gerado_ou_sem_modelo_escolhido_avisa(script, tmp_path)
     vazio = tmp_path / "results"
     vazio.mkdir()
 
-    avisos = script.montar(tmp_path / "space", resultados=vazio)
+    avisos = script.montar(tmp_path / "space", resultados=vazio, sdk="gradio")
 
     assert any("modelo_servido.json" in aviso for aviso in avisos)
     assert any("cache" in aviso for aviso in avisos)
@@ -101,10 +101,10 @@ def test_pacote_sem_texto_gerado_ou_sem_modelo_escolhido_avisa(script, tmp_path)
 def test_montar_de_novo_substitui_o_pacote_anterior(script, resultados, tmp_path):
     """Arquivo que saiu do projeto nao pode continuar no pacote por inercia."""
     destino = tmp_path / "space"
-    script.montar(destino, resultados=resultados)
+    script.montar(destino, resultados=resultados, sdk="gradio")
     (destino / "sobra.txt").write_text("velho", encoding="utf-8")
 
-    script.montar(destino, resultados=resultados)
+    script.montar(destino, resultados=resultados, sdk="gradio")
 
     assert not (destino / "sobra.txt").exists()
 
@@ -162,3 +162,44 @@ def test_app_py_serve_api_e_painel_na_porta_do_spaces(script, resultados, tmp_pa
 
     assert "criar_app_com_painel" in app
     assert "7860" in app
+
+
+# ---------------------------------------------------------------------------
+# Space estatico: o unico gratuito para conta pessoal
+# ---------------------------------------------------------------------------
+def test_pacote_estatico_tem_so_a_pagina_e_o_cartao(script, tmp_path):
+    """Space estatico serve arquivos; codigo, base e requisitos nao tem funcao la."""
+    pytest.importorskip("fastapi", reason="Fase 2: requer requirements-api.txt")
+    destino = tmp_path / "space"
+
+    script.montar(destino, sdk="static")
+
+    nomes = sorted(p.relative_to(destino).as_posix() for p in destino.rglob("*") if p.is_file())
+    assert nomes == ["README.md", "index.html"]
+    cabecalho = (destino / "README.md").read_text(encoding="utf-8").split("---")[1]
+    assert "sdk: static" in cabecalho
+    assert "app_file: index.html" in cabecalho
+
+
+def test_pagina_estatica_usa_o_modelo_e_o_cache_dos_resultados(script, tmp_path):
+    """Os 114 casos com texto: a pagina vem do modelo servido e do cache gerado."""
+    pytest.importorskip("fastapi", reason="Fase 2: requer requirements-api.txt")
+    destino = tmp_path / "space"
+
+    avisos = script.montar(destino, sdk="static")
+
+    html = (destino / "index.html").read_text(encoding="utf-8")
+    assert avisos == []
+    assert html.count('"texto_motivo": null') == 114
+
+
+def test_sem_git_o_commit_vem_do_ambiente(script, monkeypatch):
+    """O pacote estatico e montado no container, que nao leva o `.git`."""
+
+    def sem_git(*args, **kwargs):
+        raise OSError("git ausente")
+
+    monkeypatch.setattr(script.subprocess, "run", sem_git)
+    monkeypatch.setenv("APP_COMMIT", "abc1234")
+
+    assert script.commit_de_origem() == "abc1234"

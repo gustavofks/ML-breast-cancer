@@ -81,6 +81,34 @@ CMD ["python", "scripts/run_vision.py"]
 
 
 # ---------------------------------------------------------------------------
+# Estagio da Fase 2: a API que serve o modelo, as explicacoes e as metricas.
+#
+# Le a especificacao do modelo servido e o cache de textos em `results/`, e nao
+# precisa de modelo de linguagem, chave de API nem internet. Como nos outros
+# estagios, `results/` entra por volume; embuti-lo na imagem e decisao da
+# publicacao (item 6 do design). O commit de origem entra por argumento de
+# build, porque o container nao leva o `.git`:
+#
+#   docker build --target api --build-arg APP_COMMIT=$(git rev-parse --short HEAD) #                -t ml-breast-cancer:api .
+#   docker run --rm -p 8000:8000 -v "$(pwd)/results:/app/results" ml-breast-cancer:api
+# ---------------------------------------------------------------------------
+FROM base AS api
+
+USER root
+COPY requirements-api.txt ./
+RUN pip install --no-cache-dir -r requirements-api.txt
+USER analise
+
+ARG APP_COMMIT=desconhecido
+ENV APP_COMMIT=${APP_COMMIT}
+
+EXPOSE 8000
+# `--factory`: o modelo e treinado dentro de `criar_app`, e nao no import do
+# modulo, para que importar `src.api.main` em teste nao treine nada.
+CMD ["uvicorn", "src.api.main:criar_app", "--factory", "--host", "0.0.0.0", "--port", "8000"]
+
+
+# ---------------------------------------------------------------------------
 # Alvo padrao. Precisa ser o ultimo estagio do arquivo: sem `--target`, o
 # Docker constroi o estagio final — e sem esta linha o padrao seria `vision`,
 # com o TensorFlow inteiro a reboque.

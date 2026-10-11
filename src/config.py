@@ -111,6 +111,23 @@ LLM_LIMITE_DE_PALAVRAS = 220
 LLM_TIMEOUT = 300
 
 
+
+# ---------------------------------------------------------------------------
+# Fase 2: API
+# ---------------------------------------------------------------------------
+# Modelo servido. A escolha depende da avaliacao final dos bracos, entao vive
+# num arquivo que o usuario grava depois de le-la, e nao no codigo. Sem o
+# arquivo, a API serve a referencia da Fase 1 e declara isso em /model-info.
+MODELO_SERVIDO_FILE = GENETIC_DIR / "modelo_servido.json"
+
+# Desvios padrao a partir dos quais uma medida recebida dispara alerta. Medido
+# sobre o treino: com 3, 13% dos casos legitimos alertariam, e alerta que
+# dispara sempre vira ruido ignorado; com 5, 2,6%.
+API_LIMIAR_DE_DESVIO = 5.0
+
+# Variavel de ambiente com o commit de origem, preenchida no build do container.
+API_VARIAVEL_DE_COMMIT = "APP_COMMIT"
+
 def ensure_output_dirs() -> None:
     """Cria os diretorios de saida caso ainda nao existam."""
     for directory in (FIGURES_DIR, REPORTS_DIR):

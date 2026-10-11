@@ -164,3 +164,98 @@ def test_explain_com_medida_faltante_responde_422(cliente, caso):
     incompleto = {k: v for k, v in caso.items() if k != "area_worst"}
 
     assert cliente.post("/explain", json={"medidas": incompleto}).status_code == 422
+
+
+# ---------------------------------------------------------------------------
+# Log por requisicao, metricas e identificador
+# ---------------------------------------------------------------------------
+import io  # noqa: E402
+import json  # noqa: E402
+
+from src.api import registro  # noqa: E402
+
+
+def test_metrics_conta_as_requisicoes_por_rota_e_status(cliente, caso):
+    cliente.post("/predict", json={"medidas": caso})
+    cliente.post("/predict", json={"medidas": {}})
+
+    texto = cliente.get("/metrics").text
+
+    assert 'api_requisicoes_total{rota="/predict",status="200"} 1' in texto
+    assert 'api_requisicoes_total{rota="/predict",status="422"} 1' in texto
+    assert 'api_latencia_segundos_count{rota="/predict"} 2' in texto
+
+
+def test_metrics_responde_em_texto_puro(cliente):
+    """O coletor do Prometheus le texto, nao JSON com o texto dentro de uma string."""
+    resposta = cliente.get("/metrics")
+
+    assert resposta.headers["content-type"].startswith("text/plain")
+    assert resposta.text.startswith("# HELP")
+
+
+def test_rota_inexistente_nao_cria_um_rotulo_por_caminho(cliente):
+    """Rotulo por caminho bruto explode a cardinalidade com qualquer varredura."""
+    for caminho in ("/a", "/b", "/c"):
+        cliente.get(caminho)
+
+    texto = cliente.get("/metrics").text
+
+    assert 'rota="/a"' not in texto
+    assert 'api_requisicoes_total{rota="nao_encontrada",status="404"} 3' in texto
+
+
+def test_resposta_devolve_o_identificador_recebido(cliente):
+    """O mesmo id do log volta no cabecalho, para cruzar reclamacao e linha de log."""
+    resposta = cliente.get("/health", headers={"X-Request-ID": "pedido-1"})
+
+    assert resposta.headers["X-Request-ID"] == "pedido-1"
+
+
+def test_sem_identificador_a_api_gera_um(cliente):
+    primeira = cliente.get("/health").headers["X-Request-ID"]
+    segunda = cliente.get("/health").headers["X-Request-ID"]
+
+    assert primeira and segunda and primeira != segunda
+
+
+def test_alerta_de_desvio_aparece_nas_metricas(cliente, caso):
+    cliente.post("/predict", json={"medidas": {**caso, "area_worst": 1e6}})
+
+    assert 'api_alertas_de_desvio_total{feature="area_worst"} 1' in cliente.get("/metrics").text
+
+
+def test_cada_requisicao_vira_uma_linha_de_log_com_o_resultado(modelo, caso, tmp_path, monkeypatch):
+    """Secao 6.2: id, rota, latencia, status e resultado, uma linha por requisicao."""
+    fluxo = io.StringIO()
+    original = registro.configurar
+    monkeypatch.setattr(registro, "configurar", lambda nome="api": original(nome, fluxo))
+    cliente = TestClient(main.criar_app(modelo, diretorio_cache=tmp_path / "cache"))
+
+    resposta = cliente.post("/predict", json={"medidas": caso}, headers={"X-Request-ID": "r1"})
+
+    linhas = [json.loads(l) for l in fluxo.getvalue().splitlines()]
+    requisicoes = [l for l in linhas if l["evento"] == "requisicao"]
+    assert len(requisicoes) == 1
+    linha = requisicoes[0]
+    assert linha["id"] == "r1"
+    assert linha["rota"] == "/predict"
+    assert linha["status"] == 200
+    assert linha["resultado"] == resposta.json()["classe"]
+    assert linha["latencia_ms"] >= 0
+
+
+def test_alerta_de_desvio_vai_ao_log_com_o_id_da_requisicao(modelo, caso, tmp_path, monkeypatch):
+    fluxo = io.StringIO()
+    original = registro.configurar
+    monkeypatch.setattr(registro, "configurar", lambda nome="api": original(nome, fluxo))
+    cliente = TestClient(main.criar_app(modelo, diretorio_cache=tmp_path / "cache"))
+
+    cliente.post(
+        "/predict", json={"medidas": {**caso, "area_worst": 1e6}}, headers={"X-Request-ID": "r2"}
+    )
+
+    desvios = [
+        json.loads(l) for l in fluxo.getvalue().splitlines() if '"desvio"' in l
+    ]
+    assert [(d["id"], d["feature"]) for d in desvios] == [("r2", "area_worst")]

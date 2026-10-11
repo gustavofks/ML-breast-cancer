@@ -12,10 +12,13 @@ design chama de servico preparado para escalar.
 from __future__ import annotations
 
 import os
+import time
+import uuid
 from pathlib import Path
 
 import pandas as pd
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.responses import PlainTextResponse
 from pydantic import BaseModel
 
 from src import config
@@ -50,7 +53,34 @@ def criar_app(
     app = FastAPI(title="Apoio ao diagnóstico de câncer de mama", version="2.0")
     app.state.diretorio_cache = Path(diretorio_cache)
 
-    def prever(medidas: dict[str, float]):
+    @app.middleware("http")
+    async def medir(request: Request, chamar):
+        """Uma linha de log e uma amostra de metrica por requisicao, com um id."""
+        identificador = request.headers.get("X-Request-ID") or uuid.uuid4().hex
+        request.state.id = identificador
+        inicio = time.perf_counter()
+        resposta = await chamar(request)
+        segundos = time.perf_counter() - inicio
+
+        # Rotulo pelo molde da rota, nunca pelo caminho bruto: uma varredura de
+        # URLs criaria um rotulo por tentativa e explodiria a cardinalidade.
+        rota = request.scope.get("route")
+        nome = rota.path if rota is not None else "nao_encontrada"
+
+        monitor.registrar(nome, resposta.status_code, segundos)
+        registro.requisicao(
+            logger,
+            id=identificador,
+            rota=nome,
+            metodo=request.method,
+            status=resposta.status_code,
+            latencia_ms=round(segundos * 1000, 2),
+            resultado=getattr(request.state, "resultado", None),
+        )
+        resposta.headers["X-Request-ID"] = identificador
+        return resposta
+
+    def prever(request: Request, medidas: dict[str, float]):
         """Previsao com validacao e sentinela; comum a /predict e /explain."""
         try:
             previsao = modelo.prever(medidas)
@@ -61,8 +91,13 @@ def criar_app(
         monitor.registrar_alertas(alertas)
         for alerta in alertas:
             registro.desvio(
-                logger, feature=alerta.feature, valor=alerta.valor, desvios=alerta.desvios
+                logger,
+                id=request.state.id,
+                feature=alerta.feature,
+                valor=alerta.valor,
+                desvios=alerta.desvios,
             )
+        request.state.resultado = previsao.classe
         return previsao, alertas
 
     @app.get("/health")
@@ -79,9 +114,13 @@ def criar_app(
             "commit": os.environ.get(config.API_VARIAVEL_DE_COMMIT, "desconhecido"),
         }
 
+    @app.get("/metrics", response_class=PlainTextResponse)
+    def metrics():
+        return monitor.exportar()
+
     @app.post("/predict")
-    def predict(corpo: Medidas):
-        previsao, alertas = prever(corpo.medidas)
+    def predict(corpo: Medidas, request: Request):
+        previsao, alertas = prever(request, corpo.medidas)
         return {
             "probabilidade": previsao.probabilidade,
             "limiar": previsao.limiar,
@@ -90,8 +129,8 @@ def criar_app(
         }
 
     @app.post("/explain")
-    def explain(corpo: Medidas):
-        previsao, alertas = prever(corpo.medidas)
+    def explain(corpo: Medidas, request: Request):
+        previsao, alertas = prever(request, corpo.medidas)
         pares = explicacao.contribuicoes(modelo, pd.DataFrame([corpo.medidas]))
         texto, motivo = texto_do_cache(previsao, pares)
         return {

@@ -1,12 +1,3 @@
----
-title: Apoio ao diagnóstico de câncer de mama
-colorFrom: blue
-colorTo: yellow
-sdk: docker
-app_port: 7860
-pinned: false
----
-
 # Apoio ao diagnóstico de câncer de mama
 
 Tech Challenge da pós-graduação em IA da FIAP, Fase 2. Escolha um caso do

@@ -31,7 +31,7 @@ def resultados(tmp_path):
 def test_pacote_traz_o_que_o_container_precisa_para_servir(script, resultados, tmp_path):
     destino = tmp_path / "space"
 
-    script.montar(destino, resultados=resultados)
+    script.montar(destino, resultados=resultados, sdk="docker")
 
     for caminho in (
         "Dockerfile",
@@ -50,7 +50,7 @@ def test_pacote_traz_o_que_o_container_precisa_para_servir(script, resultados, t
 def test_cartao_do_space_declara_docker_e_a_porta_7860(script, resultados, tmp_path):
     """Sem `app_port`, o Spaces procura a porta 7860 por padrao; declarar evita surpresa."""
     destino = tmp_path / "space"
-    script.montar(destino, resultados=resultados)
+    script.montar(destino, resultados=resultados, sdk="docker")
 
     cartao = (destino / "README.md").read_text(encoding="utf-8")
     cabecalho = cartao.split("---")[1]
@@ -61,7 +61,7 @@ def test_cartao_do_space_declara_docker_e_a_porta_7860(script, resultados, tmp_p
 
 def test_dockerfile_do_space_serve_na_porta_7860_sem_privilegio(script, resultados, tmp_path):
     destino = tmp_path / "space"
-    script.montar(destino, resultados=resultados)
+    script.montar(destino, resultados=resultados, sdk="docker")
 
     dockerfile = (destino / "Dockerfile").read_text(encoding="utf-8")
 
@@ -107,3 +107,58 @@ def test_montar_de_novo_substitui_o_pacote_anterior(script, resultados, tmp_path
     script.montar(destino, resultados=resultados)
 
     assert not (destino / "sobra.txt").exists()
+
+
+# ---------------------------------------------------------------------------
+# Space com o SDK Gradio, gratuito
+# ---------------------------------------------------------------------------
+def test_pacote_gradio_tem_app_py_e_cartao_do_sdk_gradio(script, resultados, tmp_path):
+    """O SDK Docker apareceu como pago na criacao do Space; o Gradio e gratuito."""
+    destino = tmp_path / "space"
+
+    script.montar(destino, resultados=resultados, sdk="gradio")
+
+    assert (destino / "app.py").exists()
+    assert not (destino / "Dockerfile").exists()
+    cabecalho = (destino / "README.md").read_text(encoding="utf-8").split("---")[1]
+    assert "sdk: gradio" in cabecalho
+    assert "app_file: app.py" in cabecalho
+    assert 'python_version: "3.11"' in cabecalho
+
+
+def test_versao_do_gradio_no_cartao_e_a_mesma_fixada_nos_requisitos(script, resultados, tmp_path):
+    """O Spaces instala o Gradio pelo `sdk_version`; divergir do pin quebraria a paridade."""
+    import re
+
+    destino = tmp_path / "space"
+    script.montar(destino, resultados=resultados, sdk="gradio")
+
+    cabecalho = (destino / "README.md").read_text(encoding="utf-8").split("---")[1]
+    fixada = re.search(
+        r"^gradio==(\S+)$",
+        (config.PROJECT_ROOT / "requirements-api.txt").read_text(encoding="utf-8"),
+        re.M,
+    ).group(1)
+    assert f"sdk_version: {fixada}" in cabecalho
+
+
+def test_pacote_gradio_junta_os_requisitos_num_arquivo_so(script, resultados, tmp_path):
+    """O SDK Gradio so instala `requirements.txt`; a API precisa da FastAPI dele."""
+    destino = tmp_path / "space"
+    script.montar(destino, resultados=resultados, sdk="gradio")
+
+    requisitos = (destino / "requirements.txt").read_text(encoding="utf-8")
+
+    assert "fastapi==" in requisitos
+    assert "scikit-learn==" in requisitos
+    assert not (destino / "requirements-api.txt").exists()
+
+
+def test_app_py_serve_api_e_painel_na_porta_do_spaces(script, resultados, tmp_path):
+    destino = tmp_path / "space"
+    script.montar(destino, resultados=resultados, sdk="gradio")
+
+    app = (destino / "app.py").read_text(encoding="utf-8")
+
+    assert "criar_app_com_painel" in app
+    assert "7860" in app

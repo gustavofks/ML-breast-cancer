@@ -9,6 +9,8 @@ custo clínico assimétrico), **explicações em linguagem natural** geradas por
 verificadas automaticamente, e o sistema **servido** como API com monitoramento e painel. Como
 executar cada parte está em [Fase 2](#fase-2).
 
+**Painel publicado:** https://huggingface.co/spaces/gustavofks/apoio-diagnostico-cancer-mama
+
 Uma rede de hospitais especializados no atendimento à mulher precisa de um sistema de apoio ao
 diagnóstico capaz de acelerar a triagem. Este projeto entrega a base de Machine Learning dessa
 solução: a partir de características morfológicas de núcleos celulares extraídas de punção
@@ -271,11 +273,20 @@ indivíduo que o algoritmo genético grava. Sem o arquivo, a API serve a referê
 declara isso em `/model-info`. Cada requisição gera uma linha de log em JSON, e uma sentinela
 registra alerta quando alguma medida recebida foge da distribuição do treino.
 
-**Publicação no Hugging Face Spaces.**
+**Publicação no Hugging Face Spaces.** O painel está publicado em
+https://huggingface.co/spaces/gustavofks/apoio-diagnostico-cancer-mama como **Space estático**. O
+Hugging Face passou a cobrar de contas pessoais pelos Spaces que executam código (SDKs Gradio e
+Docker); o estático continua gratuito. A página publicada congela, para cada caso do conjunto de
+teste, a resposta que a API dá em `/explain`, consultada em processo na hora de montar o pacote:
+os números e textos são os da API, não uma conta paralela. A API completa, com previsão para
+medidas novas, log e métricas, roda no container.
 
 ```bash
-python scripts/montar_space.py   # monta build/space/, pronto para o repositório do Space
+python scripts/montar_space.py                 # Space estático (padrão): README.md e index.html
+python scripts/montar_space.py --sdk gradio    # API e painel ao vivo, para conta com plano pago
 ```
+
+O formato estático precisa da FastAPI para consultar a API; rode-o na imagem `api`.
 
 > **Nota sobre o SHAP.** A biblioteca depende do `numba`, cuja DLL compilada é bloqueada por
 > algumas políticas de segurança do Windows (App Control / Smart App Control). O pipeline detecta a

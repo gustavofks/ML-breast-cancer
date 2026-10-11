@@ -310,3 +310,18 @@ def test_texto_gravado_pelo_lote_e_encontrado_pela_api(script, cliente, tmp_path
 
     # Achou no cache: o motivo, se houver, e reprovacao, nunca ausencia.
     assert corpo["texto"] is not None or "run_llm.py" not in corpo["texto_motivo"]
+
+
+def test_lote_usa_a_versao_mais_nova_da_nota_de_mudanca(script, tmp_path, monkeypatch):
+    destino = tmp_path / "narrativas.json"
+    monkeypatch.setattr(
+        "sys.argv", ["run_llm.py", "--fake", "--casos", "1", "--saida", str(destino)]
+    )
+
+    script.main()
+
+    from src.llm import prompts
+
+    nomes = {r["identificador"] for r in json.loads(destino.read_text(encoding="utf-8"))}
+    ultima = prompts.versoes_de("nota_de_mudanca")[-1].identificador
+    assert ultima in nomes

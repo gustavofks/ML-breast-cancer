@@ -179,6 +179,31 @@ _registrar(
     )
 )
 
+# Versao 2: mesmo contrato, com folga no tamanho. A v1 pedia o limite exato que
+# o verificador aplica, e o primeiro lote real passou dele por 9 palavras.
+_registrar(
+    Template(
+        nome="nota_de_mudanca",
+        versao=2,
+        sistema=FRONTEIRA,
+        usuario=(
+            "Explique, em linguagem simples, o que a otimização por algoritmo "
+            "genético alterou em relação ao modelo anterior.\n\n"
+            "Evidência:\n{evidencia}\n\n"
+            "Regras:\n"
+            "- Use apenas os valores fornecidos acima; nenhum número novo.\n"
+            "- Se a evidência mostrar que o ganho não se confirmou, diga isso com "
+            "clareza em vez de suavizar.\n"
+            "- Escreva no máximo "
+            f"{config.LLM_ALVO_DE_PALAVRAS} palavras. Seja breve: cite só os "
+            "números que sustentam a conclusão.\n"
+            "- Use exatamente estas seções, nesta ordem, como títulos de nível 2: "
+            "O que mudou, O que isso significa na prática, Ressalva."
+        ),
+        secoes=_CONTRATO_MUDANCA,
+    )
+)
+
 
 def versoes_de(nome: str) -> list[Template]:
     """Todas as versoes de um prompt, da mais antiga para a mais nova."""

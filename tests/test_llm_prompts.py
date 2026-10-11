@@ -99,3 +99,23 @@ def test_versoes_de_um_prompt_sao_recuperaveis_pelo_nome():
     versoes = prompts.versoes_de("explicacao_paciente")
 
     assert [t.versao for t in versoes] == [1, 2]
+
+
+def test_nota_de_mudanca_v2_pede_menos_palavras_do_que_o_verificador_aceita():
+    """O primeiro lote real escreveu 229 palavras para um limite de 220.
+
+    A v1 pedia "no maximo 220" e o verificador cortava em 220: nenhuma folga
+    para a contagem imprecisa do modelo. A v2 pede um alvo menor, e o
+    verificador continua no limite do contrato.
+    """
+    import re
+
+    from src import config
+
+    v1, v2 = prompts.versoes_de("nota_de_mudanca")[:2]
+    pedido_v1 = int(re.search(r"no máximo (\d+) palavras", v1.usuario).group(1))
+    pedido_v2 = int(re.search(r"no máximo (\d+) palavras", v2.usuario).group(1))
+
+    assert pedido_v1 == config.LLM_LIMITE_DE_PALAVRAS
+    assert pedido_v2 < config.LLM_LIMITE_DE_PALAVRAS
+    assert v2.secoes == v1.secoes

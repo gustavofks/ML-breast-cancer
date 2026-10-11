@@ -122,6 +122,11 @@ LLM_SEED = SEED
 LLM_LIMITE_DE_PALAVRAS = 220
 LLM_TIMEOUT = 300
 
+# Tamanho pedido no prompt, abaixo do limite que o verificador aplica. Com os
+# dois iguais, o primeiro lote real passou do limite por 9 palavras: o modelo
+# conta palavras de forma aproximada, e o contrato precisa de folga.
+LLM_ALVO_DE_PALAVRAS = 180
+
 # Custo do Claude, travado por construcao. O projeto e avaliado uma vez e o gasto
 # tem de ficar muito abaixo de US$ 5, entao ha quatro travas: o modelo mais
 # barato; esforco baixo, porque o pensamento adaptativo e cobrado como saida;

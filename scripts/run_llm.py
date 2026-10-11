@@ -171,7 +171,7 @@ def montar_narrativas(provider, casos: int) -> tuple[list, list]:
     if resumo_ag.exists():
         narrativas.append(
             _narrar(
-                prompts.TEMPLATES["nota_de_mudanca_v1"],
+                prompts.versoes_de("nota_de_mudanca")[-1],
                 narrator.contexto_de_mudanca(
                     json.loads(resumo_ag.read_text(encoding="utf-8"))
                 ),

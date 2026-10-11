@@ -131,3 +131,56 @@ def analisar(api, casos: pd.DataFrame, indice: int):
     # Sem isso, cada caso analisado deixaria uma figura aberta para sempre.
     plt.close(figura)
     return "\n\n".join(linhas), figura, texto
+
+
+def url_local_da_api() -> str:
+    """Endereco da API no proprio processo, pela porta que o servidor ouve.
+
+    O Spaces exige a porta 7860 e a informa em `PORT`; localmente, 8000.
+    """
+    return f"http://127.0.0.1:{os.environ.get('PORT', '8000')}"
+
+
+def criar_painel(api):
+    """A tela: escolher o caso, ver resumo, grafico e texto, com o aviso fixo."""
+    import gradio as gr
+
+    casos = casos_de_teste()
+    opcoes = [(rotulo_do_caso(casos, i), i) for i in range(len(casos))]
+
+    def ao_escolher(indice):
+        return analisar(api, casos, int(indice))
+
+    with gr.Blocks(title="Apoio ao diagnóstico de câncer de mama") as tela:
+        gr.Markdown("# Apoio ao diagnóstico de câncer de mama")
+        gr.Markdown(AVISO)
+        escolha = gr.Dropdown(choices=opcoes, value=0, label="Caso do conjunto de teste")
+        resumo = gr.Markdown()
+        grafico = gr.Plot(label="Contribuições")
+        texto = gr.Markdown()
+        saidas = [resumo, grafico, texto]
+        escolha.change(ao_escolher, inputs=escolha, outputs=saidas)
+        tela.load(ao_escolher, inputs=escolha, outputs=saidas)
+    return tela
+
+
+def criar_app_com_painel(servico=None, *, url_da_api: str | None = None, **opcoes):
+    """API e painel no mesmo servidor, uma porta so, como o Spaces exige.
+
+    O painel continua falando com a API por HTTP, pelo endereco local do processo,
+    e nao chamando funcoes da API por dentro: a tela mostra exatamente o que a API
+    publicada responde. O Uvicorn chama esta fabrica com `--factory`.
+    """
+    import gradio as gr
+    from fastapi.responses import RedirectResponse
+
+    from src.api.main import criar_app
+
+    app = criar_app(servico, **opcoes)
+
+    @app.get("/", include_in_schema=False)
+    def raiz():
+        return RedirectResponse("/painel/")
+
+    cliente = httpx.Client(base_url=url_da_api or url_local_da_api(), timeout=60)
+    return gr.mount_gradio_app(app, criar_painel(cliente), path="/painel")

@@ -102,10 +102,14 @@ USER analise
 ARG APP_COMMIT=desconhecido
 ENV APP_COMMIT=${APP_COMMIT}
 
+# Porta pelo ambiente: o Hugging Face Spaces exige 7860 e a informa em PORT.
+# O painel le a mesma variavel para falar com a API dentro do proprio processo.
+ENV PORT=8000
 EXPOSE 8000
-# `--factory`: o modelo e treinado dentro de `criar_app`, e nao no import do
-# modulo, para que importar `src.api.main` em teste nao treine nada.
-CMD ["uvicorn", "src.api.main:criar_app", "--factory", "--host", "0.0.0.0", "--port", "8000"]
+# API e painel no mesmo servidor (painel em /painel, a raiz redireciona para
+# ele). `--factory`: o modelo e treinado dentro da fabrica, e nao no import do
+# modulo, para que importar o modulo em teste nao treine nada.
+CMD ["sh", "-c", "uvicorn src.ui.app:criar_app_com_painel --factory --host 0.0.0.0 --port ${PORT}"]
 
 
 # ---------------------------------------------------------------------------

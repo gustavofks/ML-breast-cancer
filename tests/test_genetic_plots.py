@@ -106,3 +106,21 @@ def test_varredura_desenha_uma_curva_por_parcimonia_em_cada_painel(payload_ag):
         assert len(eixo.get_lines()) == 2
         for linha in eixo.get_lines():
             assert list(linha.get_xdata()) == [5.0, 10.0, 20.0]
+
+
+def test_convergencia_ignora_os_bracos_de_ablacao(payload_ag):
+    """A figura compara as configuracoes E1 a E4 do algoritmo completo.
+
+    Os bracos de ablacao rodam sob o nome de E1, mas com segmentos congelados: o
+    "so hiperparametros" fica numa reta em 0,936 e apareceria como uma execucao
+    do E1 que nao evoluiu nada — figura plausivel, leitura errada.
+    """
+    payloads = [
+        payload_ag(braco="AG, completo", semente=42),
+        payload_ag(braco="AG, completo", semente=43),
+        payload_ag(braco="AG, só limiar", semente=42, segmentos=("limiar",)),
+    ]
+
+    figura = plots.figura_convergencia(payloads)
+
+    assert len(figura.axes[0].get_lines()) == 2

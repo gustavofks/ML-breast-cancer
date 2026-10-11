@@ -42,8 +42,13 @@ def figura_convergencia(payloads: list[dict[str, Any]]) -> plt.Figure:
     Cada semente e desenhada — a dispersao entre elas e informacao, nao ruido a
     esconder atras de uma media — mas a legenda identifica o **experimento**. A
     execucao completa tem 45 buscas, e uma legenda com 45 entradas nao se le.
+
+    So entra o braco completo. As ablacoes rodam sob o nome de E1 com segmentos
+    congelados, e desenhadas apareceriam como execucoes do E1 que nao evoluiram
+    nada: figura plausivel, leitura errada.
     """
     apply_style()
+    payloads = [p for p in payloads if p.get("braco", "AG, completo") == "AG, completo"]
     figura, eixo = plt.subplots(figsize=(7.6, 4.6))
 
     ciclo = plt.rcParams["axes.prop_cycle"].by_key().get("color", [COLOR_BENIGNO])

@@ -179,6 +179,10 @@ def test_pacote_estatico_tem_so_a_pagina_e_o_cartao(script, tmp_path):
     cabecalho = (destino / "README.md").read_text(encoding="utf-8").split("---")[1]
     assert "sdk: static" in cabecalho
     assert "app_file: index.html" in cabecalho
+    # O Spaces limita a descricao curta a 60 caracteres.
+    descricao = next(l for l in cabecalho.splitlines() if l.startswith("short_description:"))
+    assert len(descricao.split(":", 1)[1].strip()) <= 60
+    assert "license: mit" in cabecalho
 
 
 def test_pagina_estatica_usa_o_modelo_e_o_cache_dos_resultados(script, tmp_path):

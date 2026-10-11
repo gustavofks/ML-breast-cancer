@@ -56,6 +56,11 @@ def commit_de_origem() -> str:
 
 
 TITULO = "Apoio ao diagnóstico de câncer de mama"
+# Os mesmos valores preenchidos no formulario de criacao do Space: o README do
+# pacote substitui o que o Spaces criou, e sem eles a descricao e a licenca
+# escolhidas sumiriam no primeiro envio.
+DESCRICAO_CURTA = "Apoio ao diagnóstico de câncer de mama com IA explicável"
+LICENCA = "mit"
 
 
 def versao_do_gradio() -> str:
@@ -66,7 +71,14 @@ def versao_do_gradio() -> str:
 
 def cabecalho(sdk: str) -> str:
     """Bloco YAML do cartao do Space, que diz ao Spaces como executar o pacote."""
-    linhas = [f"title: {TITULO}", "colorFrom: blue", "colorTo: yellow", f"sdk: {sdk}"]
+    linhas = [
+        f"title: {TITULO}",
+        f"short_description: {DESCRICAO_CURTA}",
+        f"license: {LICENCA}",
+        "colorFrom: blue",
+        "colorTo: yellow",
+        f"sdk: {sdk}",
+    ]
     if sdk == "docker":
         linhas.append("app_port: 7860")
     elif sdk == "static":

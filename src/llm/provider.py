@@ -24,6 +24,14 @@ class CacheVazioError(RuntimeError):
     """Resposta ausente do cache sem provedor disponivel para gera-la."""
 
 
+class OrcamentoEsgotado(RuntimeError):
+    """A proxima chamada poderia passar do orcamento; ela nao foi feita."""
+
+
+class GeracaoIncompleta(RuntimeError):
+    """O modelo parou antes de terminar, ou recusou. O texto nao vai para o cache."""
+
+
 @runtime_checkable
 class Provider(Protocol):
     """Contrato minimo de geracao de texto."""
@@ -63,7 +71,7 @@ class OllamaProvider:
 
     def __init__(
         self,
-        modelo: str = config.LLM_MODELO,
+        modelo: str = config.OLLAMA_MODELO,
         url: str = config.LLM_URL,
         timeout: int = config.LLM_TIMEOUT,
     ) -> None:
@@ -87,6 +95,119 @@ class OllamaProvider:
         )
         resposta.raise_for_status()
         return resposta.json()["response"].strip()
+
+
+class ClaudeProvider:
+    """Fala com a API do Claude, com o custo travado por construcao.
+
+    Tres travas vivem aqui. Esforco baixo, porque o pensamento adaptativo do
+    Haiku 5.5 e cobrado como saida. Teto de tokens por chamada. E um orcamento
+    total conferido **antes** de cada chamada: se o pior caso da proxima nao
+    couber no que sobra, ela nao sai. A quarta trava e o `CachedProvider`, que
+    nunca paga duas vezes pelo mesmo texto.
+
+    Nao envia `temperature`: o Haiku 5.5 recusa parametro de amostragem com 400.
+    Tambem nao ha semente na API. A reprodutibilidade vem do cache versionado — o
+    texto publicado e o que ficou gravado, como o `metrics.json` da Fase 1.
+
+    O `import anthropic` fica no construtor, como o `requests` do Ollama: a suite
+    roda sem o SDK, injetando um cliente falso.
+    """
+
+    def __init__(
+        self,
+        cliente=None,
+        *,
+        modelo: str = config.LLM_MODELO,
+        esforco: str = config.CLAUDE_ESFORCO,
+        max_tokens: int = config.CLAUDE_MAX_TOKENS,
+        orcamento_usd: float = config.LLM_ORCAMENTO_USD,
+        preco_entrada_usd: float = config.CLAUDE_PRECO_ENTRADA_USD,
+        preco_saida_usd: float = config.CLAUDE_PRECO_SAIDA_USD,
+    ) -> None:
+        if cliente is None:
+            import anthropic
+
+            cliente = anthropic.Anthropic()
+        self._cliente = cliente
+        self.modelo = modelo
+        self.esforco = esforco
+        self.max_tokens = max_tokens
+        self.orcamento_usd = orcamento_usd
+        self._preco_entrada = preco_entrada_usd
+        self._preco_saida = preco_saida_usd
+        self.gasto_usd = 0.0
+        self.ultimo_uso: dict | None = None
+
+    def custo(self, tokens_entrada: int, tokens_saida: int) -> float:
+        return (
+            tokens_entrada * self._preco_entrada + tokens_saida * self._preco_saida
+        ) / 1_000_000
+
+    def pior_caso(self, prompt: str, system: str) -> float:
+        """Custo maximo de uma chamada, estimado por cima.
+
+        Um token a cada dois caracteres superestima de proposito: portugues fica
+        perto de tres caracteres por token neste tokenizador. A saida entra pelo
+        teto inteiro, que ja inclui o pensamento.
+        """
+        return self.custo(len(prompt + system) // 2 + 1, self.max_tokens)
+
+    def generate(self, prompt: str, *, system: str, seed: int) -> str:
+        restante = self.orcamento_usd - self.gasto_usd
+        if self.pior_caso(prompt, system) > restante:
+            raise OrcamentoEsgotado(
+                f"gasto US$ {self.gasto_usd:.4f} de US$ {self.orcamento_usd:.2f}; "
+                "a proxima chamada poderia passar do teto e nao foi feita"
+            )
+
+        resposta = self._cliente.messages.create(
+            model=self.modelo,
+            max_tokens=self.max_tokens,
+            system=system,
+            messages=[{"role": "user", "content": prompt}],
+            output_config={"effort": self.esforco},
+        )
+
+        # Cobrado mesmo quando o texto nao serve: o gasto e registrado antes de
+        # qualquer verificacao.
+        uso = resposta.usage
+        custo = self.custo(uso.input_tokens, uso.output_tokens)
+        self.gasto_usd += custo
+        self.ultimo_uso = {
+            "modelo": self.modelo,
+            "tokens_entrada": uso.input_tokens,
+            "tokens_saida": uso.output_tokens,
+            "custo_usd": round(custo, 8),
+        }
+
+        # Texto cortado ou recusado nao pode chegar ao cache: seria servido para
+        # sempre, sem que ninguem soubesse que esta incompleto.
+        if resposta.stop_reason in ("max_tokens", "refusal"):
+            raise GeracaoIncompleta(f"geracao interrompida: {resposta.stop_reason}")
+        texto = "".join(b.text for b in resposta.content if b.type == "text").strip()
+        if not texto:
+            raise GeracaoIncompleta("resposta sem texto")
+        return texto
+
+
+def custo_do_cache(diretorio: Path = config.LLM_CACHE_DIR) -> dict:
+    """Custo total do cache versionado, somado das entradas.
+
+    O custo vive em cada entrada, gravado no momento da geracao, entao o total
+    sai do artefato, e nao de um contador que zera a cada execucao. E o numero
+    que o relatorio cita.
+    """
+    total = {"textos": 0, "tokens_entrada": 0, "tokens_saida": 0, "custo_usd": 0.0}
+    for caminho in sorted(Path(diretorio).glob("*.json")):
+        uso = json.loads(caminho.read_text(encoding="utf-8")).get("uso")
+        total["textos"] += 1
+        if uso:
+            total["tokens_entrada"] += uso["tokens_entrada"]
+            total["tokens_saida"] += uso["tokens_saida"]
+            total["custo_usd"] += uso["custo_usd"]
+    total["custo_usd"] = round(total["custo_usd"], 6)
+    return total
 
 
 class CachedProvider:
@@ -136,7 +257,8 @@ class CachedProvider:
             raise CacheVazioError(
                 f"Resposta ausente do cache ({chave}) e nenhum provedor disponivel. "
                 "Rode `python scripts/run_llm.py` na maquina de desenvolvimento, "
-                "com o Ollama no ar, para gerar e versionar o cache."
+                "com a chave da API do Claude no ambiente, para gerar e versionar "
+                "o cache."
             )
 
         resposta = self._interno.generate(prompt, system=system, seed=seed)
@@ -148,6 +270,9 @@ class CachedProvider:
                     "system": system,
                     "prompt": prompt,
                     "resposta": resposta,
+                    # Uso e custo, quando o provedor os informa. E o que permite
+                    # somar o custo do lote a partir do proprio artefato.
+                    "uso": getattr(self._interno, "ultimo_uso", None),
                 },
                 indent=2,
                 ensure_ascii=False,

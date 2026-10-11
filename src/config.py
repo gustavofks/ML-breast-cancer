@@ -96,9 +96,16 @@ GENETIC_SEEDS = (42, 43, 44)
 LLM_DIR = RESULTS_DIR / "llm"
 LLM_CACHE_DIR = LLM_DIR / "cache"
 
-# Modelo local servido pelo Ollama. Trocar o modelo e mudar esta linha: toda a
-# camada fala com um Protocol, nunca com um cliente especifico.
-LLM_MODELO = "llama3.1:8b"
+# Modelo que gera os textos versionados. Decisao de 2026-10-11: Claude Haiku 5.5
+# pela API, no lugar do modelo local do spec original. Gera texto melhor em
+# portugues, dispensa instalar o Ollama, e o lote inteiro custa centavos. Toda a
+# camada fala com um Protocol, entao trocar o modelo e mudar esta linha. O nome
+# entra na chave do cache: texto gerado por outro modelo nunca e servido como se
+# fosse deste.
+LLM_MODELO = "claude-haiku-5-5"
+
+# Alternativa gratuita e local, mantida funcionando.
+OLLAMA_MODELO = "llama3.1:8b"
 LLM_URL = "http://localhost:11434/api/generate"
 
 # Temperatura zero e semente fixa. O texto que entra no relatorio precisa ser o
@@ -109,6 +116,20 @@ LLM_SEED = SEED
 # Contrato de saida: o texto e para ser lido na tela, ao lado do grafico SHAP.
 LLM_LIMITE_DE_PALAVRAS = 220
 LLM_TIMEOUT = 300
+
+# Custo do Claude, travado por construcao. O projeto e avaliado uma vez e o gasto
+# tem de ficar muito abaixo de US$ 5, entao ha quatro travas: o modelo mais
+# barato; esforco baixo, porque o pensamento adaptativo e cobrado como saida;
+# teto de tokens por chamada; e um orcamento total que o provedor confere antes
+# de cada chamada. O cache garante que texto ja gerado nunca e pago de novo.
+CLAUDE_ESFORCO = "low"
+CLAUDE_MAX_TOKENS = 2000  # pensamento + texto; 220 palavras sao ~400 tokens
+LLM_ORCAMENTO_USD = 1.00
+
+# Preco do Haiku 5.5 por milhao de tokens, para prompts de ate 100 mil tokens
+# (os nossos tem menos de mil). Fonte: pagina oficial do modelo, 2026-10-11.
+CLAUDE_PRECO_ENTRADA_USD = 0.10
+CLAUDE_PRECO_SAIDA_USD = 0.50
 
 
 

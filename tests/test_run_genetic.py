@@ -205,3 +205,104 @@ def test_artefato_registra_historico_e_melhor_individuo(script, tmp_path, monkey
     assert registro["historico"]
     assert registro["melhor"]["n_features"] >= 1
     assert registro["avaliacao"]["n_amostras"] > 0
+
+
+def _duas_execucoes_distintas(script):
+    """Duas execucoes do smoke que diferem so pela semente."""
+    configuracao, familia, semente, segmentos, custo = script.montar_execucoes(smoke=True)[0]
+    return [
+        (configuracao, familia, semente, segmentos, custo),
+        (configuracao, familia, semente + 1, segmentos, custo),
+    ]
+
+
+def _rodar(script, monkeypatch, execucoes, destino, *extras):
+    monkeypatch.setattr(script, "montar_execucoes", lambda smoke: execucoes)
+    monkeypatch.setattr(
+        "sys.argv", ["run_genetic.py", "--smoke", "--saida", str(destino), *extras]
+    )
+    script.main()
+
+
+def test_retomada_produz_o_mesmo_artefato_que_a_execucao_sem_interrupcao(
+    script, tmp_path, monkeypatch
+):
+    """Cada execucao nasce da propria semente, entao retomar nao muda resultado.
+
+    E a propriedade que torna a retomada segura: o arquivo final e identico, byte
+    a byte, ao de uma execucao que nunca foi interrompida.
+    """
+    execucoes = _duas_execucoes_distintas(script)
+    continua, retomada = tmp_path / "continua.json", tmp_path / "retomada.json"
+
+    _rodar(script, monkeypatch, execucoes, continua)
+    primeira = json.loads(continua.read_text(encoding="utf-8"))[:1]
+    retomada.write_text(json.dumps(primeira, indent=2, ensure_ascii=False), encoding="utf-8")
+    _rodar(script, monkeypatch, execucoes, retomada, "--retomar")
+
+    assert retomada.read_bytes() == continua.read_bytes()
+
+
+def test_retomada_nao_reexecuta_o_que_ja_esta_no_arquivo(script, tmp_path, monkeypatch):
+    """Execucao do Random Forest custa ate meia hora; refazer e desperdicio."""
+    execucoes = _duas_execucoes_distintas(script)
+    destino = tmp_path / "exec.json"
+    _rodar(script, monkeypatch, execucoes[:1], destino)
+
+    evoluir_original = script.engine.evoluir
+    chamadas = {"n": 0}
+
+    def evoluir_contado(*args, **kwargs):
+        chamadas["n"] += 1
+        return evoluir_original(*args, **kwargs)
+
+    monkeypatch.setattr(script.engine, "evoluir", evoluir_contado)
+    _rodar(script, monkeypatch, execucoes, destino, "--retomar")
+
+    assert chamadas["n"] == 1
+    assert len(json.loads(destino.read_text(encoding="utf-8"))) == 2
+
+
+def test_resultado_de_outra_configuracao_nao_e_reaproveitado(script, tmp_path, monkeypatch):
+    """Mesma semente e mesmo nome de experimento nao bastam para reaproveitar.
+
+    Se a populacao mudou entre as duas rodadas, o resultado gravado responde a
+    outra pergunta, e reaproveita-lo misturaria configuracoes sem erro nenhum.
+    """
+    execucoes = _duas_execucoes_distintas(script)
+    destino = tmp_path / "exec.json"
+    _rodar(script, monkeypatch, execucoes[:1], destino)
+
+    gravado = json.loads(destino.read_text(encoding="utf-8"))
+    gravado[0]["configuracao"]["populacao"] += 1
+    destino.write_text(json.dumps(gravado, ensure_ascii=False), encoding="utf-8")
+
+    evoluir_original = script.engine.evoluir
+    chamadas = {"n": 0}
+
+    def evoluir_contado(*args, **kwargs):
+        chamadas["n"] += 1
+        return evoluir_original(*args, **kwargs)
+
+    monkeypatch.setattr(script.engine, "evoluir", evoluir_contado)
+    _rodar(script, monkeypatch, execucoes, destino, "--retomar")
+
+    assert chamadas["n"] == 2
+
+
+def test_sem_retomar_recusa_sobrescrever_artefato_existente(script, tmp_path, monkeypatch):
+    """Relancar sem a flag apagaria horas de execucao na primeira gravacao.
+
+    Foi o que quase aconteceu quando a maquina reiniciou no meio da execucao
+    completa: o script recomecaria de lista vazia e regravaria o arquivo com uma
+    execucao so. Recusar e o unico comportamento que nao perde dado em silencio.
+    """
+    execucoes = _duas_execucoes_distintas(script)
+    destino = tmp_path / "exec.json"
+    _rodar(script, monkeypatch, execucoes[:1], destino)
+    antes = destino.read_bytes()
+
+    with pytest.raises(SystemExit):
+        _rodar(script, monkeypatch, execucoes, destino)
+
+    assert destino.read_bytes() == antes

@@ -110,6 +110,67 @@ def destino_padrao(sweep: bool) -> Path:
     return config.GENETIC_DIR / ("varredura.json" if sweep else "execucoes.json")
 
 
+# Campos de `ConfiguracaoAG` que mudam o resultado. O nome fica de fora daqui
+# porque o payload o grava em `experimento`, e nao dentro de `configuracao`.
+CAMPOS_DA_CONFIGURACAO = (
+    "populacao",
+    "geracoes",
+    "taxa_mutacao",
+    "taxa_cruzamento",
+    "torneio",
+    "elitismo",
+)
+
+
+def identidade_do_payload(payload: dict) -> str:
+    """O que distingue uma execucao gravada de outra, para decidir se ja foi feita.
+
+    Inclui a configuracao inteira, e nao so o nome do experimento: se a populacao
+    mudou entre duas rodadas, o resultado gravado responde a outra pergunta, e
+    reaproveita-lo misturaria configuracoes sem erro nenhum.
+    """
+    return json.dumps(
+        {
+            "configuracao": {
+                campo: payload["configuracao"][campo] for campo in CAMPOS_DA_CONFIGURACAO
+            },
+            "experimento": payload["experimento"],
+            "familia": payload["familia"],
+            "semente": payload["semente"],
+            "segmentos": sorted(payload["segmentos"]),
+            "custo": payload["custo"],
+        },
+        sort_keys=True,
+        ensure_ascii=False,
+    )
+
+
+def identidade(
+    configuracao, familia: str, semente: int, segmentos, custo: CustoClinico
+) -> str:
+    """A mesma identidade, para uma execucao ainda por fazer.
+
+    Monta os campos no formato do payload e delega, para que as duas pontas nao
+    possam divergir.
+    """
+    return identidade_do_payload(
+        {
+            "configuracao": {
+                campo: getattr(configuracao, campo) for campo in CAMPOS_DA_CONFIGURACAO
+            },
+            "experimento": configuracao.nome,
+            "familia": familia,
+            "semente": semente,
+            "segmentos": list(segmentos),
+            "custo": {
+                "falso_negativo": custo.falso_negativo,
+                "falso_positivo": custo.falso_positivo,
+                "parcimonia": custo.parcimonia,
+            },
+        }
+    )
+
+
 def _gravar(payloads: list[dict], destino: Path) -> None:
     """Grava o artefato inteiro, sobrescrevendo o anterior."""
     destino.write_text(json.dumps(payloads, indent=2, ensure_ascii=False), encoding="utf-8")
@@ -144,6 +205,11 @@ def main() -> None:
             "ou varredura.json com --sweep)"
         ),
     )
+    parser.add_argument(
+        "--retomar",
+        action="store_true",
+        help="reaproveita as execucoes ja gravadas na saida e roda so as que faltam",
+    )
     argumentos = parser.parse_args()
 
     X, y = load_dataset()
@@ -160,12 +226,38 @@ def main() -> None:
     destino = argumentos.saida or destino_padrao(argumentos.sweep)
     destino.parent.mkdir(parents=True, exist_ok=True)
 
+    # Sem `--retomar`, um artefato existente nao e sobrescrito. Recomecar de
+    # lista vazia regravaria o arquivo na primeira execucao concluida, e as horas
+    # ja gravadas sumiriam sem erro nenhum.
+    ja_feitas: dict[str, dict] = {}
+    if destino.exists() and destino.stat().st_size > 0:
+        if not argumentos.retomar:
+            sys.exit(
+                f"{destino} ja existe. Use --retomar para aproveitar as execucoes "
+                "gravadas, ou apague o arquivo para recomecar do zero."
+            )
+        ja_feitas = {
+            identidade_do_payload(payload): payload
+            for payload in json.loads(destino.read_text(encoding="utf-8"))
+        }
+
     payloads = []
     for indice, (configuracao, familia, semente, segmentos, custo) in enumerate(
         execucoes, start=1
     ):
         rotulo = f"{configuracao.nome} | {familia} | semente {semente} | {sorted(segmentos)}"
         print(f"{indice}/{len(execucoes)}  {rotulo}")
+
+        # Cada execucao nasce da propria semente, sem estado compartilhado com as
+        # outras: reaproveitar a gravada da o mesmo resultado que refaze-la. A
+        # ordem do arquivo segue a lista de execucoes, e nao a ordem de
+        # conclusao, para que o artefato retomado seja identico ao continuo.
+        gravada = ja_feitas.get(identidade(configuracao, familia, semente, segmentos, custo))
+        if gravada is not None:
+            payloads.append(gravada)
+            print("      ja gravada, reaproveitada")
+            continue
+
         inicio = time.perf_counter()
 
         resultado = engine.evoluir(

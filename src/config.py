@@ -149,6 +149,11 @@ API_LIMIAR_DE_DESVIO = 5.0
 # Variavel de ambiente com o commit de origem, preenchida no build do container.
 API_VARIAVEL_DE_COMMIT = "APP_COMMIT"
 
+# Publicacao no Hugging Face Spaces: modelos versionados do Dockerfile e do
+# cartao do Space, e o diretorio onde o pacote e montado (fora do Git).
+SPACE_MODELOS_DIR = PROJECT_ROOT / "deploy" / "spaces"
+SPACE_PACOTE_DIR = PROJECT_ROOT / "build" / "space"
+
 def ensure_output_dirs() -> None:
     """Cria os diretorios de saida caso ainda nao existam."""
     for directory in (FIGURES_DIR, REPORTS_DIR):

@@ -308,6 +308,12 @@ docker run --rm -p 8000:8000 -v "$(pwd)/results:/app/results" ml-breast-cancer:a
 # abra http://localhost:8000
 ```
 
+O volume com `results/` é o que entrega ao container o modelo escolhido e os textos gerados. No
+**Git Bash do Windows**, prefixe o `docker run` com `MSYS_NO_PATHCONV=1`: sem isso, o Git Bash
+reescreve o caminho do volume, a pasta não chega ao container, e a API serve a referência da Fase 1
+sem textos. No PowerShell, use `-v "${PWD}/results:/app/results"`. Para confirmar, o indicador
+"Modelo servido" da vitrine deve mostrar 5 medidas e limiar de 22,7%.
+
 A vitrine tem cinco capítulos:
 1. como o modelo foi escolhido, com a jornada e os gráficos interativos do algoritmo genético;
 2. os casos do teste, com previsão, contribuições e texto;

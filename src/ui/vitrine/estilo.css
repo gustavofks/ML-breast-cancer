@@ -138,10 +138,11 @@ main { max-width: 1180px; margin: 0 auto; padding: 0 16px 64px; }
 .jornada h3 { font-size: .98rem; }
 .jornada p { color: var(--tinta-2); font-size: .86rem; margin-top: 4px; }
 .achado {
-  border-left: 4px solid var(--destaque); background: var(--superficie); padding: 14px 18px;
-  border-radius: 0 12px 12px 0; margin: 8px 0 20px; max-width: 95ch;
+  border: 1px solid color-mix(in srgb, var(--destaque) 45%, var(--borda));
+  background: color-mix(in srgb, var(--destaque) 7%, var(--superficie)); padding: 14px 18px;
+  border-radius: 12px; margin: 8px 0 20px; max-width: 95ch;
 }
-.achado strong { display: block; margin-bottom: 4px; }
+.achado strong { display: block; margin-bottom: 4px; color: var(--destaque); font-size: .8rem; letter-spacing: .06em; text-transform: uppercase; }
 
 /* Grade de cartoes */
 .grade { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 460px), 1fr)); gap: 16px; margin: 16px 0; }
@@ -211,7 +212,7 @@ select {
 .medidor-rotulo { display: flex; justify-content: space-between; align-items: baseline; }
 .medidor-rotulo strong { font-size: 1.8rem; font-variant-numeric: tabular-nums; }
 .medidor-trilho { position: relative; height: 14px; border-radius: 7px; background: var(--superficie-2); margin: 8px 0 4px; overflow: hidden; }
-.medidor-preenchido { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 7px; background: var(--benigno); transition: width .18s ease-out, background-color .18s; }
+.medidor-preenchido { position: absolute; inset: 0; border-radius: 7px; background: var(--benigno); transform-origin: left center; transform: scaleX(0); transition: transform .18s ease-out, background-color .18s; }
 .medidor-limiar { position: absolute; top: -2px; bottom: -2px; width: 2px; background: var(--tinta); }
 .medidor-legenda { display: flex; justify-content: space-between; font-size: .75rem; color: var(--tinta-3); }
 .classe { margin-top: 8px; font-weight: 700; font-size: 1.1rem; }
@@ -257,10 +258,12 @@ pre {
 }
 .log li {
   font: 12px/1.45 ui-monospace, Consolas, monospace; padding: 8px 10px; border-radius: 8px;
-  background: var(--superficie-2); border-left: 3px solid var(--tinta-3); overflow-wrap: anywhere;
+  background: var(--superficie-2); border: 1px solid transparent; overflow-wrap: anywhere;
 }
-.log li.desvio { border-left-color: var(--maligno); }
-.log li.erro { border-left-color: var(--erro); }
+.log li.desvio { border-color: color-mix(in srgb, var(--maligno) 55%, transparent); }
+.log li.desvio .cabeca-evento strong { color: var(--maligno); }
+.log li.erro { border-color: color-mix(in srgb, var(--erro) 55%, transparent); }
+.log li.erro .cabeca-evento strong { color: var(--erro); }
 .log li.novo { animation: chegar .5s ease-out; }
 @keyframes chegar { from { background: color-mix(in srgb, var(--destaque) 18%, var(--superficie-2)); } }
 @media (prefers-reduced-motion: reduce) { .log li.novo { animation: none; } }

@@ -424,7 +424,7 @@
     var limiar = dados.modelo.limiar;
     $("sim-prob").textContent = pct.format(resultado.probabilidade);
     var barra = $("sim-barra");
-    barra.style.width = (100 * resultado.probabilidade).toFixed(2) + "%";
+    barra.style.transform = "scaleX(" + resultado.probabilidade.toFixed(4) + ")";
     barra.style.background = resultado.probabilidade >= limiar ? cor("--maligno") : cor("--benigno");
     $("sim-limiar").style.left = (100 * limiar).toFixed(2) + "%";
     $("sim-limiar-texto").textContent = "limiar " + pct.format(limiar);

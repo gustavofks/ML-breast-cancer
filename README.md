@@ -11,6 +11,9 @@ executar cada parte está em [Fase 2](#fase-2).
 
 **Painel publicado:** https://huggingface.co/spaces/gustavofks/apoio-diagnostico-cancer-mama
 
+**Tudo o que a Fase 2 mudou:**
+[comparação entre `v1.0-fase1` e o estado atual](https://github.com/gustavofks/ML-breast-cancer/compare/v1.0-fase1...main)
+
 Uma rede de hospitais especializados no atendimento à mulher precisa de um sistema de apoio ao
 diagnóstico capaz de acelerar a triagem. Este projeto entrega a base de Machine Learning dessa
 solução: a partir de características morfológicas de núcleos celulares extraídas de punção
@@ -217,6 +220,47 @@ pip install -r requirements-api.txt   # FastAPI, Uvicorn e Gradio
 
 Sem elas, os testes da API e do painel são pulados, não quebrados.
 
+**Arquitetura.** As etapas pesadas e as que custam dinheiro rodam uma vez, na máquina de
+desenvolvimento, e gravam arquivos versionados. O serviço só lê esses arquivos: não precisa de
+modelo de linguagem, chave de API nem internet.
+
+```mermaid
+flowchart LR
+    base[(data/raw/data.csv)]
+
+    subgraph offline["Offline, na máquina de desenvolvimento"]
+        ag["run_genetic.py<br/>algoritmo genético<br/>(validação cruzada no treino)"]
+        av["evaluate_arms.py<br/>única etapa que usa o teste"]
+        esc["escolher_modelo.py<br/>regra registrada antes do teste"]
+        llm["run_llm.py<br/>Claude Haiku 5.5<br/>+ 4 verificações"]
+    end
+
+    subgraph artefatos["results/, versionado"]
+        gen[(genetic/<br/>execuções, summary,<br/>modelo_servido.json)]
+        cache[(llm/cache/<br/>textos aprovados)]
+    end
+
+    subgraph online["Online, no container"]
+        api["API FastAPI<br/>/predict /explain<br/>/metrics /model-info"]
+        painel["Painel Gradio<br/>/painel/"]
+        mon["log JSON +<br/>sentinela de desvio"]
+    end
+
+    space["Hugging Face Space<br/>página estática"]
+
+    base --> ag --> gen
+    base --> av
+    gen --> av --> gen
+    gen --> esc --> gen
+    gen --> llm --> cache
+    gen --> api
+    cache --> api
+    base --> api
+    api --> painel
+    api --> mon
+    api -- "montar_space.py<br/>congela /explain" --> space
+```
+
 **Algoritmo genético.** Quatro configurações do algoritmo sobre as três famílias de modelo, três
 sementes cada, mais os braços de ablação que isolam de onde vem o ganho. O conjunto de teste só é
 tocado na comparação final, por `evaluate_arms.py`; a busca inteira acontece por validação cruzada
@@ -336,12 +380,15 @@ ML-breast-cancer/
 │   │   ├── monitoring.py      # sentinela de desvio e métricas Prometheus
 │   │   ├── registro.py        # log JSON, uma linha por requisição
 │   │   └── main.py            # as rotas
-│   └── ui/app.py              # Fase 2: painel Gradio, que consome a API
+│   └── ui/                    # Fase 2: o painel
+│       ├── app.py             # painel Gradio, que consome a API
+│       └── estatico.py        # versão estática, publicada no Hugging Face
 ├── scripts/
 │   ├── run_wisconsin.py       # pipeline tabular ponta a ponta
 │   ├── run_vision.py          # pipeline de imagem ponta a ponta
 │   ├── run_genetic.py         # buscas do algoritmo genético e varredura de custo
 │   ├── evaluate_arms.py       # comparação final dos braços no conjunto de teste
+│   ├── escolher_modelo.py     # grava o modelo servido, sem ler o teste
 │   ├── build_genetic_report.py  # summary.json e figuras do algoritmo genético
 │   ├── run_llm.py             # geração dos textos, com estimativa de custo
 │   └── montar_space.py        # pacote do Hugging Face Spaces

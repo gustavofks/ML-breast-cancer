@@ -232,6 +232,7 @@ docs/referencias/
 docs/*.md
 docs/*.docx
 docs/build_docx.py
+docs/fase2/
 
 # Documentacao de processo e instrucoes para agentes de IA: specs de design e
 # CLAUDE.md. Servem ao desenvolvimento, nao a entrega, entao ficam locais pelo

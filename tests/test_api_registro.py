@@ -61,3 +61,51 @@ def test_configurar_duas_vezes_nao_duplica_linhas():
                         status=200, latencia_ms=0.1, resultado=None)
 
     assert len(fluxo.getvalue().strip().splitlines()) == 1
+
+
+def test_memoria_guarda_os_eventos_recentes_em_ordem_com_sequencia():
+    """A vitrine mostra o log na tela; ela le os eventos desta memoria."""
+    logger, _ = _capturar("teste-memoria")
+
+    registro.requisicao(logger, id="a", rota="/health", metodo="GET",
+                        status=200, latencia_ms=0.1, resultado=None)
+    registro.desvio(logger, id="b", feature="area_se", valor=900.0, desvios=19.0)
+
+    eventos = registro.memoria(logger).depois(0)
+    assert [e["evento"] for e in eventos] == ["requisicao", "desvio"]
+    assert [e["seq"] for e in eventos] == [1, 2]
+    assert eventos[1]["nivel"] == "WARNING"
+
+
+def test_memoria_devolve_so_o_que_veio_depois_da_sequencia_pedida():
+    """A tela pede so o que e novo, e nao a memoria inteira a cada leitura."""
+    logger, _ = _capturar("teste-depois")
+    for i in range(3):
+        registro.requisicao(logger, id=str(i), rota="/health", metodo="GET",
+                            status=200, latencia_ms=0.1, resultado=None)
+
+    assert [e["id"] for e in registro.memoria(logger).depois(2)] == ["2"]
+
+
+def test_memoria_tem_capacidade_limitada():
+    """Memoria sem limite cresceria com cada requisicao ate derrubar o processo."""
+    fluxo = io.StringIO()
+    logger = registro.configurar(nome="teste-capacidade", fluxo=fluxo, capacidade=3)
+    for i in range(5):
+        registro.requisicao(logger, id=str(i), rota="/health", metodo="GET",
+                            status=200, latencia_ms=0.1, resultado=None)
+
+    eventos = registro.memoria(logger).depois(0)
+    assert [e["id"] for e in eventos] == ["2", "3", "4"]
+    assert eventos[-1]["seq"] == 5
+
+
+def test_memoria_e_a_linha_do_fluxo_trazem_os_mesmos_campos():
+    """A tela e o agregador de log leem o mesmo evento, nao duas versoes dele."""
+    logger, fluxo = _capturar("teste-mesmos-campos")
+
+    registro.desvio(logger, id="b", feature="area_se", valor=900.0, desvios=19.0)
+
+    linha = json.loads(fluxo.getvalue())
+    evento = registro.memoria(logger).depois(0)[0]
+    assert {k: v for k, v in evento.items() if k != "seq"} == linha

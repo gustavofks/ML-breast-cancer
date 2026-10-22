@@ -259,3 +259,53 @@ def test_alerta_de_desvio_vai_ao_log_com_o_id_da_requisicao(modelo, caso, tmp_pa
         json.loads(l) for l in fluxo.getvalue().splitlines() if '"desvio"' in l
     ]
     assert [(d["id"], d["feature"]) for d in desvios] == [("r2", "area_worst")]
+
+
+# ---------------------------------------------------------------------------
+# Log recente, lido pela vitrine
+# ---------------------------------------------------------------------------
+def _cliente_com_log_proprio(modelo, tmp_path, nome):
+    logger = registro.configurar(nome, io.StringIO())
+    return TestClient(main.criar_app(modelo, diretorio_cache=tmp_path / "cache", logger=logger))
+
+
+def test_logs_recentes_traz_requisicoes_e_desvios_com_o_id(modelo, caso, tmp_path):
+    cliente = _cliente_com_log_proprio(modelo, tmp_path, "teste-logs-recentes")
+
+    cliente.post("/predict", json={"medidas": {**caso, "area_worst": 1e6}},
+                 headers={"X-Request-ID": "r3"})
+    eventos = cliente.get("/logs/recentes").json()["eventos"]
+
+    assert {(e["evento"], e["id"]) for e in eventos} == {("requisicao", "r3"), ("desvio", "r3")}
+
+
+def test_logs_recentes_devolve_so_o_que_veio_depois(modelo, tmp_path):
+    cliente = _cliente_com_log_proprio(modelo, tmp_path, "teste-logs-depois")
+    cliente.get("/health")
+    ultimo = cliente.get("/logs/recentes").json()["eventos"][-1]["seq"]
+
+    cliente.get("/health", headers={"X-Request-ID": "novo"})
+    eventos = cliente.get("/logs/recentes", params={"depois": ultimo}).json()["eventos"]
+
+    assert [e["id"] for e in eventos] == ["novo"]
+
+
+def test_ler_o_log_nao_gera_log_nem_metrica(modelo, tmp_path):
+    """Cada leitura geraria uma linha nova, e a tela leria o proprio eco para sempre."""
+    cliente = _cliente_com_log_proprio(modelo, tmp_path, "teste-logs-silencio")
+
+    for _ in range(3):
+        cliente.get("/logs/recentes")
+
+    assert cliente.get("/logs/recentes").json()["eventos"] == []
+    assert "/logs/recentes" not in cliente.get("/metrics").text
+
+
+def test_duas_apis_com_loggers_proprios_nao_misturam_o_log(modelo, tmp_path):
+    """A vitrine monta seus dados numa segunda API; o log dela nao vaza para a servida."""
+    servida = _cliente_com_log_proprio(modelo, tmp_path, "teste-servida")
+    montagem = _cliente_com_log_proprio(modelo, tmp_path, "teste-montagem")
+
+    montagem.get("/health")
+
+    assert servida.get("/logs/recentes").json()["eventos"] == []

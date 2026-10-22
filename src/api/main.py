@@ -11,6 +11,7 @@ design chama de servico preparado para escalar.
 
 from __future__ import annotations
 
+import logging
 import os
 import time
 import uuid
@@ -32,6 +33,10 @@ from src.llm.provider import CacheVazioError, CachedProvider
 # o texto gravado.
 TEMPLATE_DO_PACIENTE = "explicacao_paciente_v2"
 
+# Rotas que nao geram log nem metrica. Ler o log pela tela geraria uma linha
+# nova a cada leitura, e a tela passaria a mostrar o proprio eco.
+ROTAS_SILENCIOSAS = frozenset({"/logs/recentes"})
+
 
 class Medidas(BaseModel):
     """Corpo de /predict e /explain: medidas do nucleo celular, por nome."""
@@ -43,12 +48,20 @@ def criar_app(
     servico: dominio.Servico | None = None,
     *,
     diretorio_cache: Path = config.LLM_CACHE_DIR,
+    logger: logging.Logger | None = None,
 ) -> FastAPI:
-    """Monta a API em torno de um modelo ja treinado, ou treina o especificado."""
+    """Monta a API em torno de um modelo ja treinado, ou treina o especificado.
+
+    `logger` existe para quem monta uma segunda API no mesmo processo, como a
+    vitrine: com o logger padrao, as duas escreveriam no mesmo log e na mesma
+    memoria de eventos, e as chamadas da montagem apareceriam no monitoramento
+    da API servida.
+    """
     modelo = servico or dominio.Servico.construir(dominio.carregar_especificacao())
     sentinela = monitoring.Sentinela.de_treino(modelo.X_train, k=config.API_LIMIAR_DE_DESVIO)
     monitor = monitoring.Monitor()
-    logger = registro.configurar()
+    logger = logger or registro.configurar()
+    eventos = registro.memoria(logger)
 
     app = FastAPI(title="Apoio ao diagnóstico de câncer de mama", version="2.0")
     app.state.diretorio_cache = Path(diretorio_cache)
@@ -72,6 +85,8 @@ def criar_app(
             nome = "nao_encontrada"
         else:
             nome = request.scope.get("root_path", "") + rota.path
+        if nome in ROTAS_SILENCIOSAS:
+            return resposta
 
         monitor.registrar(nome, resposta.status_code, segundos)
         registro.requisicao(
@@ -123,6 +138,15 @@ def criar_app(
     @app.get("/metrics", response_class=PlainTextResponse)
     def metrics():
         return monitor.exportar()
+
+    @app.get("/logs/recentes")
+    def logs_recentes(depois: int = 0):
+        """Eventos de log em memoria com sequencia maior que `depois`.
+
+        O mesmo JSON das linhas do stdout. Existe para a vitrine mostrar o log
+        na tela; um agregador de verdade le o stdout.
+        """
+        return {"eventos": eventos.depois(depois)}
 
     @app.post("/predict")
     def predict(corpo: Medidas, request: Request):

@@ -159,10 +159,18 @@ API_LIMIAR_DE_DESVIO = 5.0
 # Variavel de ambiente com o commit de origem, preenchida no build do container.
 API_VARIAVEL_DE_COMMIT = "APP_COMMIT"
 
+# Eventos de log guardados em memoria para a vitrine mostrar na tela. Duzentos
+# cobrem varios minutos de demonstracao e custam poucos kilobytes.
+API_EVENTOS_EM_MEMORIA = 200
+
 # Publicacao no Hugging Face Spaces: modelos versionados do Dockerfile e do
 # cartao do Space, e o diretorio onde o pacote e montado (fora do Git).
 SPACE_MODELOS_DIR = PROJECT_ROOT / "deploy" / "spaces"
 SPACE_PACOTE_DIR = PROJECT_ROOT / "build" / "space"
+
+# Ativos da vitrine (molde, estilo, script e o Chart.js versionado), embutidos
+# no HTML na montagem: a pagina nao carrega nada de fora.
+VITRINE_DIR = PROJECT_ROOT / "src" / "ui" / "vitrine"
 
 def ensure_output_dirs() -> None:
     """Cria os diretorios de saida caso ainda nao existam."""

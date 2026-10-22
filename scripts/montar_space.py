@@ -192,9 +192,12 @@ linguagem natural.
 **Sistema de apoio à decisão.** A previsão e a explicação ajudam a leitura do
 caso, mas o diagnóstico final é sempre do médico responsável.
 
-Esta é a versão estática do painel: os números e os textos foram gerados pela
-API do projeto e congelados na página. A API completa, com previsão para medidas
-novas, log estruturado e métricas, roda no container do repositório.
+Esta é a versão estática da vitrine do projeto: o processo de escolha do
+modelo, os casos do teste, um simulador de medidas que roda no navegador, uma
+sessão gravada do console da API e a avaliação dos textos gerados. Os números e
+os textos vêm da API do projeto e dos artefatos de `results/`, congelados na
+página. A API completa, com chamadas ao vivo, log e métricas, roda no container
+do repositório.
 """
 
 
@@ -215,34 +218,30 @@ def _avisos(resultados: Path) -> list[str]:
 
 
 def _montar_estatico(destino: Path, resultados: Path, commit: str) -> list[str]:
-    """Gera `index.html` consultando a API em processo, com o modelo e o cache dados.
+    """Gera `index.html`: a vitrine, montada com o modelo e o cache dados.
 
-    Os imports ficam aqui dentro: so este formato precisa da FastAPI na maquina
-    que monta o pacote.
+    A vitrine consulta a API em processo (`src/ui/vitrine.py`); os imports ficam
+    aqui dentro porque so este formato precisa da FastAPI na maquina que monta o
+    pacote.
     """
-
-    from fastapi.testclient import TestClient
-
-    from src.api import main as api_main
     from src.api.servico import Servico, carregar_especificacao
-    from src.ui import estatico
+    from src.ui import vitrine
 
     modelo = Servico.construir(
         carregar_especificacao(resultados / "genetic" / "modelo_servido.json")
     )
-    api = TestClient(api_main.criar_app(modelo, diretorio_cache=resultados / "llm" / "cache"))
 
     anterior = os.environ.get(config.API_VARIAVEL_DE_COMMIT)
     os.environ[config.API_VARIAVEL_DE_COMMIT] = commit
     try:
-        dados = estatico.dados_dos_casos(api)
+        dados = vitrine.montar_dados(modelo, resultados=resultados)
     finally:
         if anterior is None:
             os.environ.pop(config.API_VARIAVEL_DE_COMMIT, None)
         else:
             os.environ[config.API_VARIAVEL_DE_COMMIT] = anterior
 
-    (destino / "index.html").write_text(estatico.pagina(dados), encoding="utf-8")
+    (destino / "index.html").write_text(vitrine.pagina(dados), encoding="utf-8")
     return _avisos(resultados)
 
 

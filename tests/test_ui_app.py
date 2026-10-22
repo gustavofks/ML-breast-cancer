@@ -164,8 +164,8 @@ def test_painel_e_api_no_mesmo_servidor(api):
     assert cliente.get("/painel/").status_code == 200
 
 
-def test_raiz_leva_ao_painel(api):
-    """Quem abre o endereco do Space cai na tela, nao num JSON."""
+def test_raiz_serve_a_vitrine(api):
+    """Quem abre o endereco do servidor cai na vitrine, nao num JSON."""
     pytest.importorskip("gradio", reason="Fase 2: requer requirements-api.txt")
     from fastapi.testclient import TestClient
 
@@ -176,8 +176,9 @@ def test_raiz_leva_ao_painel(api):
 
     resposta = cliente.get("/", follow_redirects=False)
 
-    assert resposta.status_code in (302, 307)
-    assert resposta.headers["location"].startswith("/painel")
+    assert resposta.status_code == 200
+    assert resposta.headers["content-type"].startswith("text/html")
+    assert "Console da API" in resposta.text
 
 
 def test_painel_aponta_para_a_porta_do_proprio_processo(monkeypatch):
@@ -191,7 +192,7 @@ def test_metricas_separam_o_painel_da_raiz(api):
     """O Gradio montado sobrescreve a rota do escopo com a dele, que e "/".
 
     Sem o prefixo da montagem, cada pagina do painel seria contada como a raiz,
-    e a metrica diria que o redirecionamento responde 200.
+    e a raiz apareceria com duas visitas em vez de uma.
     """
     pytest.importorskip("gradio", reason="Fase 2: requer requirements-api.txt")
     from fastapi.testclient import TestClient
@@ -205,6 +206,5 @@ def test_metricas_separam_o_painel_da_raiz(api):
     cliente.get("/", follow_redirects=False)
     texto = cliente.get("/metrics").text
 
-    assert 'api_requisicoes_total{rota="/",status="200"}' not in texto
     assert 'api_requisicoes_total{rota="/painel/",status="200"} 1' in texto
-    assert 'api_requisicoes_total{rota="/",status="307"} 1' in texto
+    assert 'api_requisicoes_total{rota="/",status="200"} 1' in texto

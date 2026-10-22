@@ -165,22 +165,38 @@ def criar_painel(api):
 
 
 def criar_app_com_painel(servico=None, *, url_da_api: str | None = None, **opcoes):
-    """API e painel no mesmo servidor, uma porta so, como o Spaces exige.
+    """API, vitrine e painel no mesmo servidor, uma porta so, como o Spaces exige.
 
-    O painel continua falando com a API por HTTP, pelo endereco local do processo,
-    e nao chamando funcoes da API por dentro: a tela mostra exatamente o que a API
-    publicada responde. O Uvicorn chama esta fabrica com `--factory`.
+    A raiz serve a vitrine (`src/ui/vitrine.py`), que detecta a API e chama as
+    rotas de verdade. O painel Gradio continua em `/painel/`, falando com a API
+    por HTTP, pelo endereco local do processo, e nao chamando funcoes da API por
+    dentro: a tela mostra exatamente o que a API publicada responde. O Uvicorn
+    chama esta fabrica com `--factory`.
+
+    A vitrine e montada na primeira visita, e nao na inicializacao: sao 114
+    consultas a `/explain`, e a API ja responde enquanto ninguem abriu a raiz.
     """
+    import threading
+
     import gradio as gr
-    from fastapi.responses import RedirectResponse
+    from fastapi.responses import HTMLResponse
 
     from src.api.main import criar_app
+    from src.api.servico import Servico, carregar_especificacao
+    from src.ui import vitrine
 
+    servico = servico or Servico.construir(carregar_especificacao())
     app = criar_app(servico, **opcoes)
+    trava = threading.Lock()
+    pronta: dict[str, str] = {}
 
-    @app.get("/", include_in_schema=False)
+    @app.get("/", include_in_schema=False, response_class=HTMLResponse)
     def raiz():
-        return RedirectResponse("/painel/")
+        with trava:
+            if "html" not in pronta:
+                dados = vitrine.montar_dados(servico, diretorio_cache=app.state.diretorio_cache)
+                pronta["html"] = vitrine.pagina(dados)
+        return pronta["html"]
 
     cliente = httpx.Client(base_url=url_da_api or url_local_da_api(), timeout=60)
     return gr.mount_gradio_app(app, criar_painel(cliente), path="/painel")

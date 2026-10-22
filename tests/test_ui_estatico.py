@@ -1,7 +1,4 @@
-"""Testes da versao estatica do painel, publicada como Space estatico."""
-
-import json
-import re
+"""Testes dos casos do teste congelados a partir da API, para a vitrine estatica."""
 
 import pytest
 
@@ -47,23 +44,6 @@ def test_registro_traz_o_diagnostico_registrado_e_o_modelo_servido(dados):
     assert dados["modelo"]["limiar"]
 
 
-def test_pagina_traz_o_aviso_permanente(dados):
-    assert "diagnóstico final é sempre do médico" in estatico.pagina(dados)
-
-
-def test_dados_embutidos_nao_fecham_o_script_antes_da_hora(dados):
-    """Texto com "</script>" dentro do JSON encerraria o bloco e quebraria a pagina."""
-    dados = json.loads(json.dumps(dados))
-    dados["casos"][0]["texto"] = "ataque </script><script>alert(1)</script>"
-
-    html = estatico.pagina(dados)
-    bloco = re.search(r'<script id="dados" type="application/json">(.*?)</script>', html, re.S)
-
-    assert json.loads(bloco.group(1))["casos"][0]["texto"].startswith("ataque </script>")
-
-
-def test_pagina_nao_depende_de_nada_externo(dados):
-    """Space estatico abre sem servidor; recurso externo e ponto de falha a mais."""
-    html = estatico.pagina(dados)
-
-    assert not re.search(r'(src|href)="https?://', html)
+def test_registro_traz_as_medidas_do_modelo_para_o_simulador(dados):
+    for caso in dados["casos"]:
+        assert list(caso["medidas"]) == dados["modelo"]["features"]

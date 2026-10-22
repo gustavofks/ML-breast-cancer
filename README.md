@@ -165,6 +165,7 @@ Ambos estão versionados **com as saídas executadas** — podem ser lidos sem r
 
 ```bash
 pytest
+node --test "tests/js/*.test.js"   # lógica da vitrine; usa build/space/index.html, se montado
 ```
 
 ### Entrega extra: diagnóstico por imagem
@@ -242,6 +243,7 @@ flowchart LR
 
     subgraph online["Online, no container"]
         api["API FastAPI<br/>/predict /explain<br/>/metrics /model-info"]
+        vitrine["Vitrine<br/>/"]
         painel["Painel Gradio<br/>/painel/"]
         mon["log JSON +<br/>sentinela de desvio"]
     end
@@ -256,9 +258,10 @@ flowchart LR
     gen --> api
     cache --> api
     base --> api
+    api --> vitrine
     api --> painel
     api --> mon
-    api -- "montar_space.py<br/>congela /explain" --> space
+    vitrine -- "montar_space.py<br/>congela dados e gravação" --> space
 ```
 
 **Algoritmo genético.** Quatro configurações do algoritmo sobre as três famílias de modelo, três
@@ -296,34 +299,51 @@ Cada texto passa por quatro verificações automáticas — números fiéis à e
 diagnóstica, as medidas de maior peso citadas, formato e tamanho — e texto reprovado nunca chega à
 tela.
 
-**API e painel.** Um servidor só, com o painel em `/painel/`:
+**API, vitrine e painel.** Um servidor só. A raiz abre a **vitrine**, a página de apresentação
+da Fase 2, e o painel Gradio fica em `/painel/`:
 
 ```bash
 docker build --target api -t ml-breast-cancer:api .
 docker run --rm -p 8000:8000 -v "$(pwd)/results:/app/results" ml-breast-cancer:api
+# abra http://localhost:8000
 ```
+
+A vitrine tem cinco capítulos:
+1. como o modelo foi escolhido, com a jornada e os gráficos interativos do algoritmo genético;
+2. os casos do teste, com previsão, contribuições e texto;
+3. um simulador em que se movem as medidas do modelo;
+4. um console que chama cada rota e mostra pedido, resposta, log e métricas na tela;
+5. a qualidade dos textos gerados.
+
+Servida pelo container, ela detecta a API em `/health` e chama as rotas de verdade.
 
 | Rota | Função |
 |---|---|
+| `/` | a vitrine |
 | `/painel/` | escolher um caso do teste e ver previsão, limiar, contribuições e texto |
 | `GET /health` | vivacidade e confirmação de que o modelo carregou |
 | `POST /predict` | probabilidade, classe e limiar a partir das 30 medidas |
 | `POST /explain` | a previsão, as contribuições do caso e o texto em linguagem natural |
 | `GET /metrics` | contadores, latências e alertas de desvio no formato Prometheus |
 | `GET /model-info` | modelo servido, medidas, limiar, origem e commit |
+| `GET /logs/recentes` | os últimos eventos do log em memória, para a vitrine mostrar na tela |
 
 O modelo servido é descrito em `results/genetic/modelo_servido.json`, no mesmo formato do melhor
 indivíduo que o algoritmo genético grava. Sem o arquivo, a API serve a referência da Fase 1 e
 declara isso em `/model-info`. Cada requisição gera uma linha de log em JSON, e uma sentinela
 registra alerta quando alguma medida recebida foge da distribuição do treino.
 
-**Publicação no Hugging Face Spaces.** O painel está publicado em
+**Publicação no Hugging Face Spaces.** A vitrine está publicada em
 https://huggingface.co/spaces/gustavofks/apoio-diagnostico-cancer-mama como **Space estático**. O
 Hugging Face passou a cobrar de contas pessoais pelos Spaces que executam código (SDKs Gradio e
-Docker); o estático continua gratuito. A página publicada congela, para cada caso do conjunto de
-teste, a resposta que a API dá em `/explain`, consultada em processo na hora de montar o pacote:
-os números e textos são os da API, não uma conta paralela. A API completa, com previsão para
-medidas novas, log e métricas, roda no container.
+Docker); o estático continua gratuito, porque nada executa no servidor.
+
+Lá, a mesma página usa o que foi congelado na montagem, consultando a API em processo: as respostas
+de `/explain` para cada caso do teste e uma sessão gravada do console, com respostas, log e
+métricas reais.
+
+O simulador refaz no navegador a conta da regressão logística servida. Os testes conferem essa conta
+contra a API nos 114 casos, a menos de 1e-9. As chamadas ao vivo rodam no container.
 
 ```bash
 python scripts/montar_space.py                 # Space estático (padrão): README.md e index.html
@@ -380,9 +400,12 @@ ML-breast-cancer/
 │   │   ├── monitoring.py      # sentinela de desvio e métricas Prometheus
 │   │   ├── registro.py        # log JSON, uma linha por requisição
 │   │   └── main.py            # as rotas
-│   └── ui/                    # Fase 2: o painel
-│       ├── app.py             # painel Gradio, que consome a API
-│       └── estatico.py        # versão estática, publicada no Hugging Face
+│   └── ui/                    # Fase 2: as telas
+│       ├── app.py             # painel Gradio e o servidor com API, vitrine e painel
+│       ├── vitrine.py         # vitrine: dados do processo, da API e do console gravado
+│       ├── simulador.py       # a conta do modelo servido, exportada para o navegador
+│       ├── estatico.py        # casos do teste congelados a partir da API
+│       └── vitrine/           # molde, estilo, scripts e o Chart.js embutidos na página
 ├── scripts/
 │   ├── run_wisconsin.py       # pipeline tabular ponta a ponta
 │   ├── run_vision.py          # pipeline de imagem ponta a ponta
@@ -394,6 +417,7 @@ ML-breast-cancer/
 │   └── montar_space.py        # pacote do Hugging Face Spaces
 ├── deploy/spaces/             # Dockerfile e cartão do Space
 ├── tests/                     # testes automatizados: um arquivo por módulo
+│   └── js/                    # testes da lógica da vitrine, no Node
 ├── results/
 │   ├── figures/               # 19 gráficos gerados
 │   ├── metrics.json           # métricas do pipeline tabular

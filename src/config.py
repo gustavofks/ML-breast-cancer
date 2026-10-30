@@ -63,6 +63,115 @@ EPOCHS = 50
 VALIDATION_SPLIT = 0.3  # metade vira validacao, metade vira teste
 
 
+# ---------------------------------------------------------------------------
+# Fase 2: algoritmo genetico
+# ---------------------------------------------------------------------------
+GENETIC_DIR = RESULTS_DIR / "genetic"
+
+# Custo clinico assimetrico. A razao 10:1 traduz a politica descrita na secao
+# 4.2 do relatorio da Fase 1: o falso negativo (tumor maligno classificado como
+# benigno) e incomparavelmente mais grave que o falso positivo, que no fluxo
+# clinico custa um exame adicional. A razao e decisao da instituicao de saude,
+# entao vive aqui como parametro, nunca embutida no codigo do fitness.
+CUSTO_FALSO_NEGATIVO = 10.0
+CUSTO_FALSO_POSITIVO = 1.0
+
+# Peso do termo de parcimonia. Serve de desempate: entre duas solucoes
+# igualmente seguras, prefere a que exige menos medidas do patologista.
+PENALIDADE_PARCIMONIA = 0.05
+
+# Faixa util do limiar de decisao. Fora dela o classificador degenera em
+# "tudo maligno" ou "tudo benigno", que nao e solucao candidata.
+LIMIAR_MIN = 0.05
+LIMIAR_MAX = 0.95
+
+# Algoritmo genetico e estocastico: execucao unica nao e resultado. Toda
+# configuracao roda com estas tres sementes, e o relatorio traz media e desvio.
+GENETIC_SEEDS = (42, 43, 44)
+
+# Processos que avaliam a populacao em paralelo; -1 usa todos os nucleos. Nao
+# muda o resultado, so o tempo: a avaliacao de um individuo nao depende do
+# gerador aleatorio da busca.
+GENETIC_N_JOBS = -1
+
+
+# ---------------------------------------------------------------------------
+# Fase 2: camada de modelo de linguagem
+# ---------------------------------------------------------------------------
+LLM_DIR = RESULTS_DIR / "llm"
+LLM_CACHE_DIR = LLM_DIR / "cache"
+
+# Modelo que gera os textos versionados. Decisao de 2026-10-11: Claude Haiku 5.5
+# pela API, no lugar do modelo local do spec original. Gera texto melhor em
+# portugues, dispensa instalar o Ollama, e o lote inteiro custa centavos. Toda a
+# camada fala com um Protocol, entao trocar o modelo e mudar esta linha. O nome
+# entra na chave do cache: texto gerado por outro modelo nunca e servido como se
+# fosse deste.
+LLM_MODELO = "claude-haiku-5-5"
+
+# Alternativa gratuita e local, mantida funcionando.
+OLLAMA_MODELO = "llama3.1:8b"
+LLM_URL = "http://localhost:11434/api/generate"
+
+# Temperatura zero e semente fixa. O texto que entra no relatorio precisa ser o
+# mesmo a cada execucao, pela mesma regra que vale para results/metrics.json.
+LLM_TEMPERATURA = 0.0
+LLM_SEED = SEED
+
+# Contrato de saida: o texto e para ser lido na tela, ao lado do grafico SHAP.
+LLM_LIMITE_DE_PALAVRAS = 220
+LLM_TIMEOUT = 300
+
+# Tamanho pedido no prompt, abaixo do limite que o verificador aplica. Com os
+# dois iguais, o primeiro lote real passou do limite por 9 palavras: o modelo
+# conta palavras de forma aproximada, e o contrato precisa de folga.
+LLM_ALVO_DE_PALAVRAS = 180
+
+# Custo do Claude, travado por construcao. O projeto e avaliado uma vez e o gasto
+# tem de ficar muito abaixo de US$ 5, entao ha quatro travas: o modelo mais
+# barato; esforco baixo, porque o pensamento adaptativo e cobrado como saida;
+# teto de tokens por chamada; e um orcamento total que o provedor confere antes
+# de cada chamada. O cache garante que texto ja gerado nunca e pago de novo.
+CLAUDE_ESFORCO = "low"
+CLAUDE_MAX_TOKENS = 2000  # pensamento + texto; 220 palavras sao ~400 tokens
+LLM_ORCAMENTO_USD = 1.00
+
+# Preco do Haiku 5.5 por milhao de tokens, para prompts de ate 100 mil tokens
+# (os nossos tem menos de mil). Fonte: pagina oficial do modelo, 2026-10-11.
+CLAUDE_PRECO_ENTRADA_USD = 0.10
+CLAUDE_PRECO_SAIDA_USD = 0.50
+
+
+
+# ---------------------------------------------------------------------------
+# Fase 2: API
+# ---------------------------------------------------------------------------
+# Modelo servido. A escolha depende da avaliacao final dos bracos, entao vive
+# num arquivo que o usuario grava depois de le-la, e nao no codigo. Sem o
+# arquivo, a API serve a referencia da Fase 1 e declara isso em /model-info.
+MODELO_SERVIDO_FILE = GENETIC_DIR / "modelo_servido.json"
+
+# Desvios padrao a partir dos quais uma medida recebida dispara alerta. Medido
+# sobre o treino: com 3, 13% dos casos legitimos alertariam, e alerta que
+# dispara sempre vira ruido ignorado; com 5, 2,6%.
+API_LIMIAR_DE_DESVIO = 5.0
+
+# Variavel de ambiente com o commit de origem, preenchida no build do container.
+API_VARIAVEL_DE_COMMIT = "APP_COMMIT"
+
+# Eventos de log guardados em memoria para a vitrine mostrar na tela. Duzentos
+# cobrem varios minutos de demonstracao e custam poucos kilobytes.
+API_EVENTOS_EM_MEMORIA = 200
+
+# Publicacao no Hugging Face Spaces: modelos versionados do Dockerfile e do
+# cartao do Space, e o diretorio onde o pacote e montado (fora do Git).
+SPACE_MODELOS_DIR = PROJECT_ROOT / "deploy" / "spaces"
+SPACE_PACOTE_DIR = PROJECT_ROOT / "build" / "space"
+
+# Ativos da vitrine (molde, estilo, script e o Chart.js versionado), embutidos
+# no HTML na montagem: a pagina nao carrega nada de fora.
+VITRINE_DIR = PROJECT_ROOT / "src" / "ui" / "vitrine"
+
 def ensure_output_dirs() -> None:
     """Cria os diretorios de saida caso ainda nao existam."""
     for directory in (FIGURES_DIR, REPORTS_DIR):

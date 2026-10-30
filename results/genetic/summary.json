@@ -1,0 +1,553 @@
+{
+  "execucoes": 45,
+  "experimentos": [
+    {
+      "experimento": "E1 base",
+      "familia": "KNN",
+      "braco": "AG, completo",
+      "sementes": 3,
+      "fitness_medio": 0.981044,
+      "fitness_desvio": 0.001444,
+      "custo_medio": 0.106227,
+      "custo_desvio": 0.010817,
+      "features_medio": 5,
+      "geracoes": 30
+    },
+    {
+      "experimento": "E1 base",
+      "familia": "Random Forest",
+      "braco": "AG, completo",
+      "sementes": 3,
+      "fitness_medio": 0.979872,
+      "fitness_desvio": 0.000972,
+      "custo_medio": 0.117949,
+      "custo_desvio": 0.007471,
+      "features_medio": 5,
+      "geracoes": 30
+    },
+    {
+      "experimento": "E1 base",
+      "familia": "Regressão Logística",
+      "braco": "AG, completo",
+      "sementes": 3,
+      "fitness_medio": 0.98406,
+      "fitness_desvio": 0.001047,
+      "custo_medio": 0.087179,
+      "custo_desvio": 0.006302,
+      "features_medio": 4.33,
+      "geracoes": 30
+    },
+    {
+      "experimento": "E1 base",
+      "familia": "Regressão Logística",
+      "braco": "AG, só features",
+      "sementes": 3,
+      "fitness_medio": 0.972625,
+      "fitness_desvio": 0.001002,
+      "custo_medio": 0.162637,
+      "custo_desvio": 0.017118,
+      "features_medio": 6.67,
+      "geracoes": 30
+    },
+    {
+      "experimento": "E1 base",
+      "familia": "Regressão Logística",
+      "braco": "AG, só hiperparâmetros",
+      "sementes": 3,
+      "fitness_medio": 0.936154,
+      "fitness_desvio": 0.0,
+      "custo_medio": 0.138462,
+      "custo_desvio": 0.0,
+      "features_medio": 30,
+      "geracoes": 30
+    },
+    {
+      "experimento": "E1 base",
+      "familia": "Regressão Logística",
+      "braco": "AG, só limiar",
+      "sementes": 3,
+      "fitness_medio": 0.942088,
+      "fitness_desvio": 0.0,
+      "custo_medio": 0.079121,
+      "custo_desvio": 0.0,
+      "features_medio": 30,
+      "geracoes": 30
+    },
+    {
+      "experimento": "E2 exploração",
+      "familia": "KNN",
+      "braco": "AG, completo",
+      "sementes": 3,
+      "fitness_medio": 0.974927,
+      "fitness_desvio": 0.00045,
+      "custo_medio": 0.134066,
+      "custo_desvio": 0.031544,
+      "features_medio": 7,
+      "geracoes": 30
+    },
+    {
+      "experimento": "E2 exploração",
+      "familia": "Random Forest",
+      "braco": "AG, completo",
+      "sementes": 3,
+      "fitness_medio": 0.973516,
+      "fitness_desvio": 0.000579,
+      "custo_medio": 0.164835,
+      "custo_desvio": 0.017674,
+      "features_medio": 6,
+      "geracoes": 30
+    },
+    {
+      "experimento": "E2 exploração",
+      "familia": "Regressão Logística",
+      "braco": "AG, completo",
+      "sementes": 3,
+      "fitness_medio": 0.978932,
+      "fitness_desvio": 0.001368,
+      "custo_medio": 0.071795,
+      "custo_desvio": 0.012731,
+      "features_medio": 8.33,
+      "geracoes": 30
+    },
+    {
+      "experimento": "E3 explotação",
+      "familia": "KNN",
+      "braco": "AG, completo",
+      "sementes": 3,
+      "fitness_medio": 0.980989,
+      "fitness_desvio": 0.000794,
+      "custo_medio": 0.09011,
+      "custo_desvio": 0.017118,
+      "features_medio": 6,
+      "geracoes": 60
+    },
+    {
+      "experimento": "E3 explotação",
+      "familia": "Random Forest",
+      "braco": "AG, completo",
+      "sementes": 3,
+      "fitness_medio": 0.982155,
+      "fitness_desvio": 0.001937,
+      "custo_medio": 0.106227,
+      "custo_desvio": 0.013227,
+      "features_medio": 4.33,
+      "geracoes": 60
+    },
+    {
+      "experimento": "E3 explotação",
+      "familia": "Regressão Logística",
+      "braco": "AG, completo",
+      "sementes": 3,
+      "fitness_medio": 0.98696,
+      "fitness_desvio": 0.00072,
+      "custo_medio": 0.063736,
+      "custo_desvio": 0.020695,
+      "features_medio": 4,
+      "geracoes": 60
+    },
+    {
+      "experimento": "E4 sem elitismo",
+      "familia": "KNN",
+      "braco": "AG, completo",
+      "sementes": 3,
+      "fitness_medio": 0.978895,
+      "fitness_desvio": 0.001473,
+      "custo_medio": 0.105495,
+      "custo_desvio": 0.019983,
+      "features_medio": 6.33,
+      "geracoes": 30
+    },
+    {
+      "experimento": "E4 sem elitismo",
+      "familia": "Random Forest",
+      "braco": "AG, completo",
+      "sementes": 3,
+      "fitness_medio": 0.976447,
+      "fitness_desvio": 0.000679,
+      "custo_medio": 0.135531,
+      "custo_desvio": 0.006794,
+      "features_medio": 6,
+      "geracoes": 30
+    },
+    {
+      "experimento": "E4 sem elitismo",
+      "familia": "Regressão Logística",
+      "braco": "AG, completo",
+      "sementes": 3,
+      "fitness_medio": 0.982076,
+      "fitness_desvio": 0.000563,
+      "custo_medio": 0.068132,
+      "custo_desvio": 0.008223,
+      "features_medio": 6.67,
+      "geracoes": 30
+    }
+  ],
+  "bracos": [
+    {
+      "braco": "AG, só limiar",
+      "sementes": 3,
+      "custo_medio": 0.079121,
+      "custo_desvio": 0.0,
+      "fitness_medio": 0.942088,
+      "recall_medio": 0.988235,
+      "falsos_negativos_medio": 2,
+      "falsos_positivos_medio": 16,
+      "features_medio": 30
+    },
+    {
+      "braco": "AG, completo",
+      "sementes": 3,
+      "custo_medio": 0.087179,
+      "custo_desvio": 0.006302,
+      "fitness_medio": 0.98406,
+      "recall_medio": 0.988235,
+      "falsos_negativos_medio": 2,
+      "falsos_positivos_medio": 19.67,
+      "features_medio": 4.33
+    },
+    {
+      "braco": "AG, só hiperparâmetros",
+      "sementes": 3,
+      "custo_medio": 0.138462,
+      "custo_desvio": 0.0,
+      "fitness_medio": 0.936154,
+      "recall_medio": 0.964706,
+      "falsos_negativos_medio": 6,
+      "falsos_positivos_medio": 3,
+      "features_medio": 30
+    },
+    {
+      "braco": "AG, só features",
+      "sementes": 3,
+      "custo_medio": 0.162637,
+      "custo_desvio": 0.017118,
+      "fitness_medio": 0.972625,
+      "recall_medio": 0.958824,
+      "falsos_negativos_medio": 7,
+      "falsos_positivos_medio": 4,
+      "features_medio": 6.67
+    }
+  ],
+  "features": [
+    {
+      "feature": "texture_worst",
+      "selecoes": 26,
+      "execucoes": 39,
+      "frequencia": 0.6667,
+      "posicao_shap": 1
+    },
+    {
+      "feature": "area_se",
+      "selecoes": 16,
+      "execucoes": 39,
+      "frequencia": 0.4103,
+      "posicao_shap": 12
+    },
+    {
+      "feature": "texture_mean",
+      "selecoes": 14,
+      "execucoes": 39,
+      "frequencia": 0.359,
+      "posicao_shap": 14
+    },
+    {
+      "feature": "concavity_worst",
+      "selecoes": 13,
+      "execucoes": 39,
+      "frequencia": 0.3333,
+      "posicao_shap": 6
+    },
+    {
+      "feature": "radius_se",
+      "selecoes": 12,
+      "execucoes": 39,
+      "frequencia": 0.3077,
+      "posicao_shap": 2
+    },
+    {
+      "feature": "radius_worst",
+      "selecoes": 11,
+      "execucoes": 39,
+      "frequencia": 0.2821,
+      "posicao_shap": 5
+    },
+    {
+      "feature": "concave points_worst",
+      "selecoes": 11,
+      "execucoes": 39,
+      "frequencia": 0.2821,
+      "posicao_shap": 9
+    },
+    {
+      "feature": "fractal_dimension_se",
+      "selecoes": 10,
+      "execucoes": 39,
+      "frequencia": 0.2564,
+      "posicao_shap": 15
+    },
+    {
+      "feature": "concave points_mean",
+      "selecoes": 10,
+      "execucoes": 39,
+      "frequencia": 0.2564,
+      "posicao_shap": 4
+    },
+    {
+      "feature": "area_worst",
+      "selecoes": 9,
+      "execucoes": 39,
+      "frequencia": 0.2308,
+      "posicao_shap": 8
+    },
+    {
+      "feature": "texture_se",
+      "selecoes": 9,
+      "execucoes": 39,
+      "frequencia": 0.2308,
+      "posicao_shap": null
+    },
+    {
+      "feature": "smoothness_worst",
+      "selecoes": 9,
+      "execucoes": 39,
+      "frequencia": 0.2308,
+      "posicao_shap": null
+    },
+    {
+      "feature": "perimeter_worst",
+      "selecoes": 8,
+      "execucoes": 39,
+      "frequencia": 0.2051,
+      "posicao_shap": 10
+    },
+    {
+      "feature": "area_mean",
+      "selecoes": 8,
+      "execucoes": 39,
+      "frequencia": 0.2051,
+      "posicao_shap": null
+    },
+    {
+      "feature": "compactness_se",
+      "selecoes": 7,
+      "execucoes": 39,
+      "frequencia": 0.1795,
+      "posicao_shap": 7
+    },
+    {
+      "feature": "radius_mean",
+      "selecoes": 6,
+      "execucoes": 39,
+      "frequencia": 0.1538,
+      "posicao_shap": null
+    },
+    {
+      "feature": "smoothness_mean",
+      "selecoes": 6,
+      "execucoes": 39,
+      "frequencia": 0.1538,
+      "posicao_shap": null
+    },
+    {
+      "feature": "concavity_mean",
+      "selecoes": 5,
+      "execucoes": 39,
+      "frequencia": 0.1282,
+      "posicao_shap": 11
+    },
+    {
+      "feature": "concavity_se",
+      "selecoes": 4,
+      "execucoes": 39,
+      "frequencia": 0.1026,
+      "posicao_shap": null
+    },
+    {
+      "feature": "symmetry_worst",
+      "selecoes": 4,
+      "execucoes": 39,
+      "frequencia": 0.1026,
+      "posicao_shap": 3
+    },
+    {
+      "feature": "compactness_mean",
+      "selecoes": 3,
+      "execucoes": 39,
+      "frequencia": 0.0769,
+      "posicao_shap": null
+    },
+    {
+      "feature": "symmetry_se",
+      "selecoes": 3,
+      "execucoes": 39,
+      "frequencia": 0.0769,
+      "posicao_shap": null
+    },
+    {
+      "feature": "smoothness_se",
+      "selecoes": 3,
+      "execucoes": 39,
+      "frequencia": 0.0769,
+      "posicao_shap": null
+    },
+    {
+      "feature": "perimeter_se",
+      "selecoes": 3,
+      "execucoes": 39,
+      "frequencia": 0.0769,
+      "posicao_shap": 13
+    },
+    {
+      "feature": "concave points_se",
+      "selecoes": 3,
+      "execucoes": 39,
+      "frequencia": 0.0769,
+      "posicao_shap": null
+    },
+    {
+      "feature": "symmetry_mean",
+      "selecoes": 3,
+      "execucoes": 39,
+      "frequencia": 0.0769,
+      "posicao_shap": null
+    },
+    {
+      "feature": "fractal_dimension_mean",
+      "selecoes": 3,
+      "execucoes": 39,
+      "frequencia": 0.0769,
+      "posicao_shap": null
+    },
+    {
+      "feature": "fractal_dimension_worst",
+      "selecoes": 3,
+      "execucoes": 39,
+      "frequencia": 0.0769,
+      "posicao_shap": null
+    },
+    {
+      "feature": "perimeter_mean",
+      "selecoes": 3,
+      "execucoes": 39,
+      "frequencia": 0.0769,
+      "posicao_shap": null
+    },
+    {
+      "feature": "compactness_worst",
+      "selecoes": 2,
+      "execucoes": 39,
+      "frequencia": 0.0513,
+      "posicao_shap": null
+    }
+  ],
+  "varredura": [
+    {
+      "razao_custo": 5.0,
+      "parcimonia": 0.0,
+      "sementes": 3,
+      "limiar_medio": 0.3436,
+      "limiar_desvio": 0.0597,
+      "features_medio": 15,
+      "features_desvio": 1.63,
+      "recall_medio": 0.988235,
+      "falsos_negativos_medio": 2,
+      "falsos_positivos_medio": 7.33
+    },
+    {
+      "razao_custo": 10.0,
+      "parcimonia": 0.0,
+      "sementes": 3,
+      "limiar_medio": 0.1839,
+      "limiar_desvio": 0.0176,
+      "features_medio": 15.67,
+      "features_desvio": 0.47,
+      "recall_medio": 0.994118,
+      "falsos_negativos_medio": 1,
+      "falsos_positivos_medio": 11
+    },
+    {
+      "razao_custo": 20.0,
+      "parcimonia": 0.0,
+      "sementes": 3,
+      "limiar_medio": 0.1716,
+      "limiar_desvio": 0.029,
+      "features_medio": 16.67,
+      "features_desvio": 2.05,
+      "recall_medio": 0.994118,
+      "falsos_negativos_medio": 1,
+      "falsos_positivos_medio": 9.67
+    },
+    {
+      "razao_custo": 5.0,
+      "parcimonia": 0.05,
+      "sementes": 3,
+      "limiar_medio": 0.2965,
+      "limiar_desvio": 0.0743,
+      "features_medio": 7.33,
+      "features_desvio": 1.25,
+      "recall_medio": 0.988235,
+      "falsos_negativos_medio": 2,
+      "falsos_positivos_medio": 9.67
+    },
+    {
+      "razao_custo": 10.0,
+      "parcimonia": 0.05,
+      "sementes": 3,
+      "limiar_medio": 0.205,
+      "limiar_desvio": 0.0323,
+      "features_medio": 4.33,
+      "features_desvio": 0.47,
+      "recall_medio": 0.988235,
+      "falsos_negativos_medio": 2,
+      "falsos_positivos_medio": 19.67
+    },
+    {
+      "razao_custo": 20.0,
+      "parcimonia": 0.05,
+      "sementes": 3,
+      "limiar_medio": 0.1592,
+      "limiar_desvio": 0.0351,
+      "features_medio": 4.33,
+      "features_desvio": 0.47,
+      "recall_medio": 0.994118,
+      "falsos_negativos_medio": 1,
+      "falsos_positivos_medio": 32.67
+    },
+    {
+      "razao_custo": 5.0,
+      "parcimonia": 0.15,
+      "sementes": 3,
+      "limiar_medio": 0.2415,
+      "limiar_desvio": 0.0276,
+      "features_medio": 3.33,
+      "features_desvio": 0.47,
+      "recall_medio": 0.988235,
+      "falsos_negativos_medio": 2,
+      "falsos_positivos_medio": 24
+    },
+    {
+      "razao_custo": 10.0,
+      "parcimonia": 0.15,
+      "sementes": 3,
+      "limiar_medio": 0.2189,
+      "limiar_desvio": 0.0663,
+      "features_medio": 3,
+      "features_desvio": 0.0,
+      "recall_medio": 0.976471,
+      "falsos_negativos_medio": 4,
+      "falsos_positivos_medio": 27.67
+    },
+    {
+      "razao_custo": 20.0,
+      "parcimonia": 0.15,
+      "sementes": 3,
+      "limiar_medio": 0.0845,
+      "limiar_desvio": 0.0042,
+      "features_medio": 2.67,
+      "features_desvio": 0.47,
+      "recall_medio": 0.988235,
+      "falsos_negativos_medio": 2,
+      "falsos_positivos_medio": 58.67
+    }
+  ]
+}

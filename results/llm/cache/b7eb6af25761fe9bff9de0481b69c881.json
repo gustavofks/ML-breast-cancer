@@ -1,0 +1,12 @@
+{
+  "modelo": "claude-haiku-5-5",
+  "system": "Você é um assistente de apoio à decisão clínica. Você explica a saída de um modelo estatístico para profissionais de saúde. Você não emite diagnóstico, não confirma nem descarta doença, e deixa explícito que sua leitura não substitui a avaliação do médico responsável.",
+  "prompt": "Transforme as métricas abaixo em insights acionáveis para a gestão clínica do serviço.\n\nEvidência:\n{\n  \"modelo\": \"Regressão Logística\",\n  \"recall\": 0.9286,\n  \"f1\": 0.9512,\n  \"falsos_negativos\": 3,\n  \"falsos_positivos\": 1\n}\n\nRegras:\n- Use apenas os valores fornecidos acima; nenhum número novo.\n- Fale em termos de carga de trabalho e risco, não de estatística.\n- Escreva no máximo 220 palavras.\n- Use exatamente estas seções, nesta ordem, como títulos de nível 2: Panorama, O que merece atenção, Ressalva.",
+  "resposta": "## Panorama\nO modelo de regressão logística teve desempenho alto na triagem avaliada. Ele captou a grande maioria dos casos relevantes e gerou poucos alarmes desnecessários. Na prática, a equipe tende a ter um fluxo de revisão enxuto.\n\n## O que merece atenção\n- **Três casos não sinalizados (falsos negativos):** são o principal ponto de risco. Pacientes que o modelo não identificou dependem da avaliação clínica habitual para não passarem despercebidos.\n- **Não reduzir a vigilância com base no modelo:** a revisão clínica dos pacientes não sinalizados deve continuar, sobretudo quando houver sinais de alerta.\n- **Um alarme falso:** representa sobrecarga adicional mínima e não exige ação imediata.\n- **Acompanhar os erros ao longo do tempo:** registrar os casos perdidos ajuda a verificar se há padrão, como perfil de paciente, período ou origem dos dados.\n\n## Ressalva\nEsta leitura usa apenas os números informados e não substitui a avaliação do médico responsável. O modelo apoia a priorização da equipe, mas não confirma nem descarta nenhuma condição clínica.",
+  "uso": {
+    "modelo": "claude-haiku-5-5",
+    "tokens_entrada": 340,
+    "tokens_saida": 1170,
+    "custo_usd": 0.000619
+  }
+}

@@ -1,0 +1,11 @@
+# Dependencias da API e do painel da Fase 2.
+# Separadas do requirements.txt pelo mesmo motivo das de visao: quem so roda a
+# analise tabular nao precisa de servidor web.
+#     pip install -r requirements-api.txt
+
+fastapi==0.142.2
+uvicorn==0.54.0
+gradio==6.30.0
+
+# Testes: o TestClient da FastAPI fala HTTP por meio do httpx.
+httpx==0.28.1

@@ -81,6 +81,57 @@ CMD ["python", "scripts/run_vision.py"]
 
 
 # ---------------------------------------------------------------------------
+# Estagio da Fase 2: a API que serve o modelo, as explicacoes e as metricas.
+#
+# Le a especificacao do modelo servido e o cache de textos em `results/`, e nao
+# precisa de modelo de linguagem, chave de API nem internet. Como nos outros
+# estagios, `results/` entra por volume; embuti-lo na imagem e decisao da
+# publicacao (item 6 do design). O commit de origem entra por argumento de
+# build, porque o container nao leva o `.git`:
+#
+#   docker build --target api --build-arg APP_COMMIT=$(git rev-parse --short HEAD) #                -t ml-breast-cancer:api .
+#   docker run --rm -p 8000:8000 -v "$(pwd)/results:/app/results" ml-breast-cancer:api
+# ---------------------------------------------------------------------------
+FROM base AS api
+
+USER root
+COPY requirements-api.txt ./
+RUN pip install --no-cache-dir -r requirements-api.txt
+USER analise
+
+ARG APP_COMMIT=desconhecido
+ENV APP_COMMIT=${APP_COMMIT}
+
+# Porta pelo ambiente: o Hugging Face Spaces exige 7860 e a informa em PORT.
+# O painel le a mesma variavel para falar com a API dentro do proprio processo.
+ENV PORT=8000
+EXPOSE 8000
+# API e painel no mesmo servidor (painel em /painel, a raiz redireciona para
+# ele). `--factory`: o modelo e treinado dentro da fabrica, e nao no import do
+# modulo, para que importar o modulo em teste nao treine nada.
+CMD ["sh", "-c", "uvicorn src.ui.app:criar_app_com_painel --factory --host 0.0.0.0 --port ${PORT}"]
+
+
+# ---------------------------------------------------------------------------
+# Estagio de geracao dos textos com o Claude. Roda uma vez, na maquina de
+# desenvolvimento, e grava o cache que o estagio `api` serve. A chave entra pelo
+# ambiente, nunca pela imagem:
+#
+#   docker build --target llm -t ml-breast-cancer:llm .
+#   docker run --rm -e ANTHROPIC_API_KEY -v "$(pwd)/results:/app/results" \
+#              ml-breast-cancer:llm python scripts/run_llm.py --casos todos --estimar
+# ---------------------------------------------------------------------------
+FROM api AS llm
+
+USER root
+COPY requirements-llm.txt ./
+RUN pip install --no-cache-dir -r requirements-llm.txt
+USER analise
+
+CMD ["python", "scripts/run_llm.py", "--casos", "todos", "--estimar"]
+
+
+# ---------------------------------------------------------------------------
 # Alvo padrao. Precisa ser o ultimo estagio do arquivo: sem `--target`, o
 # Docker constroi o estagio final — e sem esta linha o padrao seria `vision`,
 # com o TensorFlow inteiro a reboque.

@@ -1,7 +1,18 @@
 # Detecção de riscos em saúde da mulher
 
-Classificação de tumores de mama (maligno vs. benigno) com Machine Learning — Tech Challenge da
-Fase 1 da pós-graduação em Inteligência Artificial da FIAP.
+Classificação de tumores de mama (maligno vs. benigno) com Machine Learning — Tech Challenge das
+Fases 1 e 2 da pós-graduação em Inteligência Artificial da FIAP.
+
+A **Fase 2** acrescenta três camadas sobre a Fase 1, que segue congelada na tag `v1.0-fase1`:
+otimização por **algoritmo genético** (medidas, hiperparâmetros e limiar, buscados juntos contra um
+custo clínico assimétrico), **explicações em linguagem natural** geradas por modelo de linguagem e
+verificadas automaticamente, e o sistema **servido** como API com monitoramento e painel. Como
+executar cada parte está em [Fase 2](#fase-2).
+
+**Painel publicado:** https://huggingface.co/spaces/gustavofks/apoio-diagnostico-cancer-mama
+
+**Tudo o que a Fase 2 mudou:**
+[comparação entre `v1.0-fase1` e o estado atual](https://github.com/gustavofks/ML-breast-cancer/compare/v1.0-fase1...main)
 
 Uma rede de hospitais especializados no atendimento à mulher precisa de um sistema de apoio ao
 diagnóstico capaz de acelerar a triagem. Este projeto entrega a base de Machine Learning dessa
@@ -154,6 +165,7 @@ Ambos estão versionados **com as saídas executadas** — podem ser lidos sem r
 
 ```bash
 pytest
+node --test "tests/js/*.test.js"   # lógica da vitrine; usa build/space/index.html, se montado
 ```
 
 ### Entrega extra: diagnóstico por imagem
@@ -199,6 +211,153 @@ data/raw/images/
 Quando o pipeline de imagens gravar `results/metrics_vision.json`, a segunda aba do relatório HTML
 passa a ser montada a partir dele automaticamente, sem alteração de código.
 
+### Fase 2
+
+As dependências da API e do painel ficam à parte, como as de visão:
+
+```bash
+pip install -r requirements-api.txt   # FastAPI, Uvicorn e Gradio
+```
+
+Sem elas, os testes da API e do painel são pulados, não quebrados.
+
+**Arquitetura.** As etapas pesadas e as que custam dinheiro rodam uma vez, na máquina de
+desenvolvimento, e gravam arquivos versionados. O serviço só lê esses arquivos: não precisa de
+modelo de linguagem, chave de API nem internet.
+
+```mermaid
+flowchart LR
+    base[(data/raw/data.csv)]
+
+    subgraph offline["Offline, na máquina de desenvolvimento"]
+        ag["run_genetic.py<br/>algoritmo genético<br/>(validação cruzada no treino)"]
+        av["evaluate_arms.py<br/>única etapa que usa o teste"]
+        esc["escolher_modelo.py<br/>regra registrada antes do teste"]
+        llm["run_llm.py<br/>Claude Haiku 5.5<br/>+ 4 verificações"]
+    end
+
+    subgraph artefatos["results/, versionado"]
+        gen[(genetic/<br/>execuções, summary,<br/>modelo_servido.json)]
+        cache[(llm/cache/<br/>textos aprovados)]
+    end
+
+    subgraph online["Online, no container"]
+        api["API FastAPI<br/>/predict /explain<br/>/metrics /model-info"]
+        vitrine["Vitrine<br/>/"]
+        painel["Painel Gradio<br/>/painel/"]
+        mon["log JSON +<br/>sentinela de desvio"]
+    end
+
+    space["Hugging Face Space<br/>página estática"]
+
+    base --> ag --> gen
+    base --> av
+    gen --> av --> gen
+    gen --> esc --> gen
+    gen --> llm --> cache
+    gen --> api
+    cache --> api
+    base --> api
+    api --> vitrine
+    api --> painel
+    api --> mon
+    vitrine -- "montar_space.py<br/>congela dados e gravação" --> space
+```
+
+**Algoritmo genético.** Quatro configurações do algoritmo sobre as três famílias de modelo, três
+sementes cada, mais os braços de ablação que isolam de onde vem o ganho. O conjunto de teste só é
+tocado na comparação final, por `evaluate_arms.py`; a busca inteira acontece por validação cruzada
+dentro do treino.
+
+```bash
+python scripts/run_genetic.py               # 45 buscas; horas, por causa do Random Forest
+python scripts/run_genetic.py --retomar     # continua uma execução interrompida
+python scripts/run_genetic.py --sweep       # sensibilidade à política de custo clínico
+python scripts/evaluate_arms.py             # comparação final, a única que usa o teste
+python scripts/build_genetic_report.py      # summary.json e as figuras 11 a 14
+```
+
+A execução completa grava o progresso a cada busca concluída. Interrompida, ela é retomada com
+`--retomar`, e o arquivo final é idêntico ao de uma execução sem interrupção: cada busca nasce da
+própria semente.
+
+**Explicações em linguagem natural.** Geradas uma vez, em lote, e gravadas num cache versionado em
+`results/llm/cache/`. A API e o painel leem o cache; nenhum dos dois fala com modelo de linguagem.
+
+```bash
+python scripts/run_llm.py --fake                     # verifica o encanamento, sem modelo
+python scripts/run_llm.py --casos todos --estimar    # pior caso de custo, sem gastar nada
+python scripts/run_llm.py --casos todos              # geração real com o Claude
+```
+
+A geração real usa a API do Claude (Haiku 5.5) e lê a chave de `ANTHROPIC_API_KEY`. O custo é
+travado no código: o lote inteiro é estimado antes da primeira chamada e barrado se passar do
+orçamento de `src/config.py`, e texto já gerado nunca é pago de novo. O custo real fica em
+`results/llm/custo.json`. Com `--provedor ollama`, a mesma geração roda num modelo local, sem custo.
+
+Cada texto passa por quatro verificações automáticas — números fiéis à evidência, nenhuma afirmação
+diagnóstica, as medidas de maior peso citadas, formato e tamanho — e texto reprovado nunca chega à
+tela.
+
+**API, vitrine e painel.** Um servidor só. A raiz abre a **vitrine**, a página de apresentação
+da Fase 2, e o painel Gradio fica em `/painel/`:
+
+```bash
+docker build --target api -t ml-breast-cancer:api .
+docker run --rm -p 8000:8000 -v "$(pwd)/results:/app/results" ml-breast-cancer:api
+# abra http://localhost:8000
+```
+
+O volume com `results/` é o que entrega ao container o modelo escolhido e os textos gerados. No
+**Git Bash do Windows**, prefixe o `docker run` com `MSYS_NO_PATHCONV=1`: sem isso, o Git Bash
+reescreve o caminho do volume, a pasta não chega ao container, e a API serve a referência da Fase 1
+sem textos. No PowerShell, use `-v "${PWD}/results:/app/results"`. Para confirmar, o indicador
+"Modelo servido" da vitrine deve mostrar 5 medidas e limiar de 22,7%.
+
+A vitrine tem cinco capítulos:
+1. como o modelo foi escolhido, com a jornada e os gráficos interativos do algoritmo genético;
+2. os casos do teste, com previsão, contribuições e texto;
+3. um simulador em que se movem as medidas do modelo;
+4. um console que chama cada rota e mostra pedido, resposta, log e métricas na tela;
+5. a qualidade dos textos gerados.
+
+Servida pelo container, ela detecta a API em `/health` e chama as rotas de verdade.
+
+| Rota | Função |
+|---|---|
+| `/` | a vitrine |
+| `/painel/` | escolher um caso do teste e ver previsão, limiar, contribuições e texto |
+| `GET /health` | vivacidade e confirmação de que o modelo carregou |
+| `POST /predict` | probabilidade, classe e limiar a partir das 30 medidas |
+| `POST /explain` | a previsão, as contribuições do caso e o texto em linguagem natural |
+| `GET /metrics` | contadores, latências e alertas de desvio no formato Prometheus |
+| `GET /model-info` | modelo servido, medidas, limiar, origem e commit |
+| `GET /logs/recentes` | os últimos eventos do log em memória, para a vitrine mostrar na tela |
+
+O modelo servido é descrito em `results/genetic/modelo_servido.json`, no mesmo formato do melhor
+indivíduo que o algoritmo genético grava. Sem o arquivo, a API serve a referência da Fase 1 e
+declara isso em `/model-info`. Cada requisição gera uma linha de log em JSON, e uma sentinela
+registra alerta quando alguma medida recebida foge da distribuição do treino.
+
+**Publicação no Hugging Face Spaces.** A vitrine está publicada em
+https://huggingface.co/spaces/gustavofks/apoio-diagnostico-cancer-mama como **Space estático**. O
+Hugging Face passou a cobrar de contas pessoais pelos Spaces que executam código (SDKs Gradio e
+Docker); o estático continua gratuito, porque nada executa no servidor.
+
+Lá, a mesma página usa o que foi congelado na montagem, consultando a API em processo: as respostas
+de `/explain` para cada caso do teste e uma sessão gravada do console, com respostas, log e
+métricas reais.
+
+O simulador refaz no navegador a conta da regressão logística servida. Os testes conferem essa conta
+contra a API nos 114 casos, a menos de 1e-9. As chamadas ao vivo rodam no container.
+
+```bash
+python scripts/montar_space.py                 # Space estático (padrão): README.md e index.html
+python scripts/montar_space.py --sdk gradio    # API e painel ao vivo, para conta com plano pago
+```
+
+O formato estático precisa da FastAPI para consultar a API; rode-o na imagem `api`.
+
 > **Nota sobre o SHAP.** A biblioteca depende do `numba`, cuja DLL compilada é bloqueada por
 > algumas políticas de segurança do Windows (App Control / Smart App Control). O pipeline detecta a
 > ausência e continua, mantendo coeficientes e importância por permutação — as figuras SHAP já
@@ -222,16 +381,49 @@ ML-breast-cancer/
 │   ├── report.py              # montagem do relatório HTML
 │   ├── report_code.py         # extração e realce dos trechos de código exibidos
 │   ├── report_style.py        # folha de estilo e script da página
-│   └── vision/                # entrega extra: diagnóstico por imagem
-│       ├── dataset.py         # carregamento por pasta de classe
-│       ├── model.py           # CNN do zero e MobileNetV2
-│       ├── train.py           # treino com pesos de classe
-│       ├── evaluate.py        # métricas e figuras das redes
-│       └── explain.py         # Grad-CAM: onde a rede olhou
+│   ├── vision/                # entrega extra: diagnóstico por imagem
+│   │   ├── dataset.py         # carregamento por pasta de classe
+│   │   ├── model.py           # CNN do zero e MobileNetV2
+│   │   ├── train.py           # treino com pesos de classe
+│   │   ├── evaluate.py        # métricas e figuras das redes
+│   │   └── explain.py         # Grad-CAM: onde a rede olhou
+│   ├── genetic/               # Fase 2: algoritmo genético
+│   │   ├── chromosome.py      # indivíduo em três segmentos, reparo e decodificação
+│   │   ├── fitness.py         # custo clínico em validação cruzada dentro do treino
+│   │   ├── operators.py       # torneio, cruzamento e mutação
+│   │   ├── engine.py          # laço evolutivo, elitismo e histórico
+│   │   ├── experiments.py     # configurações, braços de ablação e varredura de custo
+│   │   ├── artifacts.py       # tabelas do summary.json
+│   │   └── plots.py           # figuras de convergência, fronteira, frequência e varredura
+│   ├── llm/                   # Fase 2: explicações em linguagem natural
+│   │   ├── provider.py        # Protocol, Claude, Ollama e cache com custo registrado
+│   │   ├── prompts.py         # templates versionados
+│   │   ├── narrator.py        # contexto clínico e geração dos três produtos de texto
+│   │   └── evaluation.py      # as quatro verificações automáticas de qualidade
+│   ├── api/                   # Fase 2: o serviço
+│   │   ├── servico.py         # modelo servido, treinado na inicialização
+│   │   ├── explicacao.py      # contribuições por caso, para qualquer família
+│   │   ├── monitoring.py      # sentinela de desvio e métricas Prometheus
+│   │   ├── registro.py        # log JSON, uma linha por requisição
+│   │   └── main.py            # as rotas
+│   └── ui/                    # Fase 2: as telas
+│       ├── app.py             # painel Gradio e o servidor com API, vitrine e painel
+│       ├── vitrine.py         # vitrine: dados do processo, da API e do console gravado
+│       ├── simulador.py       # a conta do modelo servido, exportada para o navegador
+│       ├── estatico.py        # casos do teste congelados a partir da API
+│       └── vitrine/           # molde, estilo, scripts e o Chart.js embutidos na página
 ├── scripts/
 │   ├── run_wisconsin.py       # pipeline tabular ponta a ponta
-│   └── run_vision.py          # pipeline de imagem ponta a ponta
-├── tests/                     # 86 testes automatizados
+│   ├── run_vision.py          # pipeline de imagem ponta a ponta
+│   ├── run_genetic.py         # buscas do algoritmo genético e varredura de custo
+│   ├── evaluate_arms.py       # comparação final dos braços no conjunto de teste
+│   ├── escolher_modelo.py     # grava o modelo servido, sem ler o teste
+│   ├── build_genetic_report.py  # summary.json e figuras do algoritmo genético
+│   ├── run_llm.py             # geração dos textos, com estimativa de custo
+│   └── montar_space.py        # pacote do Hugging Face Spaces
+├── deploy/spaces/             # Dockerfile e cartão do Space
+├── tests/                     # testes automatizados: um arquivo por módulo
+│   └── js/                    # testes da lógica da vitrine, no Node
 ├── results/
 │   ├── figures/               # 19 gráficos gerados
 │   ├── metrics.json           # métricas do pipeline tabular
@@ -239,9 +431,11 @@ ML-breast-cancer/
 │   └── reports/index.html     # relatório visual, com as duas análises
 ├── docs/relatorio_tecnico.pdf # relatório técnico completo
 ├── docs/relatorio_sintese.pdf # relatório de síntese entregue ao curso
-├── Dockerfile                 # pipeline tabular; estágio `vision` para a entrega extra
+├── Dockerfile                 # pipeline tabular; estágios `vision`, `api` e `llm`
 ├── requirements.txt
-└── requirements-vision.txt    # dependências da entrega extra
+├── requirements-vision.txt    # dependências da entrega extra
+├── requirements-api.txt       # API e painel
+└── requirements-llm.txt       # SDK do Claude, só para gerar os textos
 ```
 
 A separação de responsabilidades é deliberada: `eda.py` analisa **os dados**, `evaluation.py`
@@ -258,6 +452,11 @@ analisa **o modelo**, e `plotting.py` guarda o que os dois compartilham.
 | Outliers preservados | são casos malignos graves reais, não erros de medição |
 | Nenhuma feature removida | há 21 pares com correlação > 0,9, mas a regularização trata a redundância |
 | Três técnicas de explicabilidade | coeficientes, permutação e SHAP convergem por caminhos independentes |
+| Fitness por custo clínico assimétrico (10:1) | traduz em número a política da Fase 1: falso negativo é muito mais grave que falso positivo |
+| Braços de ablação no algoritmo genético | otimizar só o limiar, só as medidas ou só os hiperparâmetros mostra de onde vem o ganho, em vez de creditá-lo ao algoritmo |
+| Modelo servido treinado na inicialização | pickle do scikit-learn só abre na versão que o gravou; treinar 455 amostras custa menos de um segundo |
+| Sentinela de desvio com 5 desvios padrão | com 3, 13% dos casos legítimos do treino disparariam alerta, e alerta que dispara sempre vira ruído |
+| Texto gerado em lote, servido do cache | o serviço publicado fica offline e reprodutível; texto reprovado nas verificações não chega à tela |
 
 Todas estão detalhadas no [relatório técnico](docs/relatorio_tecnico.pdf).
 
@@ -267,6 +466,11 @@ O **[relatório técnico](docs/relatorio_tecnico.pdf)** reúne a análise explor
 pré-processamento, os modelos e suas justificativas, os resultados, a explicabilidade e a discussão
 crítica sobre o uso do modelo na prática. O **[relatório de síntese](docs/relatorio_sintese.pdf)**
 condensa o mesmo conteúdo no formato entregue ao curso.
+
+O **[relatório técnico da Fase 2](docs/relatorio_tecnico_fase2.pdf)** documenta o algoritmo genético e
+seus resultados, a comparação entre os modelos originais e os otimizados, a integração com o modelo de
+linguagem (abordagem, prompts e avaliação da qualidade, automática e humana), a arquitetura, o
+monitoramento, a publicação em nuvem e os desafios enfrentados.
 
 ## Reprodutibilidade
 

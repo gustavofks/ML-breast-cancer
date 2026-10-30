@@ -1,0 +1,224 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Apoio ao diagnóstico — Fase 2</title>
+<link rel="icon" href="data:,">
+<style>
+__ESTILO__
+</style>
+</head>
+<body>
+<a class="pular" href="#conteudo">Pular para o conteúdo</a>
+
+<header class="topo">
+  <div class="topo-linha">
+    <div class="marca">Apoio ao diagnóstico de câncer de mama <span class="fase">Fase 2</span></div>
+    <span id="modo" class="selo" role="status">Verificando a API…</span>
+  </div>
+  <nav class="capitulos" aria-label="Capítulos">
+    <a href="#processo"><span>1</span> Como o modelo foi escolhido</a>
+    <a href="#casos"><span>2</span> Casos do teste</a>
+    <a href="#simulador"><span>3</span> Simulador</a>
+    <a href="#console"><span>4</span> Console da API</a>
+    <a href="#textos"><span>5</span> Qualidade dos textos</a>
+  </nav>
+</header>
+
+<main id="conteudo">
+  <section class="abertura">
+    <h1>Do algoritmo genético ao serviço, com explicação para o médico</h1>
+    <p class="lead">Um algoritmo genético buscou medidas, hiperparâmetros e limiar contra um custo
+      clínico em que deixar passar um tumor maligno pesa muito mais que um alarme falso. O modelo
+      escolhido é servido por uma API monitorada, e cada previsão vem com uma explicação em
+      linguagem natural, verificada antes de chegar à tela.</p>
+    <div class="aviso" role="note">__AVISO__</div>
+    <div class="indicadores" id="indicadores"></div>
+  </section>
+
+  <section id="processo" class="capitulo" aria-labelledby="t-processo">
+    <div class="capitulo-cabeca">
+      <span class="numero">1</span>
+      <div>
+        <h2 id="t-processo">Como o modelo foi escolhido</h2>
+        <p>Da referência da Fase 1 ao modelo em produção. Toda a busca aconteceu por validação
+          cruzada dentro do treino; o conjunto de teste só foi usado na comparação final.</p>
+      </div>
+    </div>
+    <ol class="jornada" id="jornada"></ol>
+    <div class="achado" id="achado" role="note"></div>
+    <div class="grade">
+      <figure class="cartao-grafico">
+        <figcaption><h3>Convergência da busca</h3>
+          <p>Melhor fitness a cada geração, média das três sementes. Escolha a configuração.</p></figcaption>
+        <div class="filtros"><label for="f-experimento">Configuração</label><select id="f-experimento"></select></div>
+        <div class="tela"><canvas id="g-convergencia" role="img" aria-label="Convergência por família de modelo"></canvas></div>
+        <details class="tabela-dados"><summary>Ver os dados</summary><div id="d-convergencia"></div></details>
+      </figure>
+      <figure class="cartao-grafico">
+        <figcaption><h3>De onde vem o ganho: braços de ablação</h3>
+          <p>Custo clínico médio na validação cruzada (menor é melhor). Cada braço otimiza só uma parte do indivíduo.</p></figcaption>
+        <div class="tela"><canvas id="g-bracos" role="img" aria-label="Custo clínico por braço"></canvas></div>
+        <details class="tabela-dados"><summary>Ver os dados</summary><div id="d-bracos"></div></details>
+      </figure>
+      <figure class="cartao-grafico">
+        <figcaption><h3>Comparação final no conjunto de teste</h3>
+          <p>Erros de cada abordagem nos casos que nenhuma busca viu. Falso negativo é tumor maligno que passaria.</p></figcaption>
+        <div class="tela alta"><canvas id="g-teste" role="img" aria-label="Falsos negativos e falsos positivos por abordagem"></canvas></div>
+        <details class="tabela-dados"><summary>Ver os dados</summary><div id="d-teste"></div></details>
+      </figure>
+      <figure class="cartao-grafico">
+        <figcaption><h3>Sensibilidade à política de custo</h3>
+          <p>Limiar médio escolhido conforme o peso do falso negativo cresce, para cada penalidade por medida usada.</p></figcaption>
+        <div class="tela"><canvas id="g-varredura" role="img" aria-label="Limiar escolhido por razão de custo"></canvas></div>
+        <details class="tabela-dados"><summary>Ver os dados</summary><div id="d-varredura"></div></details>
+      </figure>
+      <figure class="cartao-grafico largo">
+        <figcaption><h3>Medidas que o algoritmo mais escolheu</h3>
+          <p>Fração das execuções em que cada medida entrou no melhor indivíduo. Em roxo, as medidas que o modelo servido usa.</p></figcaption>
+        <div class="tela alta"><canvas id="g-features" role="img" aria-label="Frequência de seleção das medidas"></canvas></div>
+        <details class="tabela-dados"><summary>Ver os dados</summary><div id="d-features"></div></details>
+      </figure>
+    </div>
+  </section>
+
+  <section id="casos" class="capitulo" aria-labelledby="t-casos">
+    <div class="capitulo-cabeca">
+      <span class="numero">2</span>
+      <div>
+        <h2 id="t-casos">Casos do teste</h2>
+        <p>Os casos que o modelo nunca viu, com o diagnóstico registrado na base ao lado da previsão,
+          inclusive quando ela erra.</p>
+      </div>
+    </div>
+    <div class="filtros">
+      <label for="f-caso">Caso</label><select id="f-caso"></select>
+      <label class="marcador"><input type="checkbox" id="f-erros"> só os casos em que o modelo erra</label>
+    </div>
+    <div class="cartoes" id="c-caso"></div>
+    <div class="grade">
+      <figure class="cartao-grafico">
+        <figcaption><h3>Medidas que mais pesaram</h3>
+          <p>Laranja empurra para maligno; azul, para benigno.</p></figcaption>
+        <div class="tela"><canvas id="g-caso" role="img" aria-label="Contribuições do caso"></canvas></div>
+        <details class="tabela-dados"><summary>Ver os dados</summary><div id="d-caso"></div></details>
+      </figure>
+      <article class="cartao-texto">
+        <h3>Explicação em linguagem natural</h3>
+        <div id="texto-caso" class="texto-gerado"></div>
+        <button type="button" class="botao" id="abrir-no-simulador">Abrir este caso no simulador</button>
+      </article>
+    </div>
+  </section>
+
+  <section id="simulador" class="capitulo" aria-labelledby="t-simulador">
+    <div class="capitulo-cabeca">
+      <span class="numero">3</span>
+      <div>
+        <h2 id="t-simulador">Simulador de medidas</h2>
+        <p>Mova as medidas que o modelo usa e veja a probabilidade cruzar o limiar de decisão.
+          As faixas vão do mínimo ao máximo observados no treino.</p>
+      </div>
+    </div>
+    <p class="nota" id="sim-origem"></p>
+    <div class="grade">
+      <div class="cartao-controles">
+        <div class="botoes-linha">
+          <button type="button" class="botao secundario" data-perfil="media_benigno">Perfil benigno</button>
+          <button type="button" class="botao secundario" data-perfil="media_maligno">Perfil maligno</button>
+        </div>
+        <div id="sim-controles"></div>
+      </div>
+      <div class="cartao-resultado">
+        <div class="medidor" aria-live="polite">
+          <div class="medidor-rotulo"><span>Probabilidade de malignidade</span><strong id="sim-prob">—</strong></div>
+          <div class="medidor-trilho"><div class="medidor-preenchido" id="sim-barra"></div><div class="medidor-limiar" id="sim-limiar"></div></div>
+          <div class="medidor-legenda"><span>0%</span><span id="sim-limiar-texto"></span><span>100%</span></div>
+          <div class="classe" id="sim-classe"></div>
+        </div>
+        <div class="tela"><canvas id="g-sim" role="img" aria-label="Contribuições da simulação"></canvas></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="console" class="capitulo" aria-labelledby="t-console">
+    <div class="capitulo-cabeca">
+      <span class="numero">4</span>
+      <div>
+        <h2 id="t-console">Console da API</h2>
+        <p>Cada botão faz uma chamada à API e mostra o pedido, a resposta, o log que ela gerou e as
+          métricas de monitoramento.</p>
+      </div>
+    </div>
+    <p class="nota" id="console-origem"></p>
+    <div class="console">
+      <div class="console-lista" id="console-lista" role="list"></div>
+      <div class="console-detalhe">
+        <div class="pedido">
+          <div class="pedido-linha"><span class="metodo" id="req-metodo">GET</span><code id="req-rota">/health</code>
+            <button type="button" class="botao" id="req-enviar">Enviar</button></div>
+          <p class="nota" id="req-descricao"></p>
+          <label for="req-corpo" class="rotulo-campo" id="req-corpo-rotulo">Corpo do pedido (JSON)</label>
+          <textarea id="req-corpo" spellcheck="false" rows="6"></textarea>
+        </div>
+        <div class="resposta">
+          <div class="resposta-linha"><span class="status" id="res-status">—</span>
+            <span id="res-latencia"></span><span id="res-id"></span></div>
+          <pre id="res-corpo" tabindex="0"></pre>
+        </div>
+      </div>
+    </div>
+    <div class="grade">
+      <div class="cartao-log">
+        <div class="cartao-log-cabeca"><h3>Log estruturado</h3>
+          <label class="marcador"><input type="checkbox" id="log-metrics"> mostrar leituras de /metrics</label></div>
+        <ol class="log" id="log" aria-live="polite"></ol>
+      </div>
+      <figure class="cartao-grafico">
+        <figcaption><h3>Monitoramento</h3><p id="metricas-legenda">Requisições por rota e alertas de desvio, lidos de /metrics.</p></figcaption>
+        <div class="tela"><canvas id="g-requisicoes" role="img" aria-label="Requisições por rota"></canvas></div>
+        <div class="tela baixa"><canvas id="g-alertas" role="img" aria-label="Alertas de desvio por medida"></canvas></div>
+        <details class="tabela-dados"><summary>Ver os dados</summary><div id="d-metricas"></div></details>
+      </figure>
+    </div>
+  </section>
+
+  <section id="textos" class="capitulo" aria-labelledby="t-textos">
+    <div class="capitulo-cabeca">
+      <span class="numero">5</span>
+      <div>
+        <h2 id="t-textos">Qualidade dos textos</h2>
+        <p>Os textos foram gerados uma vez, em lote, e cada um passou por quatro verificações
+          automáticas. O servidor nunca chama o modelo de linguagem: só serve o que foi aprovado.</p>
+      </div>
+    </div>
+    <div class="indicadores" id="t-indicadores"></div>
+    <div class="grade">
+      <div class="cartao-texto">
+        <h3>As quatro verificações</h3>
+        <table class="tabela" id="t-verificacoes"></table>
+      </div>
+      <div class="cartao-texto">
+        <h3>Versões de prompt</h3>
+        <table class="tabela" id="t-prompts"></table>
+      </div>
+    </div>
+    <div class="grade" id="t-gestao"></div>
+  </section>
+
+  <footer class="rodape" id="rodape"></footer>
+</main>
+
+<script>
+__CHARTJS__
+</script>
+<script id="dados" type="application/json">__DADOS__</script>
+<script>
+__LOGICA__
+</script>
+<script>
+__VITRINE__
+</script>
+</body>
+</html>

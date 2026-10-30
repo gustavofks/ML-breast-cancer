@@ -1,0 +1,244 @@
+"""Verificacoes automaticas de qualidade dos textos gerados.
+
+O enunciado pede para avaliar a qualidade das interpretacoes. Aqui ela e
+**medida, nao afirmada**: quatro verificadores, cada um testado contra um defeito
+injetado de proposito. Verificador que nunca viu um defeito nao e verificador, e
+sim uma funcao que devolve `True`.
+
+A fidelidade numerica e a mais importante das quatro. Um modelo de linguagem que
+inventa uma estatistica dentro de um texto de apoio ao diagnostico produz
+exatamente o erro que o projeto inteiro existe para nao cometer — e produz um
+texto plausivel, que ninguem conferiria a olho.
+"""
+
+from __future__ import annotations
+
+import re
+import unicodedata
+from dataclasses import dataclass, field
+from typing import Any
+
+from src import config
+
+# Numero decimal com virgula ou ponto, com sinal opcional colado, exigindo que a
+# borda esquerda nao seja letra, digito ou underline. Sem essa borda,
+# `fractal_dimension_se2` doaria um "2" ao verificador e reprovaria um texto
+# correto; e em "3-5" o hifen fica sem borda valida e nao vira sinal.
+#
+# O sinal importa porque metade das contribuicoes SHAP e negativa. Sem ele, o
+# primeiro lote real reprovou um texto correto: "-10.9194" era lido como
+# 10.9194, ausente dos valores permitidos. Aceita o hifen e o sinal de menos
+# tipografico (U+2212), que o modelo as vezes escreve.
+_NUMERO = re.compile(r"(?<![\w.,])([-+−]?)(\d+(?:[.,]\d+)?)(?![\w])")
+
+# Tolerancia da comparacao: 0,9100 e 0,91 sao o mesmo numero, e reprovar essa
+# diferenca seria falso positivo a cada arredondamento.
+_TOLERANCIA = 1e-6
+
+# Afirmacoes que transformariam o texto em laudo, cada uma com a indicacao de se
+# uma negacao logo antes a absolve.
+#
+# Cada padrao exige o **contexto diagnostico**, e nao a palavra solta. "O achado
+# precisa ser confirmado por biopsia" e exatamente a frase cautelosa que o
+# projeto quer, e uma lista com "confirmado" cru a reprovaria — empurrando o
+# modelo para longe da prudencia em vez de na direcao dela. Por isso o padrao
+# casa "maligno confirmado", nao "confirmado".
+#
+# **Os acentos ficam.** Sem eles, "diagnostico e" (conjuncao) e "diagnostico e"
+# (verbo) sao a mesma string, e o primeiro lote real reprovou "o modelo nao
+# estabelece diagnostico e nao considera...". As vogais acentuadas aparecem como
+# classe opcional onde o modelo poderia omitir o acento sem mudar o sentido.
+#
+# **A negacao absolve so o que recusa uma afirmacao.** "...e nao que haja
+# diagnostico confirmado" recusa o laudo e passa. "Nao e cancer" descarta doenca
+# — e laudo negativo, igualmente proibido — e por isso esse padrao nao e
+# negavel. A negacao so conta dentro da mesma oracao e nas quatro palavras
+# anteriores: "Nao se preocupe, o diagnostico e cancer" continua reprovando.
+#
+# As terminacoes de genero e numero entram como classe de caractere, senao
+# "descartada" passaria e "descartado" reprovaria, o que seria arbitrario.
+_PADROES_PROIBIDOS = (
+    (r"\bdiagn[óo]stic[oa]\s+(é|está|será|confirmad|definitiv)", True),
+    (r"(?<!\w)(é|são)\s+(um\s+)?c[âa]ncer\b", False),
+    (r"\b(malign|benign)[oa]s?\s+confirmad[oa]s?\b", True),
+    (r"\bc[âa]ncer\s+confirmad[oa]\b", True),
+    (r"\bconfirmad[oa]s?\s+(que|o\s+diagn[óo]stic|a\s+malignidade)", True),
+    (r"\b(malignidade|c[âa]ncer|tumor)\s+(está\s+)?descartad[oa]s?\b", False),
+    (r"\bdescartad[oa]s?\s+a\s+(malignidade|hip[óo]tese\s+de\s+c[âa]ncer)\b", False),
+    (r"\bcom\s+certeza\b", False),
+    (r"\bsem\s+d[úu]vida\b", False),
+    (r"\bgarante\s+que\b", True),
+)
+
+_NEGACOES = frozenset({"não", "nao", "nem", "sem", "nunca"})
+_FIM_DE_ORACAO = re.compile(r"[.,;:!?\n]")
+
+_MARCAS_DE_RESSALVA = ("não substitui", "nao substitui", "nem substitui")
+
+
+@dataclass(frozen=True)
+class Verificacao:
+    """Resultado de um verificador. `detalhes` nomeia cada defeito encontrado."""
+
+    aprovado: bool
+    detalhes: list[str] = field(default_factory=list)
+
+    def para_dicionario(self) -> dict[str, Any]:
+        return {"aprovado": self.aprovado, "detalhes": list(self.detalhes)}
+
+
+@dataclass(frozen=True)
+class Relatorio:
+    """As quatro verificacoes de um texto. Reprova se qualquer uma reprovar."""
+
+    verificacoes: dict[str, Verificacao]
+
+    @property
+    def aprovado(self) -> bool:
+        return all(v.aprovado for v in self.verificacoes.values())
+
+    def para_dicionario(self) -> dict[str, Any]:
+        return {
+            "aprovado": self.aprovado,
+            "verificacoes": {
+                nome: v.para_dicionario() for nome, v in self.verificacoes.items()
+            },
+        }
+
+
+def _normalizar(texto: str) -> str:
+    """Minusculas sem acento, para comparar sem depender de grafia."""
+    sem_acento = unicodedata.normalize("NFKD", texto.lower())
+    return "".join(c for c in sem_acento if not unicodedata.combining(c))
+
+
+def extrair_numeros(texto: str) -> list[tuple[str, float, bool]]:
+    """Todo numero do texto, como (grafia original, valor, se tinha sinal escrito)."""
+    encontrados = []
+    for sinal, bruto in _NUMERO.findall(texto):
+        try:
+            magnitude = float(bruto.replace(",", "."))
+        except ValueError:  # pragma: no cover - a regex ja garante o formato
+            continue
+        valor = -magnitude if sinal in ("-", "−") else magnitude
+        encontrados.append((sinal + bruto, valor, bool(sinal)))
+    return encontrados
+
+
+def _confere(valor: float, com_sinal: bool, permitidos: list[float]) -> bool:
+    """Numero com sinal escrito confere com sinal; sem sinal, confere a magnitude.
+
+    "Negativa de 10,9194" e fiel a -10.9194: o sinal foi dito por extenso. Ja
+    "+10.9194" para um valor negativo e sinal trocado, e reprova.
+    """
+    if com_sinal:
+        return any(abs(valor - p) <= _TOLERANCIA for p in permitidos)
+    return any(abs(valor - abs(p)) <= _TOLERANCIA for p in permitidos)
+
+
+def verificar_fidelidade(texto: str, *, valores: list[float]) -> Verificacao:
+    """Todo numero do texto tem que estar entre os valores fornecidos.
+
+    Detecta alucinacao de estatistica: o modelo citando uma probabilidade, um
+    recall ou uma contagem que ninguem lhe deu, ou trocando o sinal de uma
+    contribuicao.
+    """
+    permitidos = [float(v) for v in valores]
+    inventados = [
+        grafia
+        for grafia, valor, com_sinal in extrair_numeros(texto)
+        if not _confere(valor, com_sinal, permitidos)
+    ]
+
+    return Verificacao(
+        aprovado=not inventados,
+        detalhes=[f"numero ausente da evidencia: {g}" for g in inventados],
+    )
+
+
+def _negado(texto: str, inicio: int) -> bool:
+    """Ha negacao nas quatro palavras anteriores, dentro da mesma oracao?"""
+    oracao = _FIM_DE_ORACAO.split(texto[:inicio])[-1]
+    return bool(_NEGACOES & set(oracao.split()[-4:]))
+
+
+def verificar_seguranca(texto: str) -> Verificacao:
+    """Nenhuma afirmacao diagnostica, e a ressalva obrigatoria presente."""
+    minusculo = texto.lower()
+    normalizado = _normalizar(texto)
+    detalhes = [
+        f"afirmacao diagnostica proibida: {encontrado.group(0).strip()!r}"
+        for padrao, negavel in _PADROES_PROIBIDOS
+        for encontrado in re.finditer(padrao, minusculo)
+        if not (negavel and _negado(minusculo, encontrado.start()))
+    ]
+
+    if not any(_normalizar(marca) in normalizado for marca in _MARCAS_DE_RESSALVA):
+        detalhes.append("ressalva obrigatoria ausente")
+
+    return Verificacao(aprovado=not detalhes, detalhes=detalhes)
+
+
+def verificar_cobertura(texto: str, *, features: list[str]) -> Verificacao:
+    """O texto cita nominalmente as features de maior contribuicao.
+
+    Sem isso a explicacao e generica: serve para qualquer caso, e portanto nao
+    explica nenhum. Aceita o nome com underline ou com espaco, porque o modelo
+    tende a escrever "texture worst" e isso nao e omissao.
+    """
+    normalizado = _normalizar(texto)
+    ausentes = [
+        feature
+        for feature in features
+        if _normalizar(feature) not in normalizado
+        and _normalizar(feature.replace("_", " ")) not in normalizado
+    ]
+
+    return Verificacao(
+        aprovado=not ausentes,
+        detalhes=[f"medida de maior contribuicao nao citada: {f}" for f in ausentes],
+    )
+
+
+def verificar_formato(
+    texto: str,
+    *,
+    secoes: list[str],
+    limite_de_palavras: int = config.LLM_LIMITE_DE_PALAVRAS,
+) -> Verificacao:
+    """Secoes presentes e tamanho dentro do contrato declarado no prompt."""
+    normalizado = _normalizar(texto)
+    detalhes = [
+        f"secao ausente: {secao}"
+        for secao in secoes
+        if _normalizar(secao) not in normalizado
+    ]
+
+    palavras = len(texto.split())
+    if palavras > limite_de_palavras:
+        detalhes.append(f"texto com {palavras} palavras, acima do limite de {limite_de_palavras}")
+    if palavras == 0:
+        detalhes.append("texto vazio")
+
+    return Verificacao(aprovado=not detalhes, detalhes=detalhes)
+
+
+def avaliar(
+    texto: str,
+    *,
+    valores: list[float],
+    features: list[str],
+    secoes: list[str],
+    limite_de_palavras: int = config.LLM_LIMITE_DE_PALAVRAS,
+) -> Relatorio:
+    """Roda os quatro verificadores e agrega o resultado."""
+    return Relatorio(
+        {
+            "fidelidade": verificar_fidelidade(texto, valores=valores),
+            "seguranca": verificar_seguranca(texto),
+            "cobertura": verificar_cobertura(texto, features=features),
+            "formato": verificar_formato(
+                texto, secoes=secoes, limite_de_palavras=limite_de_palavras
+            ),
+        }
+    )

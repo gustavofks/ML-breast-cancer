@@ -1,0 +1,16 @@
+{
+  "familia": "Regressão Logística",
+  "hiperparametros": {
+    "C": 32.647197,
+    "class_weight": null
+  },
+  "features": [
+    "texture_mean",
+    "concave points_mean",
+    "texture_se",
+    "area_se",
+    "texture_worst"
+  ],
+  "limiar": 0.2274,
+  "origem": "AG, completo, E3 explotação, Regressão Logística, semente 44 (escolhido por validação cruzada no treino)"
+}

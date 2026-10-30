@@ -467,6 +467,11 @@ pré-processamento, os modelos e suas justificativas, os resultados, a explicabi
 crítica sobre o uso do modelo na prática. O **[relatório de síntese](docs/relatorio_sintese.pdf)**
 condensa o mesmo conteúdo no formato entregue ao curso.
 
+O **[relatório técnico da Fase 2](docs/relatorio_tecnico_fase2.pdf)** documenta o algoritmo genético e
+seus resultados, a comparação entre os modelos originais e os otimizados, a integração com o modelo de
+linguagem (abordagem, prompts e avaliação da qualidade, automática e humana), a arquitetura, o
+monitoramento, a publicação em nuvem e os desafios enfrentados.
+
 ## Reprodutibilidade
 
 Semente fixa (`SEED = 42`) na separação treino/teste, na validação cruzada e nos modelos. As

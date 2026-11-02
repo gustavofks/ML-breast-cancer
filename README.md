@@ -9,7 +9,11 @@ custo clínico assimétrico), **explicações em linguagem natural** geradas por
 verificadas automaticamente, e o sistema **servido** como API com monitoramento e painel. Como
 executar cada parte está em [Fase 2](#fase-2).
 
-**Painel publicado:** https://huggingface.co/spaces/gustavofks/apoio-diagnostico-cancer-mama
+**Vitrine publicada no Hugging Face:** https://huggingface.co/spaces/gustavofks/apoio-diagnostico-cancer-mama
+
+**Vídeo de demonstração da Fase 2:** https://www.youtube.com/watch?v=-YmjWl66jtU
+
+**Vídeo de demonstração da Fase 1:** https://www.youtube.com/watch?v=qHfrP83uR9s
 
 **Tudo o que a Fase 2 mudou:**
 [comparação entre `v1.0-fase1` e o estado atual](https://github.com/gustavofks/ML-breast-cancer/compare/v1.0-fase1...main)
@@ -24,6 +28,31 @@ aspirativa por agulha fina (PAAF), o modelo classifica o tumor como **maligno** 
 > de explicabilidade.
 
 ## Resultados
+
+### Fase 2 — otimização genética e textos em linguagem natural
+
+Comparação final, nos 114 casos de teste, de cada braço do algoritmo genético contra a referência
+da Fase 1. O custo clínico pesa o falso negativo 10 vezes mais que o falso positivo (menor é melhor).
+
+| Braço | Medidas | Limiar | Recall | F1 | Falsos negativos | Falsos positivos | Custo clínico |
+|---|---|---|---|---|---|---|---|
+| Original (Fase 1) | 30 | 0,50 | 0,929 | 0,951 | 3 | 1 | 0,272 |
+| AG, só hiperparâmetros | 30 | 0,50 | 0,976 | 0,976 | **1** | 1 | **0,096** |
+| AG, só limiar | 30 | 0,18 | 0,976 | 0,943 | **1** | 4 | 0,123 |
+| **AG, completo (servido)** | **5** | 0,23 | 0,929 | 0,918 | 3 | 4 | 0,298 |
+| AG, só medidas | 6 | 0,50 | 0,905 | 0,938 | 4 | 1 | 0,360 |
+
+O ganho em segurança vem de **mover o ponto de operação** (limiar ou peso das classes), e não da
+seleção de medidas: os braços que só fazem isso caem de 3 para 1 falso negativo. A seleção de
+medidas mantém a segurança da referência com 5 das 30 medidas. O modelo servido foi escolhido por
+uma regra registrada **antes** de olhar o teste (maior fitness em validação cruzada no treino), em
+[`results/genetic/regra_do_modelo_servido.json`](results/genetic/regra_do_modelo_servido.json).
+Com 114 casos, diferenças de um ou dois erros não bastam para ordenar os braços com segurança.
+
+O Claude Haiku 5.5 gerou, em lote, a explicação de cada previsão e dois textos de gestão: 116 de
+116 passaram nas quatro verificações automáticas, a um custo total de US$ 0,046.
+
+### Fase 1 — classificação tabular
 
 Modelo escolhido: **Regressão Logística** (`C = 1,0`), vencedora sobre KNN e Random Forest na
 validação cruzada estratificada de 5 folds.
@@ -159,13 +188,22 @@ jupyter lab
 | [`02_modeling_evaluation.ipynb`](notebooks/02_modeling_evaluation.ipynb) | modelagem, validação cruzada, avaliação, ajuste de limiar e explicabilidade |
 | [`03_vision_cnn.ipynb`](notebooks/03_vision_cnn.ipynb) | entrega extra: auditoria de duplicatas, CNNs, ajuste fino e Grad-CAM |
 
-Ambos estão versionados **com as saídas executadas** — podem ser lidos sem rodar nada.
+Os três estão versionados **com as saídas executadas** — podem ser lidos sem rodar nada.
 
 ### Testes
 
 ```bash
 pytest
 node --test "tests/js/*.test.js"   # lógica da vitrine; usa build/space/index.html, se montado
+```
+
+Sem `requirements-api.txt` instalado, os testes da API e do painel são pulados. A suíte completa
+roda na imagem `api`, com o repositório montado (a imagem não leva `results/` nem `deploy/`, que os
+testes da Fase 2 leem):
+
+```bash
+docker build --target api -t ml-breast-cancer:api .
+docker run --rm -v "$(pwd):/repo" -w /repo ml-breast-cancer:api python -m pytest -q
 ```
 
 ### Entrega extra: diagnóstico por imagem
@@ -183,7 +221,8 @@ Com Docker, é um estágio à parte do mesmo `Dockerfile` — o TensorFlow leva 
 
 ```bash
 docker build --target vision -t ml-breast-cancer:vision .
-docker run --rm -v "$(pwd)/results:/app/results"            -v "$(pwd)/data/raw/images:/app/data/raw/images"            ml-breast-cancer:vision
+docker run --rm -v "$(pwd)/results:/app/results" \
+  -v "$(pwd)/data/raw/images:/app/data/raw/images" ml-breast-cancer:vision
 ```
 
 **Base utilizada: BUSI — Breast Ultrasound Images Dataset** (Al-Dhabyani et al., 2020). São 780
@@ -220,6 +259,20 @@ pip install -r requirements-api.txt   # FastAPI, Uvicorn e Gradio
 ```
 
 Sem elas, os testes da API e do painel são pulados, não quebrados.
+
+**Atalho.** Todos os resultados da Fase 2 (buscas, comparação final, modelo servido e textos) já
+estão versionados em `results/`. Para só ver o sistema funcionando, pule direto para o bloco
+**API, vitrine e painel**, mais abaixo. Para reproduzir tudo do zero, a ordem é:
+
+```bash
+python scripts/run_genetic.py                              # 1. buscas do algoritmo genético
+python scripts/run_genetic.py --sweep                      #    sensibilidade ao custo (opcional)
+python scripts/escolher_modelo.py --braco "AG, completo"   # 2. grava o modelo servido, sem ler o teste
+python scripts/evaluate_arms.py                            # 3. comparação final no teste
+python scripts/build_genetic_report.py                     # 4. summary.json e figuras 11 a 14
+pip install -r requirements-llm.txt                        # 5. SDK do Claude, só para gerar textos
+python scripts/run_llm.py --casos todos                    #    textos (pago; veja abaixo)
+```
 
 **Arquitetura.** As etapas pesadas e as que custam dinheiro rodam uma vez, na máquina de
 desenvolvimento, e gravam arquivos versionados. O serviço só lê esses arquivos: não precisa de
@@ -356,7 +409,12 @@ python scripts/montar_space.py                 # Space estático (padrão): READ
 python scripts/montar_space.py --sdk gradio    # API e painel ao vivo, para conta com plano pago
 ```
 
-O formato estático precisa da FastAPI para consultar a API; rode-o na imagem `api`.
+O formato estático precisa da FastAPI para consultar a API; rode-o na imagem `api`, com o
+repositório montado:
+
+```bash
+docker run --rm -v "$(pwd):/repo" -w /repo ml-breast-cancer:api python scripts/montar_space.py
+```
 
 > **Nota sobre o SHAP.** A biblioteca depende do `numba`, cuja DLL compilada é bloqueada por
 > algumas políticas de segurança do Windows (App Control / Smart App Control). O pipeline detecta a
@@ -425,12 +483,17 @@ ML-breast-cancer/
 ├── tests/                     # testes automatizados: um arquivo por módulo
 │   └── js/                    # testes da lógica da vitrine, no Node
 ├── results/
-│   ├── figures/               # 19 gráficos gerados
+│   ├── figures/               # 21 gráficos da Fase 1
+│   ├── genetic/               # Fase 2: execuções, comparação final, modelo servido e figuras 11 a 14
+│   ├── llm/                   # Fase 2: textos aprovados em cache, custo e comparação de prompts
 │   ├── metrics.json           # métricas do pipeline tabular
 │   ├── metrics_vision.json    # métricas do pipeline de imagem
 │   └── reports/index.html     # relatório visual, com as duas análises
-├── docs/relatorio_tecnico.pdf # relatório técnico completo
-├── docs/relatorio_sintese.pdf # relatório de síntese entregue ao curso
+├── docs/
+│   ├── relatorio_tecnico.pdf        # Fase 1: relatório técnico completo
+│   ├── relatorio_sintese.pdf        # Fase 1: síntese entregue ao curso
+│   ├── relatorio_tecnico_fase2.pdf  # Fase 2: relatório técnico completo
+│   └── relatorio_sintese_fase2.pdf  # Fase 2: síntese entregue ao curso
 ├── Dockerfile                 # pipeline tabular; estágios `vision`, `api` e `llm`
 ├── requirements.txt
 ├── requirements-vision.txt    # dependências da entrega extra
@@ -470,7 +533,9 @@ condensa o mesmo conteúdo no formato entregue ao curso.
 O **[relatório técnico da Fase 2](docs/relatorio_tecnico_fase2.pdf)** documenta o algoritmo genético e
 seus resultados, a comparação entre os modelos originais e os otimizados, a integração com o modelo de
 linguagem (abordagem, prompts e avaliação da qualidade, automática e humana), a arquitetura, o
-monitoramento, a publicação em nuvem e os desafios enfrentados.
+monitoramento, a publicação em nuvem e os desafios enfrentados. O
+**[relatório de síntese da Fase 2](docs/relatorio_sintese_fase2.pdf)** é a versão entregue ao curso,
+com os links do repositório, do vídeo e da vitrine.
 
 ## Reprodutibilidade
 
@@ -478,3 +543,7 @@ Semente fixa (`SEED = 42`) na separação treino/teste, na validação cruzada e
 dependências estão com versão fixada em `requirements.txt`. Executar o pipeline duas vezes produz
 o mesmo `metrics.json` — e rodá-lo no container Linux produz o mesmo arquivo que a execução local
 no Windows, verificado campo a campo.
+
+Na Fase 2, cada busca do algoritmo genético nasce da própria semente, então uma execução retomada
+com `--retomar` termina idêntica a uma sem interrupção. Os textos do modelo de linguagem ficam em
+cache versionado: reproduzir o sistema não exige chave de API nem gera custo.

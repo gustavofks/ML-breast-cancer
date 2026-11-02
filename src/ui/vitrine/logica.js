@@ -56,12 +56,18 @@
     return amostras;
   }
 
+  // A propria vitrine le /metrics a cada poucos segundos. Contadas no grafico,
+  // essas leituras cresceriam sem parar e achatariam as rotas que interessam;
+  // o /metrics continua contando-as, que e o que o Prometheus espera.
+  var ROTAS_FORA_DO_GRAFICO = ["/metrics"];
+
   // Requisicoes, latencia media e alertas, agregados para os graficos.
   function resumirMetricas(amostras) {
     var rotas = {};
     var alertas = {};
     amostras.forEach(function (a) {
       var rota = a.rotulos.rota;
+      if (ROTAS_FORA_DO_GRAFICO.indexOf(rota) !== -1) return;
       if (a.nome === "api_requisicoes_total") {
         rotas[rota] = rotas[rota] || { requisicoes: 0, erros: 0, soma: 0, contagem: 0 };
         rotas[rota].requisicoes += a.valor;

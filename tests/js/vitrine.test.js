@@ -65,6 +65,17 @@ test("lerPrometheus le rotulos e ignora comentarios", () => {
   assert.deepEqual(resumo.alertas, [{ feature: "area_se", alertas: 2 }]);
 });
 
+test("leituras de /metrics ficam fora do grafico de requisicoes", () => {
+  const texto = [
+    'api_requisicoes_total{rota="/metrics",status="200"} 250',
+    'api_latencia_segundos_sum{rota="/metrics"} 0.5',
+    'api_latencia_segundos_count{rota="/metrics"} 250',
+    'api_requisicoes_total{rota="/predict",status="200"} 2',
+  ].join("\n");
+  const resumo = L.resumirMetricas(L.lerPrometheus(texto));
+  assert.deepEqual(resumo.rotas.map((r) => r.rota), ["/predict"]);
+});
+
 test("modo ao vivo so quando /health confirma o modelo carregado", async () => {
   const resposta = (ok, corpo) => () => Promise.resolve({ ok, json: () => Promise.resolve(corpo) });
   assert.equal(await L.detectarModo(resposta(true, { status: "ok", modelo_carregado: true })), "ao-vivo");

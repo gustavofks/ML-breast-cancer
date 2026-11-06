@@ -111,7 +111,7 @@ function mostrarProgresso(titulo, atual, total) {
   if (!titulo) return;
   $("progresso-titulo").textContent = titulo;
   $("progresso-conta").textContent = atual + " de " + total;
-  $("progresso-barra").style.width = (atual / total) * 100 + "%";
+  $("progresso-barra").style.transform = "scaleX(" + atual / total + ")";
 }
 
 function descricaoDoTipo(tipo) {

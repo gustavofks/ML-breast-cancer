@@ -45,7 +45,7 @@ button:focus-visible { outline: 2px solid var(--verde); outline-offset: 2px; }
 .progresso-linha { display: flex; justify-content: space-between; gap: 12px; font-size: 13.5px; }
 .progresso-linha span:last-child { color: var(--tinta-2); white-space: nowrap; }
 .progresso-trilho { height: 4px; background: var(--painel-2); border-radius: 2px; margin-top: 6px; overflow: hidden; }
-#progresso-barra { height: 100%; width: 0; background: var(--rosa); transition: width .4s ease; }
+#progresso-barra { height: 100%; background: var(--rosa); transform: scaleX(0); transform-origin: left; transition: transform .4s ease; }
 
 .dialogo {
   position: fixed; left: 16px; bottom: 44px; width: min(560px, calc(100vw - 32px)); max-height: calc(100vh - 170px);

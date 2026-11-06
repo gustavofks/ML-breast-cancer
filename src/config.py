@@ -172,6 +172,11 @@ SPACE_PACOTE_DIR = PROJECT_ROOT / "build" / "space"
 # no HTML na montagem: a pagina nao carrega nada de fora.
 VITRINE_DIR = PROJECT_ROOT / "src" / "ui" / "vitrine"
 
+# Hospital 3D: apoio visual da apresentacao, pagina estatica como a vitrine.
+HOSPITAL_DIR = PROJECT_ROOT / "src" / "ui" / "hospital"
+HOSPITAL_PAGINA = SPACE_PACOTE_DIR / "hospital.html"
+VITRINE_PAGINA = SPACE_PACOTE_DIR / "index.html"
+
 def ensure_output_dirs() -> None:
     """Cria os diretorios de saida caso ainda nao existam."""
     for directory in (FIGURES_DIR, REPORTS_DIR):

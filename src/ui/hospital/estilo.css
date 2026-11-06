@@ -1,0 +1,149 @@
+/* Hospital 3D. A tela e a cena: a interface flutua em paineis escuros sobre ela. */
+:root {
+  --painel: rgba(17, 25, 29, .86);
+  --painel-2: rgba(255, 255, 255, .08);
+  --tinta: #f2f5f4;
+  --tinta-2: #b5c2c3;
+  --borda: rgba(255, 255, 255, .14);
+  --rosa: #e0528c;
+  --verde: #7fe3cf;
+  --raio: 14px;
+}
+
+* { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; overflow: hidden; background: #cfe4ea; }
+body { color: var(--tinta); font: 15px/1.5 "Segoe UI", system-ui, -apple-system, Roboto, sans-serif; }
+#cena { position: fixed; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
+button { font: inherit; color: inherit; cursor: pointer; }
+button:focus-visible { outline: 2px solid var(--verde); outline-offset: 2px; }
+[hidden] { display: none !important; }
+
+.topo {
+  position: fixed; top: 14px; left: 16px; right: 16px; display: flex; gap: 12px;
+  align-items: center; justify-content: space-between; pointer-events: none;
+}
+.marca, .modos {
+  pointer-events: auto; background: var(--painel); border: 1px solid var(--borda); border-radius: var(--raio);
+  backdrop-filter: blur(10px);
+}
+.marca { padding: 8px 16px; display: flex; flex-direction: column; line-height: 1.25; }
+.marca strong { font-size: 16px; letter-spacing: .1px; }
+.marca span { color: var(--tinta-2); font-size: 12.5px; }
+.modos { display: flex; padding: 5px; gap: 4px; }
+.modos button {
+  border: 0; background: transparent; padding: 8px 14px; border-radius: 10px; color: var(--tinta-2);
+  transition: background .16s ease, color .16s ease;
+}
+.modos button:hover { color: var(--tinta); background: var(--painel-2); }
+.modos button[aria-pressed="true"] { background: var(--rosa); color: #fff; }
+
+.progresso {
+  position: fixed; top: 84px; left: 50%; transform: translateX(-50%); width: min(460px, calc(100vw - 32px));
+  background: var(--painel); border: 1px solid var(--borda); border-radius: var(--raio); padding: 8px 14px 10px;
+  backdrop-filter: blur(10px);
+}
+.progresso-linha { display: flex; justify-content: space-between; gap: 12px; font-size: 13.5px; }
+.progresso-linha span:last-child { color: var(--tinta-2); white-space: nowrap; }
+.progresso-trilho { height: 4px; background: var(--painel-2); border-radius: 2px; margin-top: 6px; overflow: hidden; }
+#progresso-barra { height: 100%; width: 0; background: var(--rosa); transition: width .4s ease; }
+
+.dialogo {
+  position: fixed; left: 16px; bottom: 44px; width: min(560px, calc(100vw - 32px)); max-height: calc(100vh - 170px);
+  overflow-y: auto; background: var(--painel); border: 1px solid var(--borda); border-radius: 18px; padding: 16px 18px;
+  backdrop-filter: blur(12px); animation: subir .22s cubic-bezier(.2, .8, .2, 1);
+}
+@keyframes subir { from { opacity: 0; transform: translateY(10px); } }
+.dialogo-cabeca { display: flex; gap: 12px; align-items: center; padding-right: 28px; }
+.dialogo-cabeca strong { display: block; font-size: 17px; line-height: 1.2; }
+.dialogo-cabeca span { color: var(--tinta-2); font-size: 13px; }
+.retrato { width: 46px; height: 46px; flex: none; }
+.retrato svg { width: 100%; height: 100%; display: block; }
+.fala { margin: 10px 0 0; font-size: 16px; line-height: 1.5; min-height: 3em; }
+.evidencias { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.evidencias:empty { display: none; }
+.evidencia {
+  background: var(--painel-2); border-radius: 10px; padding: 6px 11px; display: flex; flex-direction: column;
+  line-height: 1.25; min-width: 88px;
+}
+.evidencia strong { font-size: 15.5px; font-variant-numeric: tabular-nums; }
+.evidencia span { font-size: 12px; color: var(--tinta-2); }
+.dialogo-rodape { display: flex; gap: 12px; align-items: center; justify-content: space-between; margin-top: 8px; }
+.fonte { font: 12px/1.4 Consolas, ui-monospace, monospace; color: var(--verde); overflow-wrap: anywhere; }
+.ver-figura { background: transparent; border: 1px solid var(--borda); border-radius: 8px; padding: 4px 10px; font-size: 13px; flex: none; }
+.perguntas { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.perguntas:empty { display: none; }
+.pergunta {
+  background: var(--painel-2); border: 1px solid transparent; border-radius: 999px; padding: 6px 13px; font-size: 13.5px;
+  transition: background .16s ease, border-color .16s ease;
+}
+.pergunta:hover { background: rgba(255, 255, 255, .15); }
+.pergunta.ativa { border-color: var(--rosa); }
+.fechar {
+  position: absolute; top: 10px; right: 12px; width: 30px; height: 30px; border: 0; border-radius: 8px;
+  background: transparent; font-size: 20px; line-height: 1; color: var(--tinta-2);
+}
+.fechar:hover { background: var(--painel-2); color: var(--tinta); }
+
+.controle-visita {
+  position: fixed; right: 16px; bottom: 44px; display: flex; gap: 6px; padding: 5px;
+  background: var(--painel); border: 1px solid var(--borda); border-radius: var(--raio); backdrop-filter: blur(10px);
+}
+.controle-visita button { border: 0; background: var(--painel-2); padding: 9px 14px; border-radius: 10px; }
+.controle-visita button:hover { background: rgba(255, 255, 255, .16); }
+#visita-proxima { background: var(--rosa); color: #fff; }
+
+.aviso {
+  position: fixed; bottom: 8px; left: 50%; transform: translateX(-50%); margin: 0; text-align: center; font-size: 12.5px;
+  color: var(--tinta-2); background: var(--painel); border-radius: 8px; padding: 3px 12px; pointer-events: none;
+  max-width: calc(100vw - 32px); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.dica {
+  position: fixed; left: 50%; bottom: 44px; transform: translateX(-50%); margin: 0; max-width: min(640px, calc(100vw - 32px));
+  background: var(--painel); border: 1px solid var(--borda); border-radius: 999px; padding: 8px 18px; font-size: 13.5px;
+  text-align: center; backdrop-filter: blur(10px); pointer-events: none;
+}
+
+.mira { display: none; position: fixed; left: 50%; top: 50%; width: 6px; height: 6px; margin: -3px; border-radius: 50%; background: #fff; box-shadow: 0 0 0 1.5px rgba(0, 0, 0, .35); pointer-events: none; }
+body[data-modo="andar"] .mira { display: block; }
+.mira-dica {
+  position: fixed; left: 50%; top: calc(50% + 26px); transform: translateX(-50%); background: var(--painel);
+  border-radius: 8px; padding: 5px 11px; font-size: 13.5px; pointer-events: none; white-space: nowrap;
+}
+
+.janela {
+  background: #141d21; color: var(--tinta); border: 1px solid var(--borda); border-radius: 18px; padding: 18px 20px;
+  width: min(560px, calc(100vw - 32px)); position: fixed;
+}
+.janela::backdrop { background: rgba(8, 12, 14, .6); }
+.janela-cabeca { display: flex; justify-content: space-between; gap: 16px; align-items: center; padding-right: 30px; }
+.janela h2 { margin: 0; font-size: 18px; font-weight: 600; }
+.janela-lead { color: var(--tinta-2); margin: 6px 0 12px; }
+.janela-figura { width: min(1000px, calc(100vw - 32px)); }
+.janela-figura img { display: block; margin-top: 12px; width: 100%; max-height: calc(100vh - 130px); object-fit: contain; background: #fff; border-radius: 10px; }
+.lista-casos { display: grid; gap: 8px; }
+.opcao-caso {
+  display: flex; justify-content: space-between; gap: 12px; align-items: center; text-align: left;
+  background: var(--painel-2); border: 1px solid transparent; border-radius: 12px; padding: 12px 14px;
+}
+.opcao-caso:hover { border-color: var(--rosa); }
+.opcao-caso span { color: var(--tinta-2); font-size: 13px; white-space: nowrap; }
+
+.carregando {
+  position: fixed; inset: 0; display: grid; place-items: center; padding: 24px; text-align: center;
+  background: #14222a; color: var(--tinta); font-size: 17px;
+}
+
+@media (max-width: 720px) {
+  .topo { flex-direction: column; align-items: stretch; top: 8px; left: 8px; right: 8px; gap: 6px; }
+  .marca { padding: 6px 12px; }
+  .marca span { display: none; }
+  .modos button { flex: 1; padding: 8px 4px; font-size: 13px; }
+  .progresso { top: 102px; }
+  .dialogo { left: 8px; bottom: 8px; width: calc(100vw - 16px); max-height: 52vh; }
+  .controle-visita { right: 8px; bottom: auto; top: 160px; }
+  .aviso { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .dialogo { animation: none; }
+  * { transition: none !important; }
+}

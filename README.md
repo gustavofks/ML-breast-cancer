@@ -421,6 +421,18 @@ docker run --rm -v "$(pwd):/repo" -w /repo ml-breast-cancer:api python scripts/m
 > ausência e continua, mantendo coeficientes e importância por permutação — as figuras SHAP já
 > versionadas em `results/figures/` permanecem válidas.
 
+### Hospital 3D
+
+Protótipo de apoio à apresentação: um hospital fictício em 3D, com robôs funcionários em que cada
+sala é uma etapa real do projeto. Tem visita guiada, modo a pé em primeira pessoa, planta e a jornada
+de um caso real do teste, incluindo os erros do modelo. Não usa LLM ao vivo, chave ou servidor: as
+falas são moldes preenchidos com `results/`, e cada resposta mostra a fonte.
+
+```bash
+python scripts/montar_space.py      # uma vez, na imagem `api`: gera a vitrine, de onde vêm os casos
+python scripts/montar_hospital.py   # gera build/space/hospital.html, que abre com dois cliques
+```
+
 ## Estrutura do projeto
 
 ```

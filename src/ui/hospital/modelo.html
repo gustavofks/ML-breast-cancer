@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hospital do Tech Challenge</title>
+<link rel="icon" href="data:,">
+<style>
+__ESTILO__
+</style>
+</head>
+<body data-modo="planta">
+<canvas id="cena" aria-label="Hospital em 3D com robôs que explicam cada etapa do projeto"></canvas>
+
+<header class="topo">
+  <div class="marca">
+    <strong>Hospital do Tech Challenge</strong>
+    <span>Apoio ao diagnóstico de câncer de mama</span>
+  </div>
+  <nav class="modos" aria-label="Modos de visita">
+    <button type="button" data-modo="visita" aria-pressed="false">Visita guiada</button>
+    <button type="button" data-modo="caso" aria-pressed="false">Siga um caso</button>
+    <button type="button" data-modo="andar" aria-pressed="false">Andar</button>
+    <button type="button" data-modo="planta" aria-pressed="true">Planta</button>
+  </nav>
+</header>
+
+<div id="progresso" class="progresso" hidden>
+  <div class="progresso-linha"><span id="progresso-titulo"></span><span id="progresso-conta"></span></div>
+  <div class="progresso-trilho"><div id="progresso-barra"></div></div>
+</div>
+
+<div id="mira" class="mira" aria-hidden="true"></div>
+<div id="mira-dica" class="mira-dica" hidden></div>
+<p id="dica" class="dica" hidden></p>
+
+<section id="dialogo" class="dialogo" aria-live="polite" hidden>
+  <button id="fechar-dialogo" class="fechar" type="button" aria-label="Fechar conversa">×</button>
+  <div class="dialogo-cabeca">
+    <div id="retrato" class="retrato"></div>
+    <div><strong id="nome-robo"></strong><span id="papel-robo"></span></div>
+  </div>
+  <p id="texto-fala" class="fala"></p>
+  <div id="evidencias" class="evidencias"></div>
+  <div class="dialogo-rodape">
+    <span id="fonte" class="fonte" hidden></span>
+    <button id="ver-figura" class="ver-figura" type="button" hidden>Ver figura</button>
+  </div>
+  <div id="perguntas" class="perguntas"></div>
+</section>
+
+<div id="controle-visita" class="controle-visita" hidden>
+  <button id="visita-anterior" type="button" aria-label="Sala anterior">‹ Anterior</button>
+  <button id="visita-auto" type="button" aria-pressed="false">Reproduzir</button>
+  <button id="visita-proxima" type="button" aria-label="Próxima sala">Próxima ›</button>
+</div>
+
+<p class="aviso">__AVISO__</p>
+
+<dialog id="figura" class="janela janela-figura" aria-labelledby="figura-titulo">
+  <div class="janela-cabeca"><h2 id="figura-titulo"></h2><button id="figura-fechar" class="fechar" type="button" aria-label="Fechar figura">×</button></div>
+  <div id="figura-imagem"></div>
+</dialog>
+
+<dialog id="escolha-caso" class="janela" aria-labelledby="caso-titulo">
+  <div class="janela-cabeca"><h2 id="caso-titulo">Siga um caso real do teste</h2><button id="caso-fechar" class="fechar" type="button" aria-label="Fechar">×</button></div>
+  <p class="janela-lead">Um caso percorre o hospital da chegada à mesa do médico. Inclui os erros do modelo.</p>
+  <div id="lista-casos" class="lista-casos"></div>
+</dialog>
+
+<div id="carregando" class="carregando" role="status">Abrindo o hospital…</div>
+
+<script id="three-fonte" type="text/plain">__THREE__</script>
+<script id="dados" type="application/json">__DADOS__</script>
+<script id="figuras" type="application/json">__FIGURAS__</script>
+<script type="module">
+// O Three.js e um modulo ES e a pagina e um arquivo so: ele entra como texto e vira modulo aqui.
+const fonteDoThree = document.getElementById("three-fonte").textContent;
+const THREE = await import(URL.createObjectURL(new Blob([fonteDoThree], { type: "text/javascript" })));
+const DADOS = JSON.parse(document.getElementById("dados").textContent);
+const FIGURAS = JSON.parse(document.getElementById("figuras").textContent);
+__APP__
+</script>
+</body>
+</html>

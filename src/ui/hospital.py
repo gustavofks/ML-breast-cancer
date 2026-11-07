@@ -23,6 +23,8 @@ from pathlib import Path
 from typing import Any
 
 from src import config
+from src.ui import filmes
+from src.ui.formato import num, pct, por_nome
 
 # Mesmo texto de `src/ui/app.py`, que nao pode ser importado aqui: ele traz o pandas.
 AVISO = (
@@ -51,19 +53,6 @@ FONTE_CONFIG = "src/config.py"
 
 def _ler(caminho: Path) -> Any:
     return json.loads(caminho.read_text(encoding="utf-8"))
-
-
-def _num(valor: float, casas: int = 3) -> str:
-    """Numero com virgula, como o publico da apresentacao le."""
-    return f"{valor:.{casas}f}".replace(".", ",")
-
-
-def _pct(valor: float, casas: int = 1) -> str:
-    return f"{_num(valor * 100, casas)}%"
-
-
-def _por_nome(linhas: list[dict[str, Any]], chave: str, valor: str) -> dict[str, Any]:
-    return next(linha for linha in linhas if linha[chave] == valor)
 
 
 def casos_da_vitrine(pagina: Path = config.VITRINE_PAGINA) -> dict[str, Any]:
@@ -187,10 +176,10 @@ def _sala_dados(contexto: dict[str, Any]) -> dict[str, Any]:
 def _sala_modelos(contexto: dict[str, Any]) -> dict[str, Any]:
     metricas = contexto["metricas"]
     escolhido = metricas["modelo_escolhido"]
-    teste = _por_nome(metricas["teste"], "modelo", escolhido)
+    teste = por_nome(metricas["teste"], "modelo", escolhido)
     malignos = teste["falsos_negativos"] + teste["verdadeiros_positivos"]
     shap = metricas["explicabilidade"]["shap_global"]
-    com_limiar_baixo = _por_nome(metricas["limiares"], "limiar", 0.3)
+    com_limiar_baixo = por_nome(metricas["limiares"], "limiar", 0.3)
     return {
         "id": "modelos",
         "nome": "Sala dos Modelos",
@@ -198,7 +187,7 @@ def _sala_modelos(contexto: dict[str, Any]) -> dict[str, Any]:
         "robo": {"nome": "Téo", "papel": "Analista de modelos", "cor": "#2f7fd6", "acessorio": "jaleco"},
         "fala": (
             f"Três modelos disputaram por validação cruzada, e venceu {escolhido}, com F1 de "
-            f"{_num(metricas['validacao_cruzada'][0]['f1'])}. Ganhou por um motivo a mais: dá "
+            f"{num(metricas['validacao_cruzada'][0]['f1'])}. Ganhou por um motivo a mais: dá "
             f"para explicar cada decisão. No teste, deixou passar {teste['falsos_negativos']} de "
             f"{malignos} tumores malignos."
         ),
@@ -218,7 +207,7 @@ def _sala_modelos(contexto: dict[str, Any]) -> dict[str, Any]:
                     "limiar e na Fase 2."
                 ),
                 "evidencias": [
-                    {"rotulo": linha["modelo"], "valor": f"F1 {_num(linha['f1'])}"}
+                    {"rotulo": linha["modelo"], "valor": f"F1 {num(linha['f1'])}"}
                     for linha in metricas["validacao_cruzada"]
                 ],
                 "fonte": FONTE_METRICAS,
@@ -230,7 +219,7 @@ def _sala_modelos(contexto: dict[str, Any]) -> dict[str, Any]:
                     f"{shap[0]['feature']} aparece no topo. O quadro da parede mostra o SHAP completo."
                 ),
                 "evidencias": [
-                    {"rotulo": item["feature"], "valor": f"SHAP {_num(item['shap_medio'])}"}
+                    {"rotulo": item["feature"], "valor": f"SHAP {num(item['shap_medio'])}"}
                     for item in shap[:3]
                 ],
                 "fonte": FONTE_METRICAS,
@@ -257,8 +246,8 @@ def _sala_modelos(contexto: dict[str, Any]) -> dict[str, Any]:
 
 def _sala_imagem(contexto: dict[str, Any]) -> dict[str, Any]:
     visao = contexto["visao"]
-    escolhido = _por_nome(visao["teste"], "modelo", visao["modelo_escolhido"])
-    do_zero = _por_nome(visao["teste"], "modelo", "CNN do zero")
+    escolhido = por_nome(visao["teste"], "modelo", visao["modelo_escolhido"])
+    do_zero = por_nome(visao["teste"], "modelo", "CNN do zero")
     duplicatas = visao["duplicatas"]
     return {
         "id": "imagem",
@@ -267,7 +256,7 @@ def _sala_imagem(contexto: dict[str, Any]) -> dict[str, Any]:
         "robo": {"nome": "Íris", "papel": "Técnica de imagem", "cor": "#8a5cd6", "acessorio": "touca"},
         "fala": (
             f"Aqui a entrada é o ultrassom cru, sem medida feita por especialista. A "
-            f"{visao['modelo_escolhido']} achou {_pct(escolhido['recall_maligno'], 0)} dos malignos "
+            f"{visao['modelo_escolhido']} achou {pct(escolhido['recall_maligno'], 0)} dos malignos "
             f"do teste, {escolhido['malignos_no_teste'] - escolhido['malignos_nao_detectados']} de "
             f"{escolhido['malignos_no_teste']}. É demonstração de viabilidade, não sistema clínico."
         ),
@@ -285,8 +274,8 @@ def _sala_imagem(contexto: dict[str, Any]) -> dict[str, Any]:
                     "que fez funcionar."
                 ),
                 "evidencias": [
-                    {"rotulo": "CNN do zero", "valor": _pct(do_zero["recall_maligno"], 0)},
-                    {"rotulo": visao["modelo_escolhido"], "valor": _pct(escolhido["recall_maligno"], 0)},
+                    {"rotulo": "CNN do zero", "valor": pct(do_zero["recall_maligno"], 0)},
+                    {"rotulo": visao["modelo_escolhido"], "valor": pct(escolhido["recall_maligno"], 0)},
                 ],
                 "fonte": FONTE_VISAO,
             },
@@ -324,8 +313,8 @@ def _sala_evolucao(contexto: dict[str, Any]) -> dict[str, Any]:
     servido = contexto["servido"]
     execucao = contexto["execucao"]
     bracos = sorted(resumo["bracos"], key=lambda b: b["custo_medio"])
-    referencia = _por_nome(comparacao, "braco", BRACO_REFERENCIA)
-    final = _por_nome(comparacao, "braco", BRACO_COMPLETO)
+    referencia = por_nome(comparacao, "braco", BRACO_REFERENCIA)
+    final = por_nome(comparacao, "braco", BRACO_COMPLETO)
     auc = [linha["roc_auc"] for linha in comparacao]
     return {
         "id": "evolucao",
@@ -335,7 +324,7 @@ def _sala_evolucao(contexto: dict[str, Any]) -> dict[str, Any]:
         "fala": (
             f"Cada esfera é um indivíduo: um conjunto de medidas, hiperparâmetros e limiar. A nuvem "
             f"encolhe porque a diversidade real desta execução cai. Foram {resumo['execucoes']} "
-            f"execuções, com falso negativo custando {_num(config.CUSTO_FALSO_NEGATIVO, 0)} vezes "
+            f"execuções, com falso negativo custando {num(config.CUSTO_FALSO_NEGATIVO, 0)} vezes "
             "mais que falso positivo."
         ),
         "enxame": {
@@ -353,12 +342,12 @@ def _sala_evolucao(contexto: dict[str, Any]) -> dict[str, Any]:
             {
                 "pergunta": "O algoritmo achou um modelo melhor?",
                 "resposta": (
-                    f"Não é essa a história. A AUC ficou entre {_num(min(auc))} e {_num(max(auc))} em "
+                    f"Não é essa a história. A AUC ficou entre {num(min(auc))} e {num(max(auc))} em "
                     "todos os braços: a capacidade de ordenar os casos é a mesma. O ganho em falso "
                     "negativo vem de mover o ponto de corte, não de escolher medidas."
                 ),
                 "evidencias": [
-                    {"rotulo": braco["braco"], "valor": f"custo {_num(braco['custo_medio'], 4)}"}
+                    {"rotulo": braco["braco"], "valor": f"custo {num(braco['custo_medio'], 4)}"}
                     for braco in bracos
                 ],
                 "fonte": FONTE_RESUMO,
@@ -367,15 +356,15 @@ def _sala_evolucao(contexto: dict[str, Any]) -> dict[str, Any]:
                 "pergunta": "Qual modelo foi para produção?",
                 "resposta": (
                     f"{servido['familia']} com {len(servido['features'])} medidas e limiar "
-                    f"{_num(servido['limiar'], 4)}. No teste, {final['falsos_negativos']} falsos "
+                    f"{num(servido['limiar'], 4)}. No teste, {final['falsos_negativos']} falsos "
                     f"negativos e {final['falsos_positivos']} falsos positivos, contra "
                     f"{referencia['falsos_negativos']} e {referencia['falsos_positivos']} da "
                     f"referência com {referencia['n_features']} medidas. Reduzir medidas custou pouca "
-                    f"AUC: {_num(final['roc_auc'], 4)} contra {_num(referencia['roc_auc'], 4)}."
+                    f"AUC: {num(final['roc_auc'], 4)} contra {num(referencia['roc_auc'], 4)}."
                 ),
                 "evidencias": [
                     {"rotulo": "Medidas", "valor": f"{final['n_features']} de {referencia['n_features']}"},
-                    {"rotulo": "Limiar", "valor": _num(servido["limiar"], 4)},
+                    {"rotulo": "Limiar", "valor": num(servido["limiar"], 4)},
                 ],
                 "fonte": FONTE_COMPARACAO,
             },
@@ -384,7 +373,7 @@ def _sala_evolucao(contexto: dict[str, Any]) -> dict[str, Any]:
                 "resposta": (
                     f"Não. São {final['n_amostras']} casos, com "
                     f"{final['falsos_negativos'] + final['verdadeiros_positivos']} malignos. Um falso "
-                    f"negativo a mais vale {_num(config.CUSTO_FALSO_NEGATIVO / final['n_amostras'])} de "
+                    f"negativo a mais vale {num(config.CUSTO_FALSO_NEGATIVO / final['n_amostras'])} de "
                     "custo, então diferença de um ou dois é ruído de amostra. E a regra do modelo "
                     "servido foi fixada antes de abrir o teste."
                 ),
@@ -429,13 +418,13 @@ def _sala_laudos(contexto: dict[str, Any]) -> dict[str, Any]:
             {
                 "pergunta": "Quanto custou gerar tudo?",
                 "resposta": (
-                    f"US$ {_num(custo['custo_usd'], 3)} com {custo['modelo']}, dentro do teto de "
-                    f"US$ {_num(custo['orcamento_usd'], 2)} conferido antes de cada chamada. Texto "
+                    f"US$ {num(custo['custo_usd'], 3)} com {custo['modelo']}, dentro do teto de "
+                    f"US$ {num(custo['orcamento_usd'], 2)} conferido antes de cada chamada. Texto "
                     "gerado uma vez vira cache, e o custo não se repete."
                 ),
                 "evidencias": [
-                    {"rotulo": "Custo total", "valor": f"US$ {_num(custo['custo_usd'], 3)}"},
-                    {"rotulo": "Teto", "valor": f"US$ {_num(custo['orcamento_usd'], 2)}"},
+                    {"rotulo": "Custo total", "valor": f"US$ {num(custo['custo_usd'], 3)}"},
+                    {"rotulo": "Teto", "valor": f"US$ {num(custo['orcamento_usd'], 2)}"},
                 ],
                 "fonte": FONTE_CUSTO,
             },
@@ -479,11 +468,11 @@ def _sala_central(contexto: dict[str, Any]) -> dict[str, Any]:
                 "pergunta": "O que é a sentinela?",
                 "resposta": (
                     f"Ela compara cada medida com a distribuição do treino e alerta quando foge mais "
-                    f"de {_num(config.API_LIMIAR_DE_DESVIO, 0)} desvios padrão. Ela registra, não "
+                    f"de {num(config.API_LIMIAR_DE_DESVIO, 0)} desvios padrão. Ela registra, não "
                     "bloqueia: quem decide se confia no resultado é o médico."
                 ),
                 "evidencias": [
-                    {"rotulo": "Limite", "valor": f"{_num(config.API_LIMIAR_DE_DESVIO, 0)} desvios padrão"},
+                    {"rotulo": "Limite", "valor": f"{num(config.API_LIMIAR_DE_DESVIO, 0)} desvios padrão"},
                 ],
                 "fonte": "src/api/monitoring.py",
             },
@@ -589,8 +578,10 @@ def montar_dados(vitrine: dict[str, Any], resultados: Path = config.RESULTS_DIR)
         "narrativas": _ler(llm / "narrativas.json"),
         "custo": _ler(llm / "custo.json"),
         "eventos": vitrine["console"]["gravacao"]["eventos"],
+        "casos": vitrine["casos"],
     }
     salas = [CONSTRUTORES[identificador](contexto) for identificador in ORDEM_DA_VISITA]
+    teste = por_nome(contexto["metricas"]["teste"], "modelo", contexto["metricas"]["modelo_escolhido"])
     return {
         "aviso": AVISO,
         "modelo": {
@@ -601,8 +592,11 @@ def montar_dados(vitrine: dict[str, Any], resultados: Path = config.RESULTS_DIR)
         "dataset": {
             "benignos": contexto["metricas"]["dataset"]["benignos"],
             "malignos": contexto["metricas"]["dataset"]["malignos"],
+            "teste_benignos": teste["verdadeiros_negativos"] + teste["falsos_positivos"],
+            "teste_malignos": teste["verdadeiros_positivos"] + teste["falsos_negativos"],
         },
         "salas": salas,
+        "filmes": filmes.filmes(contexto),
         "casos": [_resumir_caso(i, caso) for i, caso in enumerate(vitrine["casos"])],
     }
 
@@ -613,6 +607,8 @@ def figuras_usadas(dados: dict[str, Any]) -> list[str]:
     for sala in dados["salas"]:
         nomes += [quadro["figura"] for quadro in sala.get("quadros", [])]
         nomes += [p["figura"] for p in sala["perguntas"] if "figura" in p]
+    for filme in dados["filmes"]:
+        nomes += [p["figura"] for p in filme["planos"] if p["figura"]]
     return list(dict.fromkeys(nomes))
 
 
@@ -641,7 +637,11 @@ def _ativo(nome: str) -> str:
 
 # Ordem importa: os arquivos sao concatenados num modulo so, e `hospital.js`, que
 # usa os demais, vem por ultimo.
-SCRIPTS = ("logica.js", "texturas.js", "predio.js", "mobilia.js", "robos.js", "camera.js", "interface.js", "hospital.js")
+SCRIPTS = (
+    "logica.js", "roteiro.js", "texturas.js", "predio.js", "mobilia.js", "robos.js", "camera.js",
+    "ceu.js", "pos.js", "obra.js", "tomadas.js", "trilha.js", "letreiros.js", "diretor.js",
+    "interface.js", "estudio.js", "hospital.js",
+)
 
 
 def pagina(dados: dict[str, Any], figuras: dict[str, str]) -> str:

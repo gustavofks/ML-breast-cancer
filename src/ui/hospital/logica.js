@@ -36,7 +36,7 @@ const HospitalLogica = (function () {
     },
     evolucao: {
       x0: 1, x1: 12, z0: 2, z1: 11, porta: { x: 6.5, z: 2 }, ala: "fase2",
-      posto: { x: 4.8, z: 5 }, parada: { x: 4.4, z: 3.4 },
+      posto: { x: 4.6, z: 5.2 }, parada: { x: 4.4, z: 3.4 },
       camera: { de: [10.6, 2.3, 2.8], para: [6.2, 1.25, 7.2] },
     },
     laudos: {
@@ -215,6 +215,51 @@ const HospitalLogica = (function () {
     ];
   }
 
+  // Erros do modelo servido se o corte fosse outro. E a conta da regua do limiar.
+  function contarErros(casos, limiar) {
+    let negativos = 0;
+    let positivos = 0;
+    casos.forEach(function (c) {
+      const alerta = c.probabilidade >= limiar;
+      if (c.registrado === "Maligno" && !alerta) negativos += 1;
+      if (c.registrado === "Benigno" && alerta) positivos += 1;
+    });
+    return { falsosNegativos: negativos, falsosPositivos: positivos };
+  }
+
+  // Luz de cada hora do dia. A manha, a tarde e a noite marcam a passagem das fases.
+  const HORAS = [
+    { h: 5.5, topo: "#1f2f55", horizonte: "#eba97f", sol: "#ffb27a", solI: 0.6, ceu: "#a4b4d4", chao: "#b9a191", hemi: 1.0, luzes: 0.7 },
+    { h: 8, topo: "#74b1e6", horizonte: "#f6e4cf", sol: "#ffe6c0", solI: 1.7, ceu: "#fff4e6", chao: "#e9dfcf", hemi: 1.15, luzes: 0.3 },
+    { h: 12, topo: "#5ea6e6", horizonte: "#dcecf3", sol: "#fff4e2", solI: 1.9, ceu: "#fffaf2", chao: "#e9e4da", hemi: 1.25, luzes: 0.25 },
+    { h: 17, topo: "#6488cc", horizonte: "#f8c897", sol: "#ffbe80", solI: 1.9, ceu: "#ffe6cc", chao: "#dcc7b3", hemi: 1.0, luzes: 0.5 },
+    { h: 19, topo: "#28316a", horizonte: "#ea8468", sol: "#ff8f5c", solI: 0.8, ceu: "#a9a2cc", chao: "#9a8890", hemi: 0.6, luzes: 1 },
+    { h: 22, topo: "#091026", horizonte: "#1b2848", sol: "#8fa8d8", solI: 0.28, ceu: "#5a6a96", chao: "#3a3f52", hemi: 0.34, luzes: 1.25 },
+  ];
+
+  function misturarCor(a, b, p) {
+    const canal = function (cor, i) { return parseInt(cor.slice(1 + i * 2, 3 + i * 2), 16); };
+    let saida = "#";
+    for (let i = 0; i < 3; i++) {
+      saida += Math.round(canal(a, i) + (canal(b, i) - canal(a, i)) * p).toString(16).padStart(2, "0");
+    }
+    return saida;
+  }
+
+  function ceuDaHora(h) {
+    const limitada = Math.min(HORAS[HORAS.length - 1].h, Math.max(HORAS[0].h, h));
+    let i = 0;
+    while (i < HORAS.length - 2 && HORAS[i + 1].h < limitada) i++;
+    const a = HORAS[i];
+    const b = HORAS[i + 1];
+    const p = (limitada - a.h) / (b.h - a.h);
+    const saida = {};
+    Object.keys(a).forEach(function (chave) {
+      saida[chave] = typeof a[chave] === "string" ? misturarCor(a[chave], b[chave], p) : a[chave] + (b[chave] - a[chave]) * p;
+    });
+    return saida;
+  }
+
   // Tempo de leitura de uma fala, para a visita automatica nao atropelar o publico.
   function tempoDeLeitura(texto) {
     const palavras = texto.trim().split(/\s+/).length;
@@ -224,6 +269,7 @@ const HospitalLogica = (function () {
   const api = {
     ALTURA_PAREDE, LARGURA_PORTA, CORREDOR, SALAS, CORES_DA_ALA,
     salaEm, rota, colidir, numero, tipoDoCaso, casosPorTipo, resumoDoTexto, etapasDoCaso, tempoDeLeitura,
+    contarErros, ceuDaHora, misturarCor,
   };
   if (typeof module === "object" && module.exports) module.exports = api;
   return api;

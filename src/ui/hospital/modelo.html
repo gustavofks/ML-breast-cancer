@@ -12,6 +12,40 @@ __ESTILO__
 <body data-modo="planta">
 <canvas id="cena" aria-label="Hospital em 3D com robôs que explicam cada etapa do projeto"></canvas>
 
+<section id="estudio" class="estudio" aria-label="Estúdio de gravação" hidden>
+  <div class="palco"><canvas id="quadro" width="1920" height="1080" aria-label="Quadro do filme, exatamente como será gravado"></canvas></div>
+  <div class="mesa">
+    <div class="mesa-linha">
+      <div class="filmes" role="group" aria-label="Filme">
+        <button type="button" data-filme="fase1" aria-pressed="true">Fase 1</button>
+        <button type="button" data-filme="fase2" aria-pressed="false">Fase 2</button>
+        <button type="button" data-filme="fase3" aria-pressed="false">Fase 3</button>
+      </div>
+      <button id="estudio-ensaiar" type="button" class="acao">Ensaiar</button>
+      <button id="estudio-gravar" type="button" class="acao gravar">Gravar</button>
+      <button id="estudio-parar" type="button" class="acao" disabled>Parar</button>
+      <span id="estudio-relogio" class="relogio">00:00</span>
+      <span class="duracao">duração <span id="estudio-duracao"></span></span>
+      <span id="estudio-estado" class="estado" role="status">Escolha um trecho da fita para começar dele.</span>
+    </div>
+    <div id="fita" class="fita" aria-label="Planos do filme"></div>
+    <div class="prompter">
+      <p id="prompter-frase" class="prompter-frase"></p>
+      <p id="prompter-agora"></p>
+      <p id="prompter-depois" class="prompter-depois"></p>
+    </div>
+    <div class="mesa-linha opcoes">
+      <label><input id="estudio-microfone" type="checkbox"> Microfone</label>
+      <label><input id="estudio-musica" type="checkbox" checked> Música</label>
+      <label><input id="estudio-legendas" type="checkbox" checked> Legendas</label>
+      <label id="estudio-telao" hidden>Gravação real <input id="estudio-video" type="file" accept="video/*"></label>
+      <button id="estudio-roteiro" type="button">Roteiro e capítulos</button>
+      <button id="estudio-srt" type="button">Legendas .srt</button>
+      <button id="estudio-foto" type="button">Foto do quadro</button>
+    </div>
+  </div>
+</section>
+
 <header class="topo">
   <div class="marca">
     <strong>Hospital do Tech Challenge</strong>
@@ -22,6 +56,8 @@ __ESTILO__
     <button type="button" data-modo="caso" aria-pressed="false">Siga um caso</button>
     <button type="button" data-modo="andar" aria-pressed="false">Andar</button>
     <button type="button" data-modo="planta" aria-pressed="true">Planta</button>
+    <button type="button" data-modo="estudio" aria-pressed="false">Estúdio</button>
+    <button id="hora" type="button" class="hora" title="Mudar a hora do dia">Manhã</button>
   </nav>
 </header>
 

@@ -428,6 +428,10 @@ sala é uma etapa real do projeto. Tem visita guiada, modo a pé em primeira pes
 de um caso real do teste, incluindo os erros do modelo. Não usa LLM ao vivo, chave ou servidor: as
 falas são moldes preenchidos com `results/`, e cada resposta mostra a fonte.
 
+O modo **Estúdio** grava um filme por fase, em que o prédio é construído junto com o projeto. Teleprompter,
+microfone, trilha sintetizada e legendas ficam no navegador, que salva um MP4 em 1080p. Os roteiros
+estão em `src/ui/filmes.py`.
+
 ```bash
 python scripts/montar_space.py      # uma vez, na imagem `api`: gera a vitrine, de onde vêm os casos
 python scripts/montar_hospital.py   # gera build/space/hospital.html, que abre com dois cliques

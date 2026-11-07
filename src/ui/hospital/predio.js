@@ -1,12 +1,16 @@
 // O predio: chao, paredes com portas e janelas, teto, placas e arredores.
 //
-// `construirPredio` devolve os colisores das paredes e os grupos que o modo planta
-// esconde. Toda parede nasce de `parede`, que recorta aberturas e registra a colisao.
+// `construirPredio` devolve os colisores, as portas automaticas e as pecas de cada ala,
+// que os filmes erguem aos poucos. Toda parede nasce de `parede`, que recorta aberturas
+// e registra a colisao.
 
 const L = HospitalLogica;
 const COR_PAREDE = "#fbf8f1";
 const PISO_DA_ALA = { acolhida: "#f4ebe6", fase1: "#e4efe9", fase2: "#ebe6f2", fase3: "#ded7c8" };
 const ESPESSURA = 0.2;
+
+// Um vidro so para o predio inteiro: de noite, todas as janelas acendem juntas.
+const VIDRO = { material: null };
 
 function material(cor, opcoes) {
   return new THREE.MeshStandardMaterial(Object.assign({ color: cor, roughness: 0.82, metalness: 0 }, opcoes));
@@ -32,9 +36,11 @@ function parede(cena, colisores, a, b, opcoes) {
   const grupo = new THREE.Group();
   const matParede = material(COR_PAREDE);
   const matRodape = material(op.cor || "#c9c2b4");
-  const matVidro = new THREE.MeshPhysicalMaterial({
+  VIDRO.material = VIDRO.material || new THREE.MeshPhysicalMaterial({
     color: "#cfe9ee", transparent: true, opacity: 0.22, roughness: 0.08, metalness: 0, depthWrite: false,
+    emissive: "#ffcf8f", emissiveIntensity: 0,
   });
+  const matVidro = VIDRO.material;
 
   function peca(de, ate, base, topo, mat, sombra) {
     if (ate - de < 1e-3) return;
@@ -77,6 +83,7 @@ function parede(cena, colisores, a, b, opcoes) {
     } else {
       peca(de, ate, 2.5, H, matParede);
       batente(grupo, noEixoX, fixo, vao.centro, vao.largura, op.cor);
+      if (vao.automatica) portaAutomatica(grupo, op.portas, noEixoX, fixo, vao.centro, vao.largura);
       colisao(inicioColisao, de);
       inicioColisao = ate;
     }
@@ -101,6 +108,53 @@ function batente(grupo, noEixoX, fixo, centro, largura, cor) {
     : caixa(ESPESSURA + 0.08, 0.1, largura + 0.1, mat, fixo, 2.5, centro, false));
 }
 
+// Duas folhas de vidro que abrem quando alguem chega perto, robo ou visitante.
+function portaAutomatica(grupo, portas, noEixoX, fixo, centro, largura) {
+  const matFolha = new THREE.MeshPhysicalMaterial({
+    color: "#d8eef2", transparent: true, opacity: 0.32, roughness: 0.1, depthWrite: false,
+  });
+  const matAro = material("#8e9a9c", { metalness: 0.5, roughness: 0.4 });
+  const meia = largura / 2;
+  const folhas = [-1, 1].map(function (lado) {
+    const folha = new THREE.Group();
+    folha.add(new THREE.Mesh(new THREE.BoxGeometry(meia, 2.42, 0.03), matFolha));
+    [meia / 2, -meia / 2].forEach(function (d) {
+      const aro = new THREE.Mesh(new THREE.BoxGeometry(0.05, 2.42, 0.05), matAro);
+      aro.position.x = d;
+      folha.add(aro);
+    });
+    folha.position.y = 1.22;
+    if (!noEixoX) folha.rotation.y = Math.PI / 2;
+    grupo.add(folha);
+    return { grupo: folha, lado: lado };
+  });
+  const porta = {
+    x: noEixoX ? centro : fixo,
+    z: noEixoX ? fixo : centro,
+    abertura: 0,
+    posicionar: function () {
+      folhas.forEach(function (f) {
+        const d = f.lado * (meia / 2 + porta.abertura * meia * 0.94);
+        f.grupo.position.x = noEixoX ? centro + d : fixo;
+        f.grupo.position.z = noEixoX ? fixo : centro + d;
+      });
+    },
+  };
+  porta.posicionar();
+  portas.push(porta);
+}
+
+function atualizarPortas(portas, pontos, dt) {
+  portas.forEach(function (porta) {
+    const perto = pontos.some(function (p) { return Math.hypot(p.x - porta.x, p.z - porta.z) < 2.7; });
+    const alvo = perto ? 1 : 0;
+    if (porta.abertura === alvo) return;
+    const passo = dt * 2.6;
+    porta.abertura = alvo > porta.abertura ? Math.min(alvo, porta.abertura + passo) : Math.max(alvo, porta.abertura - passo);
+    porta.posicionar();
+  });
+}
+
 function janelasEntre(de, ate, largura, vaoLivre) {
   const lista = [];
   const passo = largura + vaoLivre;
@@ -112,13 +166,13 @@ function janelasEntre(de, ate, largura, vaoLivre) {
   return lista;
 }
 
-function porta(centro, largura) {
-  return { tipo: "porta", centro: centro, largura: largura || L.LARGURA_PORTA };
+function porta(centro, largura, automatica) {
+  return { tipo: "porta", centro: centro, largura: largura || L.LARGURA_PORTA, automatica: automatica !== false };
 }
 
-function chao(cena) {
+function chao(cena, pecas) {
   const predio = new THREE.Group();
-  const placa = function (x0, x1, z0, z1, cor) {
+  const placa = function (x0, x1, z0, z1, cor, ala) {
     const m = new THREE.Mesh(
       new THREE.PlaneGeometry(x1 - x0, z1 - z0),
       new THREE.MeshStandardMaterial({ map: texturaGranilite(cor, [(x1 - x0) / 3, (z1 - z0) / 3]), roughness: 0.55 })
@@ -127,17 +181,23 @@ function chao(cena) {
     m.position.set((x0 + x1) / 2, 0.01, (z0 + z1) / 2);
     m.receiveShadow = true;
     predio.add(m);
+    pecas[ala].push({ objeto: m, tipo: "piso" });
   };
   Object.keys(L.SALAS).forEach(function (id) {
     const s = L.SALAS[id];
-    placa(s.x0, s.x1, s.z0, s.z1, PISO_DA_ALA[s.ala]);
+    placa(s.x0, s.x1, s.z0, s.z1, PISO_DA_ALA[s.ala], s.ala);
   });
-  placa(L.CORREDOR.x0, L.CORREDOR.x1, L.CORREDOR.z0, L.CORREDOR.z1, "#e6e0d3");
+  placa(L.CORREDOR.x0, 12, L.CORREDOR.z0, L.CORREDOR.z1, "#e6e0d3", "fase1");
+  placa(12, L.CORREDOR.x1, L.CORREDOR.z0, L.CORREDOR.z1, "#e6e0d3", "fase2");
   cena.add(predio);
 }
 
 // As linhas coloridas de hospital: seguem o corredor e entram na ala de cada fase.
-function linhasGuia(cena) {
+function linhasGuia(cena, pecas) {
+  const grupos = { fase1: new THREE.Group(), fase2: new THREE.Group() };
+  cena.add(grupos.fase1, grupos.fase2);
+  pecas.fase1.push({ objeto: grupos.fase1, tipo: "ergue" });
+  pecas.fase2.push({ objeto: grupos.fase2, tipo: "ergue" });
   const linha = function (x0, z0, x1, z1, cor, deslocamento) {
     const largura = 0.14;
     const horizontal = z0 === z1;
@@ -147,7 +207,7 @@ function linhasGuia(cena) {
     );
     m.rotation.x = -Math.PI / 2;
     m.position.set((x0 + x1) / 2, 0.022, (z0 + z1) / 2 + (deslocamento || 0));
-    cena.add(m);
+    (cor === L.CORES_DA_ALA.fase1 ? grupos.fase1 : grupos.fase2).add(m);
   };
   const C = L.CORES_DA_ALA;
   linha(-21, 0.5, 6.5, 0.5, C.fase1, 0);
@@ -165,7 +225,7 @@ function linhasGuia(cena) {
   linha(17.5, 0, 17.5, 4, C.fase2);
 }
 
-function placaDaPorta(cena, sala, dados) {
+function placaDaPorta(cena, sala, dados, pecas) {
   const s = L.SALAS[sala];
   const cor = L.CORES_DA_ALA[s.ala];
   const mat = new THREE.MeshStandardMaterial({ map: texturaPlaca(dados.nome, dados.fase, cor), roughness: 0.6 });
@@ -184,39 +244,47 @@ function placaDaPorta(cena, sala, dados) {
     m.rotation.y = -Math.PI / 2;
   }
   cena.add(m);
+  pecas[s.ala].push({ objeto: m, tipo: "ergue" });
 }
 
 function teto(cena) {
   const grupo = new THREE.Group();
+  const porAla = {};
+  Object.keys(L.CORES_DA_ALA).forEach(function (ala) {
+    porAla[ala] = new THREE.Group();
+    grupo.add(porAla[ala]);
+  });
   const matTeto = material("#fbf9f4", { side: THREE.DoubleSide, emissive: "#fbf9f4", emissiveIntensity: 0.32 });
-  const matLuz = new THREE.MeshBasicMaterial({ color: "#fffdf2" });
-  const laje = function (x0, x1, z0, z1) {
+  // Acima de 1: passa do limiar do brilho, e o painel parece mesmo aceso.
+  const matLuz = new THREE.MeshBasicMaterial({ color: new THREE.Color(2.3, 2.25, 2.1) });
+  const laje = function (x0, x1, z0, z1, ala) {
     const m = new THREE.Mesh(new THREE.PlaneGeometry(x1 - x0, z1 - z0), matTeto);
     m.rotation.x = Math.PI / 2;
     m.position.set((x0 + x1) / 2, L.ALTURA_PAREDE, (z0 + z1) / 2);
-    grupo.add(m);
+    porAla[ala].add(m);
   };
   Object.keys(L.SALAS).forEach(function (id) {
     const s = L.SALAS[id];
-    if (id !== "obras") laje(s.x0, s.x1, s.z0, s.z1);
+    if (id !== "obras") laje(s.x0, s.x1, s.z0, s.z1, s.ala);
     const cx = (s.x0 + s.x1) / 2;
     const cz = (s.z0 + s.z1) / 2;
     [-2.4, 2.4].forEach(function (d) {
       const painel = new THREE.Mesh(new THREE.PlaneGeometry(2.4, 0.7), matLuz);
       painel.rotation.x = Math.PI / 2;
       painel.position.set(cx + d, L.ALTURA_PAREDE - 0.02, cz);
-      if (id !== "obras") grupo.add(painel);
+      if (id !== "obras") porAla[s.ala].add(painel);
     });
   });
-  laje(L.CORREDOR.x0, L.CORREDOR.x1, L.CORREDOR.z0, L.CORREDOR.z1);
+  laje(L.CORREDOR.x0, 12, L.CORREDOR.z0, L.CORREDOR.z1, "fase1");
+  laje(12, L.CORREDOR.x1, L.CORREDOR.z0, L.CORREDOR.z1, "fase2");
   for (let x = -7; x < 23; x += 5) {
     const painel = new THREE.Mesh(new THREE.PlaneGeometry(1.8, 0.6), matLuz);
     painel.rotation.x = Math.PI / 2;
     painel.position.set(x, L.ALTURA_PAREDE - 0.02, 0);
-    grupo.add(painel);
+    porAla[x < 12 ? "fase1" : "fase2"].add(painel);
   }
   cena.add(grupo);
-  return grupo;
+  return { grupo: grupo, porAla: porAla };
 }
 
 function arvore(cena, x, z, escala) {
@@ -270,7 +338,7 @@ function arredores(cena) {
   cena.add(calcada);
 
   [[-27, -9, 1.1], [-27, 9, 1.2], [-32, -6, 0.9], [-33, 7, 1], [-12, -15, 1.3], [4, -15, 1], [18, -15, 1.2],
-    [-10, 15, 1.1], [8, 15, 1.3], [24, 15, 1], [38, -5, 1.2], [38, 6, 1], [30, -13, 1.1], [30, 13, 0.9]]
+    [-10, 15, 1.1], [8, 15, 1.3], [24, 15, 1], [38, 6, 1], [30, 13, 0.9]]
     .forEach(function (p) { arvore(cena, p[0], p[1], p[2]); });
 
   lacoRosa(cena, -25.4, 1.6, -4.6);
@@ -286,51 +354,58 @@ function arredores(cena) {
 
 function construirPredio(cena, salasPorId) {
   const colisores = [];
-  const paredes = [];
+  const portas = [];
+  const pecas = { acolhida: [], fase1: [], fase2: [], fase3: [] };
   const C = L.CORES_DA_ALA;
-  const add = function (a, b, op) { paredes.push(parede(cena, colisores, a, b, op)); };
+  const add = function (ala, a, b, op) {
+    const grupo = parede(cena, colisores, a, b, Object.assign({ portas: portas }, op));
+    pecas[ala].push({ objeto: grupo, tipo: "ergue" });
+  };
 
-  chao(cena);
-  linhasGuia(cena);
+  chao(cena, pecas);
+  linhasGuia(cena, pecas);
   arredores(cena);
 
   // Fachadas norte e sul.
-  add({ x: -10, z: -11 }, { x: 23, z: -11 }, { aberturas: janelasEntre(-10, 23, 2.6, 1.1), cor: "#b7c4c2" });
-  add({ x: -10, z: 11 }, { x: 23, z: 11 }, { aberturas: janelasEntre(-10, 23, 2.6, 1.1), cor: "#b7c4c2" });
+  add("fase1", { x: -10, z: -11 }, { x: 12, z: -11 }, { aberturas: janelasEntre(-10, 12, 2.6, 1.1), cor: "#b7c4c2" });
+  add("fase2", { x: 12, z: -11 }, { x: 23, z: -11 }, { aberturas: janelasEntre(12, 23, 2.6, 1.1), cor: "#b7c4c2" });
+  add("fase1", { x: -10, z: 11 }, { x: 1, z: 11 }, { aberturas: janelasEntre(-10, 1, 2.6, 1.1), cor: "#b7c4c2" });
+  add("fase2", { x: 1, z: 11 }, { x: 23, z: 11 }, { aberturas: janelasEntre(1, 23, 2.6, 1.1), cor: "#b7c4c2" });
 
   // Corredor: uma porta por sala e janela interna para ver os robos de fora.
   const janelasDoCorredor = function (centros) {
     return centros.map(function (c) { return { tipo: "janela", centro: c, largura: 2.2 }; });
   };
   [-2, 2].forEach(function (z) {
-    add({ x: -10, z: z }, { x: 1, z: z }, { aberturas: [porta(-4.5)].concat(janelasDoCorredor([-7.6, -1.4])), cor: C.fase1 });
-    add({ x: 1, z: z }, { x: 12, z: z }, {
+    add("fase1", { x: -10, z: z }, { x: 1, z: z }, { aberturas: [porta(-4.5)].concat(janelasDoCorredor([-7.6, -1.4])), cor: C.fase1 });
+    add(z === -2 ? "fase1" : "fase2", { x: 1, z: z }, { x: 12, z: z }, {
       aberturas: [porta(6.5)].concat(janelasDoCorredor([3.4, 9.6])),
       cor: z === -2 ? C.fase1 : C.fase2,
     });
-    add({ x: 12, z: z }, { x: 23, z: z }, { aberturas: [porta(17.5)].concat(janelasDoCorredor([14.4, 20.6])), cor: C.fase2 });
+    add("fase2", { x: 12, z: z }, { x: 23, z: z }, { aberturas: [porta(17.5)].concat(janelasDoCorredor([14.4, 20.6])), cor: C.fase2 });
   });
 
   // Divisorias entre salas.
-  [1, 12].forEach(function (x) {
-    add({ x: x, z: -11 }, { x: x, z: -2 }, {});
-    add({ x: x, z: 2 }, { x: x, z: 11 }, {});
-  });
+  add("fase1", { x: 1, z: -11 }, { x: 1, z: -2 }, {});
+  add("fase1", { x: 1, z: 2 }, { x: 1, z: 11 }, {});
+  add("fase1", { x: 12, z: -11 }, { x: 12, z: -2 }, {});
+  add("fase2", { x: 12, z: 2 }, { x: 12, z: 11 }, {});
 
   // Recepcao e obras nas pontas, abertas no eixo do corredor.
-  add({ x: -10, z: -11 }, { x: -10, z: 11 }, { aberturas: [porta(0, 4)], cor: C.acolhida });
-  add({ x: 23, z: -11 }, { x: 23, z: 11 }, { aberturas: [porta(0, 4)], cor: C.fase3 });
-  add({ x: -22, z: -8 }, { x: -22, z: 8 }, {
+  add("acolhida", { x: -10, z: -11 }, { x: -10, z: 11 }, { aberturas: [porta(0, 4, false)], cor: C.acolhida });
+  add("fase2", { x: 23, z: -11 }, { x: 23, z: 11 }, { aberturas: [porta(0, 4, false)], cor: C.fase3 });
+  add("acolhida", { x: -22, z: -8 }, { x: -22, z: 8 }, {
     aberturas: [porta(0, 4)].concat([{ tipo: "janela", centro: -5.6, largura: 3 }, { tipo: "janela", centro: 5.6, largura: 3 }]),
     cor: C.acolhida,
   });
-  add({ x: -22, z: -8 }, { x: -10, z: -8 }, { cor: C.acolhida });
-  add({ x: -22, z: 8 }, { x: -10, z: 8 }, { aberturas: janelasEntre(-22, -10, 2.6, 1.3), cor: C.acolhida });
-  add({ x: 23, z: -8 }, { x: 35, z: -8 }, { cor: C.fase3 });
-  add({ x: 23, z: 8 }, { x: 35, z: 8 }, { cor: C.fase3 });
-  add({ x: 35, z: -8 }, { x: 35, z: 8 }, { cor: C.fase3 });
+  add("acolhida", { x: -22, z: -8 }, { x: -10, z: -8 }, { cor: C.acolhida });
+  add("acolhida", { x: -22, z: 8 }, { x: -10, z: 8 }, { aberturas: janelasEntre(-22, -10, 2.6, 1.3), cor: C.acolhida });
+  add("fase3", { x: 23, z: -8 }, { x: 35, z: -8 }, { cor: C.fase3 });
+  add("fase3", { x: 23, z: 8 }, { x: 35, z: 8 }, { cor: C.fase3 });
+  add("fase3", { x: 35, z: -8 }, { x: 35, z: 8 }, { cor: C.fase3 });
 
-  Object.keys(salasPorId).forEach(function (id) { placaDaPorta(cena, id, salasPorId[id]); });
+  Object.keys(salasPorId).forEach(function (id) { placaDaPorta(cena, id, salasPorId[id], pecas); });
 
-  return { colisores: colisores, paredes: paredes, teto: teto(cena) };
+  const tetos = teto(cena);
+  return { colisores: colisores, portas: portas, pecas: pecas, teto: tetos.grupo, tetos: tetos.porAla };
 }

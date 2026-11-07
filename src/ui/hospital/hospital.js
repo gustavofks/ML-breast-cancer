@@ -25,7 +25,7 @@ const ROTINAS = {
     { x: 9.4, z: -8.4, acao: "parado", dur: 4, olhar: { x: 8.2, z: -11 } },
   ],
   evolucao: [
-    { x: 4.4, z: 7.6, acao: "trabalhando", dur: 6, olhar: { x: 3, z: 7.6 } },
+    { x: 9.7, z: 3.4, acao: "trabalhando", dur: 6, olhar: { x: 10.7, z: 3.4 } },
     { x: 5.2, z: 4.2, acao: "parado", dur: 5, olhar: { x: 7.4, z: 6.8 } },
     { x: 9.8, z: 3.8, acao: "parado", dur: 5, olhar: { x: 7.4, z: 6.8 } },
   ],
@@ -50,36 +50,13 @@ function poseDaSala(id) {
 }
 
 function criarRenderizador(tela) {
-  const renderizador = new THREE.WebGLRenderer({ canvas: tela, antialias: true, powerPreference: "high-performance" });
+  const renderizador = new THREE.WebGLRenderer({ canvas: tela, antialias: false, powerPreference: "high-performance" });
   renderizador.setPixelRatio(Math.min(devicePixelRatio, 2));
   renderizador.shadowMap.enabled = true;
   renderizador.shadowMap.type = THREE.PCFSoftShadowMap;
   renderizador.toneMapping = THREE.NeutralToneMapping;
   renderizador.toneMappingExposure = 1;
   return renderizador;
-}
-
-function iluminar(cena) {
-  cena.background = new THREE.Color("#cfe4ea");
-  cena.fog = new THREE.Fog("#cfe4ea", 80, 220);
-  cena.add(new THREE.HemisphereLight("#fffaf2", "#e9e4da", 1.9));
-  const sol = new THREE.DirectionalLight("#fff3df", 1.5);
-  sol.position.set(-24, 40, 20);
-  sol.target.position.set(6, 0, 0);
-  sol.castShadow = true;
-  sol.shadow.mapSize.set(4096, 4096);
-  sol.shadow.bias = -0.0004;
-  sol.shadow.normalBias = 0.03;
-  Object.assign(sol.shadow.camera, { left: -38, right: 38, top: 26, bottom: -26, near: 5, far: 90 });
-  cena.add(sol, sol.target);
-  // Uma luz por sala, sem sombra: a planta nao precisa, e interiores ganham ponto de luz.
-  const pontos = Object.values(L.SALAS).map(function (s) { return [(s.x0 + s.x1) / 2, (s.z0 + s.z1) / 2]; });
-  [[-4.5, 0], [6.5, 0], [17.5, 0]].forEach(function (p) { pontos.push(p); });
-  pontos.forEach(function (p) {
-    const luz = new THREE.PointLight("#fff4e4", 6, 11, 1.6);
-    luz.position.set(p[0], 3, p[1]);
-    cena.add(luz);
-  });
 }
 
 function rotuloFlutuante(texto, cor) {
@@ -155,13 +132,16 @@ class Hospital {
     this.tela = tela;
     this.renderizador = criarRenderizador(tela);
     this.cena = new THREE.Scene();
-    iluminar(this.cena);
-    this.camera3d = new THREE.PerspectiveCamera(52, 1, 0.1, 260);
+    this.camera3d = new THREE.PerspectiveCamera(52, 1, 0.1, 700);
     const predio = construirPredio(this.cena, SALAS_POR_ID);
     this.predio = predio;
-    const mobilia = construirMobilia(this.cena, predio.colisores, SALAS_POR_ID, DADOS.dataset);
+    const mobilia = construirMobilia(this.cena, predio.colisores, SALAS_POR_ID, DADOS, predio.pecas);
     this.quadros = mobilia.quadros;
     this.animados = mobilia.animados;
+    this.palco = mobilia.palco;
+    this.ceu = new Ceu(this.cena, this.renderizador);
+    this.pos = new Pos(this.renderizador);
+    this.obra = new Obra(predio.pecas);
     this.equipe = criarEquipe(this.cena);
     this.rotulosDasSalas = criarRotulosDasSalas(this.cena);
     this.circulantes = criarCirculantes(this.cena);
@@ -175,15 +155,20 @@ class Hospital {
     this.visita = null;
     this.caso = null;
     this.alvoProximo = null;
+    this.diretor = new Diretor(this);
+    this.estudio = new Estudio(this);
     this.ligarEventos();
     this.ajustarTamanho();
     addEventListener("resize", () => this.ajustarTamanho());
   }
 
   ajustarTamanho() {
+    if (this.estudio.aberto) return;
     const w = innerWidth;
     const h = innerHeight;
     this.renderizador.setSize(w, h, false);
+    const escala = this.renderizador.getPixelRatio();
+    this.pos.redimensionar(Math.round(w * escala), Math.round(h * escala));
     this.camera3d.aspect = w / h;
     this.camera3d.updateProjectionMatrix();
   }
@@ -193,6 +178,7 @@ class Hospital {
       botao.addEventListener("click", () => this.trocarModo(botao.dataset.modo));
     });
     $("fechar-dialogo").addEventListener("click", () => this.encerrarConversa());
+    $("hora").addEventListener("click", () => this.proximaHora());
     $("visita-anterior").addEventListener("click", () => this.passoDaVisita(-1));
     $("visita-proxima").addEventListener("click", () => this.passoDaVisita(1));
     $("visita-auto").addEventListener("click", () => this.alternarAutomatico());
@@ -200,6 +186,50 @@ class Hospital {
     $("caso-fechar").addEventListener("click", () => $("escolha-caso").close());
     this.tela.addEventListener("click", (e) => this.aoClicar(e));
     addEventListener("keydown", (e) => this.aoTeclar(e));
+  }
+
+  // Manha, fim de tarde e noite, fora dos filmes: o hospital muda bastante.
+  proximaHora() {
+    const horas = [[10, "Manhã"], [17.6, "Fim de tarde"], [21, "Noite"]];
+    this.indiceDaHora = ((this.indiceDaHora || 0) + 1) % horas.length;
+    this.ceu.definirHora(horas[this.indiceDaHora][0]);
+    $("hora").textContent = horas[this.indiceDaHora][1];
+  }
+
+  // Robos e lajes so existem nas alas prontas: num terreno vazio, ficariam flutuando.
+  sincronizarObra() {
+    const obra = this.obra;
+    Object.values(this.equipe).forEach(function (a) {
+      a.robo.raiz.visible = obra.progresso[L.SALAS[a.sala.id].ala] >= 0.97;
+    });
+    const corredorPronto = obra.pronta("fase1") && obra.pronta("fase2");
+    this.circulantes.forEach(function (a) { a.robo.raiz.visible = corredorPronto; });
+    Object.keys(this.predio.tetos).forEach((ala) => {
+      this.predio.tetos[ala].visible = obra.pronta(ala);
+    });
+  }
+
+  definirTetoDoFilme(semTeto) {
+    this.predio.teto.visible = !semTeto;
+    this.rotulosDasSalas.visible = false;
+  }
+
+  // Depois do estudio, o hospital volta inteiro, como na visita.
+  restaurarMundo() {
+    this.obra.terminarTudo();
+    this.sincronizarObra();
+    const palco = this.palco;
+    palco.pastas.posicionar(palco.pastas.total, 1);
+    palco.cofre.abrir(0);
+    palco.podio.subir(1);
+    palco.selos.acender(1);
+    palco.regua.definir(DADOS.modelo.limiar);
+    palco.enxame.estado.relogio = null;
+    palco.fluxo.acender(0);
+    this.ceu.definirHora(10);
+    this.indiceDaHora = 0;
+    $("hora").textContent = "Manhã";
+    this.camera3d.updateProjectionMatrix();
   }
 
   aoTeclar(e) {
@@ -273,6 +303,7 @@ class Hospital {
     this.caso = null;
     this.portador.robo.raiz.visible = false;
     this.camera.voo = null;
+    this.estudio.fechar();
     mostrarProgresso(null);
     mostrarDica(null);
     $("controle-visita").hidden = true;
@@ -291,6 +322,7 @@ class Hospital {
     if (modo === "planta") this.abrirPlanta();
     if (modo === "andar") this.comecarAPe();
     if (modo === "visita") this.comecarVisita(sala);
+    if (modo === "estudio") this.estudio.abrir();
   }
 
   // Sem teto e com a camera alta: a maquete inteira de uma vez.
@@ -466,9 +498,13 @@ class Hospital {
   }
 
   quadroDoLaco() {
-    const dt = Math.min(this.relogio.getDelta(), 0.05);
-    this.avancar(dt);
-    this.renderizador.render(this.cena, this.camera3d);
+    this.avancar(Math.min(this.relogio.getDelta(), 0.05));
+    this.desenhar();
+  }
+
+  desenhar() {
+    if (this.estudio.aberto) this.estudio.desenhar();
+    else this.pos.render(this.cena, this.camera3d);
   }
 
   avancar(dt) {
@@ -478,16 +514,25 @@ class Hospital {
     this.circulantes.forEach(function (a) { a.atualizar(t, dt); });
     if (this.portador.robo.raiz.visible) this.portador.atualizar(t, dt);
     this.animados.forEach(function (a) { a.avancar(t, dt); });
-    this.seguirPortador(dt);
-    this.camera.atualizar(dt, Boolean(this.conversa));
-    this.procurarAlvo();
+    this.ceu.avancar(t, dt);
+    if (this.estudio.aberto) {
+      this.diretor.avancar(dt);
+    } else {
+      this.seguirPortador(dt);
+      this.camera.atualizar(dt, Boolean(this.conversa));
+      this.procurarAlvo();
+    }
+    const pontos = Object.values(this.equipe).map(function (a) { return a.posicao; });
+    this.circulantes.forEach(function (a) { pontos.push(a.posicao); });
+    pontos.push(this.portador.posicao, this.camera3d.position);
+    atualizarPortas(this.predio.portas, pontos, dt);
   }
 
   iniciar() {
     this.renderizador.setAnimationLoop(() => this.quadroDoLaco());
     $("carregando").hidden = true;
     const pedida = new URLSearchParams(location.search).get("modo");
-    this.trocarModo(pedida === "andar" || pedida === "visita" ? pedida : "planta");
+    this.trocarModo(["andar", "visita", "estudio"].includes(pedida) ? pedida : "planta");
   }
 }
 

@@ -128,3 +128,78 @@ test("contagem de erros dos casos bate com a matriz de confusao do modelo servid
   assert.equal(grupos["verdadeiro positivo"].length, servido.verdadeiros_positivos);
   assert.equal(grupos["verdadeiro negativo"].length, servido.verdadeiros_negativos);
 });
+
+const R = require(path.join(RAIZ, "src", "ui", "hospital", "roteiro.js"));
+const FILME = {
+  planos: [
+    { id: "a", capitulo: "Um", narracao: "F1 de 0,964 na validação. Segunda frase aqui: terceira parte." },
+    { id: "b", capitulo: "Dois", narracao: "Curto." },
+  ],
+};
+
+test("linha do tempo encadeia planos sem buraco, entre claquete e creditos", () => {
+  const linha = R.linhaDoTempo(FILME);
+  assert.equal(linha.planos[0].inicio, R.CLAQUETE);
+  assert.equal(linha.planos[1].inicio, linha.planos[0].fim);
+  assert.equal(linha.total, linha.creditos + R.CREDITOS);
+  assert.equal(R.indiceEm(linha, 0), -1);
+  assert.equal(R.indiceEm(linha, linha.planos[1].inicio + 0.01), 1);
+  assert.equal(R.indiceEm(linha, linha.total - 1), 2);
+});
+
+test("voz gravada manda no tempo do plano, respeitando o minimo", () => {
+  const plano = FILME.planos[0];
+  assert.equal(R.duracaoDoPlano(plano, { a: 20 }), 20.7);
+  assert.ok(R.duracaoDoPlano(plano, { a: 1 }) >= 4);
+});
+
+test("legenda nao parte numero decimal e cobre as frases em ordem", () => {
+  const linha = R.linhaDoTempo(FILME);
+  const trechos = R.trechos(linha.planos[0]);
+  assert.ok(trechos[0].texto.includes("0,964"));
+  for (let i = 1; i < trechos.length; i++) assert.equal(trechos[i].inicio, trechos[i - 1].fim);
+  assert.equal(R.legendaEm(linha.planos[0], trechos[1].inicio + 0.01).texto, trechos[1].texto);
+  assert.ok(trechos.at(-1).fim <= linha.planos[0].fim);
+});
+
+test("srt tem blocos numerados com tempo crescente", () => {
+  const blocos = R.srt(R.linhaDoTempo(FILME)).trim().split(/\n\n/);
+  assert.match(blocos[0], /^1\n00:00:02,800 --> /);
+  const inicios = blocos.map((b) => b.split("\n")[1].split(" --> ")[0]);
+  assert.deepEqual(inicios, [...inicios].sort());
+});
+
+test("capitulos comecam em 00:00, como o YouTube exige", () => {
+  assert.match(R.capitulos(R.linhaDoTempo(FILME)), /^00:00 Um\n/);
+});
+
+test("contar erros cresce de um lado quando o corte anda", () => {
+  const casos = [
+    { registrado: "Maligno", probabilidade: 0.3 },
+    { registrado: "Benigno", probabilidade: 0.2 },
+  ];
+  assert.deepEqual(L.contarErros(casos, 0.5), { falsosNegativos: 1, falsosPositivos: 0 });
+  assert.deepEqual(L.contarErros(casos, 0.1), { falsosNegativos: 0, falsosPositivos: 1 });
+});
+
+test("ceu acerta os pontos fixos e nao salta entre eles", () => {
+  assert.equal(L.ceuDaHora(12).topo, "#5ea6e6");
+  assert.equal(L.ceuDaHora(0).topo, L.ceuDaHora(5.5).topo);
+  for (let h = 6; h < 22; h += 0.25) {
+    assert.ok(Math.abs(L.ceuDaHora(h + 0.25).hemi - L.ceuDaHora(h).hemi) < 0.2, `hora ${h}`);
+  }
+});
+
+test("a regua reproduz a comparacao final no limiar servido", { skip: semPagina }, () => {
+  const comparacao = JSON.parse(fs.readFileSync(path.join(RAIZ, "results", "genetic", "comparacao_final.json"), "utf8"));
+  const servido = comparacao.find((b) => b.braco === "AG, completo");
+  const erros = L.contarErros(dados.casos, dados.modelo.limiar);
+  assert.equal(erros.falsosNegativos, servido.falsos_negativos);
+  assert.equal(erros.falsosPositivos, servido.falsos_positivos);
+});
+
+test("filmes cabem no limite de 15 minutos do enunciado", { skip: semPagina }, () => {
+  dados.filmes.forEach((filme) => {
+    assert.ok(R.linhaDoTempo(filme).total < 15 * 60, filme.id);
+  });
+});

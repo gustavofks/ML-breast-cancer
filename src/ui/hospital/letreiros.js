@@ -203,7 +203,7 @@ function desenharFigura(c, q) {
 
 // Plano reservado a gravacao real: o video do usuario, ou a lista do que falta gravar.
 function desenharTelao(c, q) {
-  const a = R.janela(q.p, 0.32, 0.42);
+  const a = R.janela(q.p, 0.37, 0.4);
   if (!q.plano.telao || a <= 0) return;
   comOpacidade(c, a, function () {
     c.fillStyle = "#0c1216";

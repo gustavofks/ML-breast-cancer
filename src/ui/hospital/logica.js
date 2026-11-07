@@ -51,7 +51,7 @@ const HospitalLogica = (function () {
     },
     obras: {
       x0: 23, x1: 35, z0: -8, z1: 8, porta: { x: 23, z: 0 }, ala: "fase3",
-      posto: { x: 25.4, z: 1.8 }, parada: { x: 25.6, z: -1.4 },
+      posto: { x: 25.8, z: -0.2 }, parada: { x: 25.6, z: -2.4 },
       camera: { de: [24.2, 2.3, -3.4], para: [28.6, 1, 3.2] },
     },
   };

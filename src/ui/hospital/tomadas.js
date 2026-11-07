@@ -23,7 +23,7 @@ const TOMADAS = {
   evolucao_ampla_perto: { de: { p: [7, 1.7, 3.2], o: [4.6, 1.1, 5.2] }, ate: { p: [6.4, 1.5, 3.6], o: [4.6, 1.05, 5.2] } },
   enxame_orbita: { orbita: { centro: [7.4, 1.25, 6.8], raio: 3.3, altura: 2, de: -1.2, ate: 0.5 } },
   evolucao_convergencia: { de: { p: [4.2, 1.9, 6.6], o: [4.2, 1.85, 10.86] }, ate: { p: [4.2, 1.85, 9.5], o: [4.2, 1.85, 10.86] }, velocidade: 2.4 },
-  regua_limiar: { de: { p: [8.4, 1.9, 6.8], o: [1.17, 1.75, 6.8] }, ate: { p: [5.2, 1.65, 6.8], o: [1.17, 1.5, 6.8] }, velocidade: 3 },
+  regua_limiar: { de: { p: [5.6, 1.9, 9.2], o: [1.17, 1.6, 7.6] }, ate: { p: [5.2, 1.65, 6.8], o: [1.17, 1.5, 6.8] }, velocidade: 3 },
 
   central_ampla: { de: { p: [13.4, 2.3, 2.8], o: [17.6, 1.5, 8.6] }, ate: { p: [14.2, 2, 3.6], o: [18, 1.45, 8.8] } },
   corredor_portador: { seguir: true },

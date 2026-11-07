@@ -39,7 +39,7 @@ const ROTINAS = {
     { x: 14.6, z: 9.6, acao: "parado", dur: 4, olhar: { x: 17.5, z: 11 } },
   ],
   obras: [
-    { x: 27, z: 2.8, acao: "parado", dur: 5, olhar: { x: 29.8, z: 4.4 } },
+    { x: 26.4, z: -3.6, acao: "parado", dur: 5, olhar: { x: 29.8, z: 4.4 } },
     { x: 30.6, z: -5, acao: "trabalhando", dur: 5, olhar: { x: 32, z: -6 } },
   ],
 };

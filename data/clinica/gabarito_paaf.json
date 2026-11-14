@@ -1,0 +1,572 @@
+[
+ {
+  "caso": 0,
+  "paciente": "PACIENTE-0113",
+  "referencia": "Benigno"
+ },
+ {
+  "caso": 1,
+  "paciente": "PACIENTE-0119",
+  "referencia": "Maligno"
+ },
+ {
+  "caso": 2,
+  "paciente": "PACIENTE-0073",
+  "referencia": "Benigno"
+ },
+ {
+  "caso": 3,
+  "paciente": "PACIENTE-0098",
+  "referencia": "Maligno"
+ },
+ {
+  "caso": 4,
+  "paciente": "PACIENTE-0129",
+  "referencia": "Benigno"
+ },
+ {
+  "caso": 5,
+  "paciente": "PACIENTE-0136",
+  "referencia": "Benigno"
+ },
+ {
+  "caso": 6,
+  "paciente": "PACIENTE-0108",
+  "referencia": "Maligno"
+ },
+ {
+  "caso": 7,
+  "paciente": "PACIENTE-0042",
+  "referencia": "Benigno"
+ },
+ {
+  "caso": 8,
+  "paciente": "PACIENTE-0052",
+  "referencia": "Benigno"
+ },
+ {
+  "caso": 9,
+  "paciente": "PACIENTE-0036",
+  "referencia": "Benigno"
+ },
+ {
+  "caso": 10,
+  "paciente": "PACIENTE-0065",
+  "referencia": "Maligno"
+ },
+ {
+  "caso": 11,
+  "paciente": "PACIENTE-0014",
+  "referencia": "Benigno"
+ },
+ {
+  "caso": 12,
+  "paciente": "PACIENTE-0124",
+  "referencia": "Maligno"
+ },
+ {
+  "caso": 13,
+  "paciente": "PACIENTE-0096",
+  "referencia": "Benigno"
+ },
+ {
+  "caso": 14,
+  "paciente": "PACIENTE-0027",
+  "referencia": "Benigno"
+ },
+ {
+  "caso": 15,
+  "paciente": "PACIENTE-0133",
+  "referencia": "Benigno"
+ },
+ {
+  "caso": 16,
+  "paciente": "PACIENTE-0032",
+  "referencia": "Maligno"
+ },
+ {
+  "caso": 17,
+  "paciente": "PACIENTE-0148",
+  "referencia": "Benigno"
+ },
+ {
+  "caso": 18,
+  "paciente": "PACIENTE-0022",
+  "referencia": "Benigno"
+ },
+ {
+  "caso": 19,
+  "paciente": "PACIENTE-0143",
+  "referencia": "Benigno"
+ },
+ {
+  "caso": 20,
+  "paciente": "PACIENTE-0070",
+  "referencia": "Benigno"
+ },
+ {
+  "caso": 21,
+  "paciente": "PACIENTE-0116",
+  "referencia": "Benigno"
+ },
+ {
+  "caso": 22,
+  "paciente": "PACIENTE-0038",
+  "referencia": "Maligno"
+ },
+ {
+  "caso": 23,
+  "paciente": "PACIENTE-0107",
+  "referencia": "Maligno"
+ },
+ {
+  "caso": 24,
+  "paciente": "PACIENTE-0056",
+  "referencia": "Maligno"
+ },
+ {
+  "caso": 25,
+  "paciente": "PACIENTE-0012",
+  "referencia": "Benigno"
+ },
+ {
+  "caso": 26,
+  "paciente": "PACIENTE-0122",
+  "referencia": "Benigno"
+ },
+ {
+  "caso": 27,
+  "paciente": "PACIENTE-0117",
+  "referencia": "Maligno"
+ },
+ {
+  "caso": 28,
+  "paciente": "PACIENTE-0029",
+  "referencia": "Maligno"
+ },
+ {
+  "caso": 29,
+  "paciente": "PACIENTE-0105",
+  "referencia": "Maligno"
+ },
+ {
+  "caso": 30,
+  "paciente": "PACIENTE-0058",
+  "referencia": "Maligno"
+ },
+ {
+  "caso": 31,
+  "paciente": "PACIENTE-0114",
+  "referencia": "Benigno"
+ },
+ {
+  "caso": 32,
+  "paciente": "PACIENTE-0045",
+  "referencia": "Maligno"
+ },
+ {
+  "caso": 33,
+  "paciente": "PACIENTE-0004",
+  "referencia": "Maligno"
+ },
+ {
+  "caso": 34,
+  "paciente": "PACIENTE-0054",
+  "referencia": "Benigno"
+ },
+ {
+  "caso": 35,
+  "paciente": "PACIENTE-0007",
+  "referencia": "Benigno"
+ },
+ {
+  "caso": 36,
+  "paciente": "PACIENTE-0051",
+  "referencia": "Benigno"
+ },
+ {
+  "caso": 37,
+  "paciente": "PACIENTE-0140",
+  "referencia": "Benigno"
+ },
+ {
+  "caso": 38,
+  "paciente": "PACIENTE-0048",
+  "referencia": "Maligno"
+ },
+ {
+  "caso": 39,
+  "paciente": "PACIENTE-0031",
+  "referencia": "Benigno"
+ },
+ {
+  "caso": 40,
+  "paciente": "PACIENTE-0050",
+  "referencia": "Benigno"
+ },
+ {
+  "caso": 41,
+  "paciente": "PACIENTE-0011",
+  "referencia": "Benigno"
+ },
+ {
+  "caso": 42,
+  "paciente": "PACIENTE-0112",
+  "referencia": "Maligno"
+ },
+ {
+  "caso": 43,
+  "paciente": "PACIENTE-0138",
+  "referencia": "Benigno"
+ },
+ {
+  "caso": 44,
+  "paciente": "PACIENTE-0123",
+  "referencia": "Benigno"
+ },
+ {
+  "caso": 45,
+  "paciente": "PACIENTE-0041",
+  "referencia": "Maligno"
+ },
+ {
+  "caso": 46,
+  "paciente": "PACIENTE-0013",
+  "referencia": "Benigno"
+ },
+ {
+  "caso": 47,
+  "paciente": "PACIENTE-0092",
+  "referencia": "Maligno"
+ },
+ {
+  "caso": 48,
+  "paciente": "PACIENTE-0084",
+  "referencia": "Benigno"
+ },
+ {
+  "caso": 49,
+  "paciente": "PACIENTE-0043",
+  "referencia": "Benigno"
+ },
+ {
+  "caso": 50,
+  "paciente": "PACIENTE-0019",
+  "referencia": "Maligno"
+ },
+ {
+  "caso": 51,
+  "paciente": "PACIENTE-0018",
+  "referencia": "Maligno"
+ },
+ {
+  "caso": 52,
+  "paciente": "PACIENTE-0005",
+  "referencia": "Benigno"
+ },
+ {
+  "caso": 53,
+  "paciente": "PACIENTE-0037",
+  "referencia": "Benigno"
+ },
+ {
+  "caso": 54,
+  "paciente": "PACIENTE-0061",
+  "referencia": "Benigno"
+ },
+ {
+  "caso": 55,
+  "paciente": "PACIENTE-0090",
+  "referencia": "Maligno"
+ },
+ {
+  "caso": 56,
+  "paciente": "PACIENTE-0099",
+  "referencia": "Benigno"
+ },
+ {
+  "caso": 57,
+  "paciente": "PACIENTE-0091",
+  "referencia": "Benigno"
+ },
+ {
+  "caso": 58,
+  "paciente": "PACIENTE-0137",
+  "referencia": "Benigno"
+ },
+ {
+  "caso": 59,
+  "paciente": "PACIENTE-0120",
+  "referencia": "Maligno"
+ },
+ {
+  "caso": 60,
+  "paciente": "PACIENTE-0079",
+  "referencia": "Benigno"
+ },
+ {
+  "caso": 61,
+  "paciente": "PACIENTE-0001",
+  "referencia": "Benigno"
+ },
+ {
+  "caso": 62,
+  "paciente": "PACIENTE-0109",
+  "referencia": "Maligno"
+ },
+ {
+  "caso": 63,
+  "paciente": "PACIENTE-0003",
+  "referencia": "Benigno"
+ },
+ {
+  "caso": 64,
+  "paciente": "PACIENTE-0033",
+  "referencia": "Benigno"
+ },
+ {
+  "caso": 65,
+  "paciente": "PACIENTE-0028",
+  "referencia": "Benigno"
+ },
+ {
+  "caso": 66,
+  "paciente": "PACIENTE-0020",
+  "referencia": "Maligno"
+ },
+ {
+  "caso": 67,
+  "paciente": "PACIENTE-0071",
+  "referencia": "Maligno"
+ },
+ {
+  "caso": 68,
+  "paciente": "PACIENTE-0078",
+  "referencia": "Benigno"
+ },
+ {
+  "caso": 69,
+  "paciente": "PACIENTE-0068",
+  "referencia": "Maligno"
+ },
+ {
+  "caso": 70,
+  "paciente": "PACIENTE-0055",
+  "referencia": "Benigno"
+ },
+ {
+  "caso": 71,
+  "paciente": "PACIENTE-0015",
+  "referencia": "Maligno"
+ },
+ {
+  "caso": 72,
+  "paciente": "PACIENTE-0097",
+  "referencia": "Maligno"
+ },
+ {
+  "caso": 73,
+  "paciente": "PACIENTE-0111",
+  "referencia": "Benigno"
+ },
+ {
+  "caso": 74,
+  "paciente": "PACIENTE-0039",
+  "referencia": "Benigno"
+ },
+ {
+  "caso": 75,
+  "paciente": "PACIENTE-0016",
+  "referencia": "Benigno"
+ },
+ {
+  "caso": 76,
+  "paciente": "PACIENTE-0115",
+  "referencia": "Benigno"
+ },
+ {
+  "caso": 77,
+  "paciente": "PACIENTE-0077",
+  "referencia": "Maligno"
+ },
+ {
+  "caso": 78,
+  "paciente": "PACIENTE-0146",
+  "referencia": "Benigno"
+ },
+ {
+  "caso": 79,
+  "paciente": "PACIENTE-0059",
+  "referencia": "Maligno"
+ },
+ {
+  "caso": 80,
+  "paciente": "PACIENTE-0009",
+  "referencia": "Maligno"
+ },
+ {
+  "caso": 81,
+  "paciente": "PACIENTE-0095",
+  "referencia": "Maligno"
+ },
+ {
+  "caso": 82,
+  "paciente": "PACIENTE-0064",
+  "referencia": "Benigno"
+ },
+ {
+  "caso": 83,
+  "paciente": "PACIENTE-0087",
+  "referencia": "Benigno"
+ },
+ {
+  "caso": 84,
+  "paciente": "PACIENTE-0066",
+  "referencia": "Benigno"
+ },
+ {
+  "caso": 85,
+  "paciente": "PACIENTE-0135",
+  "referencia": "Benigno"
+ },
+ {
+  "caso": 86,
+  "paciente": "PACIENTE-0100",
+  "referencia": "Maligno"
+ },
+ {
+  "caso": 87,
+  "paciente": "PACIENTE-0081",
+  "referencia": "Maligno"
+ },
+ {
+  "caso": 88,
+  "paciente": "PACIENTE-0085",
+  "referencia": "Maligno"
+ },
+ {
+  "caso": 89,
+  "paciente": "PACIENTE-0089",
+  "referencia": "Benigno"
+ },
+ {
+  "caso": 90,
+  "paciente": "PACIENTE-0040",
+  "referencia": "Maligno"
+ },
+ {
+  "caso": 91,
+  "paciente": "PACIENTE-0023",
+  "referencia": "Benigno"
+ },
+ {
+  "caso": 92,
+  "paciente": "PACIENTE-0075",
+  "referencia": "Benigno"
+ },
+ {
+  "caso": 93,
+  "paciente": "PACIENTE-0082",
+  "referencia": "Benigno"
+ },
+ {
+  "caso": 94,
+  "paciente": "PACIENTE-0145",
+  "referencia": "Benigno"
+ },
+ {
+  "caso": 95,
+  "paciente": "PACIENTE-0125",
+  "referencia": "Benigno"
+ },
+ {
+  "caso": 96,
+  "paciente": "PACIENTE-0101",
+  "referencia": "Benigno"
+ },
+ {
+  "caso": 97,
+  "paciente": "PACIENTE-0072",
+  "referencia": "Maligno"
+ },
+ {
+  "caso": 98,
+  "paciente": "PACIENTE-0006",
+  "referencia": "Benigno"
+ },
+ {
+  "caso": 99,
+  "paciente": "PACIENTE-0034",
+  "referencia": "Benigno"
+ },
+ {
+  "caso": 100,
+  "paciente": "PACIENTE-0024",
+  "referencia": "Benigno"
+ },
+ {
+  "caso": 101,
+  "paciente": "PACIENTE-0147",
+  "referencia": "Benigno"
+ },
+ {
+  "caso": 102,
+  "paciente": "PACIENTE-0149",
+  "referencia": "Benigno"
+ },
+ {
+  "caso": 103,
+  "paciente": "PACIENTE-0035",
+  "referencia": "Benigno"
+ },
+ {
+  "caso": 104,
+  "paciente": "PACIENTE-0086",
+  "referencia": "Benigno"
+ },
+ {
+  "caso": 105,
+  "paciente": "PACIENTE-0046",
+  "referencia": "Benigno"
+ },
+ {
+  "caso": 106,
+  "paciente": "PACIENTE-0141",
+  "referencia": "Maligno"
+ },
+ {
+  "caso": 107,
+  "paciente": "PACIENTE-0002",
+  "referencia": "Benigno"
+ },
+ {
+  "caso": 108,
+  "paciente": "PACIENTE-0025",
+  "referencia": "Maligno"
+ },
+ {
+  "caso": 109,
+  "paciente": "PACIENTE-0150",
+  "referencia": "Benigno"
+ },
+ {
+  "caso": 110,
+  "paciente": "PACIENTE-0067",
+  "referencia": "Benigno"
+ },
+ {
+  "caso": 111,
+  "paciente": "PACIENTE-0131",
+  "referencia": "Benigno"
+ },
+ {
+  "caso": 112,
+  "paciente": "PACIENTE-0110",
+  "referencia": "Maligno"
+ },
+ {
+  "caso": 113,
+  "paciente": "PACIENTE-0017",
+  "referencia": "Maligno"
+ }
+]

@@ -24,5 +24,13 @@
  "escolha": {
   "servidor": "llama.cpp, GGUF Q8_0",
   "motivo": "texto quase identico ao bfloat16 (so perdeu uma palavra) e cerca de 3,5 vezes mais rapido; Q4_K_M e mais rapido, mas reescreve mais a frase, e fica de reserva"
+ },
+ "confirmacao_com_vencedor": {
+  "modelo": "Qwen/Qwen3.5-4B",
+  "llama_cpp_Q8_0": {
+   "tokens_s": 51.9,
+   "leitura_tokens_s": 2858.3
+  },
+  "nota": "conversao e quantizacao funcionaram; a escolha do servidor vale para o modelo da disputa"
  }
 }

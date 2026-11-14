@@ -1,0 +1,28 @@
+{
+ "modelo": "Qwen/Qwen3-4B-Instruct-2507",
+ "pergunta": "Explique em portugues, em um paragrafo, o que e rastreamento mamografico.",
+ "data": "2026-11-14",
+ "transformers_bf16": {
+  "tokens_s": 16.7,
+  "tokens": 160,
+  "vram_gb": 7.59,
+  "amostra": "O rastreamento mamográfico é um processo preventivo que consiste em realizar exames de mamografia periodicamente em mulheres que não apresentam sintomas de câncer de mama, com o objetivo de detectar o tumor em estágios iniciais, quando é mais fácil de tratar. Esse tipo de exame permite identificar a"
+ },
+ "llama_cpp_Q8_0": {
+  "tokens_s": 59.0,
+  "leitura_tokens_s": 3135.9,
+  "arquivo_gb": 3.99,
+  "amostra": "O rastreamento mamográfico é um processo preventivo que consiste em realizar exames de mamografia em mulheres que não apresentam sintomas de câncer de mama, com o objetivo de detectar o tumor em estágios iniciais, quando é mais fácil de tratar. Esse tipo de exame é especialmente importante para mulh"
+ },
+ "llama_cpp_Q4_K_M": {
+  "tokens_s": 87.5,
+  "leitura_tokens_s": 2682.8,
+  "arquivo_gb": 2.33,
+  "amostra": "O rastreamento mamográfico é um programa de exames mamográficos realizados em mulheres que não apresentam sintomas de câncer de mama, com o objetivo de detectar o tumor na fase inicial, quando ainda é mais fácil de tratar. Esse tipo de exame consiste em uma radiografia da mama, que permite identific"
+ },
+ "observacao": "transformers medido enquanto 51 GB de modelos baixavam em paralelo; em 2026-11-05, sem concorrencia, deu entre 20 e 30 tokens/s. Amostras do llama.cpp vieram do llama-server, temperatura 0, mesma pergunta.",
+ "escolha": {
+  "servidor": "llama.cpp, GGUF Q8_0",
+  "motivo": "texto quase identico ao bfloat16 (so perdeu uma palavra) e cerca de 3,5 vezes mais rapido; Q4_K_M e mais rapido, mas reescreve mais a frase, e fica de reserva"
+ }
+}

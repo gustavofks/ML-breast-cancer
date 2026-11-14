@@ -1,3 +1,8 @@
 # Scripts de shell rodam no Linux do WSL e do container: com core.autocrlf=true,
 # o Git os entregaria com CRLF no Windows, e o bash quebra no "\r" do fim de linha.
 *.sh text eol=lf
+
+# Protocolos e conjuntos sao lidos no WSL e no container, com "---
+" e uma
+# linha JSON por registro: CRLF quebraria o cabecalho e o hash dos arquivos.
+data/clinica/** text eol=lf

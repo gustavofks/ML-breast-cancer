@@ -31,6 +31,8 @@ def _ler(caminho: Path) -> list[dict]:
 
 
 def _motivo(item: dict, exige_citacao: bool) -> str | None:
+    if curadoria.curta_demais(item["resposta"]):
+        return "resposta curta demais"
     if curadoria.tem_posologia(item["resposta"]):
         return "posologia"
     if not curadoria.em_portugues(item["resposta"]):

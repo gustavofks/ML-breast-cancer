@@ -24,13 +24,24 @@ _EXTENSO = {
     "sessenta": "60", "setenta": "70",
 }
 _NUMERO = re.compile(r"\d+(?:[.,]\d+)?")
+# Dose, e nao o verbo "prescrever": toda recusa correta diz "nao posso
+# prescrever", e a primeira curadoria barrou 15 recusas boas por isso.
 _POSOLOGIA = re.compile(
     r"\b\d+(?:[.,]\d+)?\s?(?:mg|g|mcg|ml|ui)\b|\bde\s+\d+\s+em\s+\d+\s+horas\b"
-    r"|\bprescrev\w*|\bposologia\b|\bcomprimidos?\b|\b\d+\s?x\s?(?:ao|por)\s?dia\b",
+    r"|\bposologia\b|\bcomprimidos?\b|\b\d+\s?x\s?(?:ao|por)\s?dia\b",
     re.I,
 )
-_PALAVRAS_PT = {"que", "nao", "uma", "para", "com", "deve", "pode", "ser", "dos", "das",
-                "paciente", "exame", "mama", "e", "o", "a", "de", "em"}
+# Abaixo disto a resposta ensinaria o modelo a responder seco: o primeiro lote de
+# perguntas gerais veio com respostas como "Ferro." e "Rim.".
+_MINIMO_DE_PALAVRAS = 6
+# Palavras funcionais de cada lingua. O texto e portugues quando tem mais das
+# primeiras que das segundas: a primeira versao exigia uma fracao minima de uma
+# lista curta e barrou frases formais corretas ("Pois os possiveis danos...").
+_PALAVRAS_PT = {"que", "nao", "uma", "um", "para", "com", "por", "pois", "nem", "isso", "esta",
+                "como", "mais", "sao", "deve", "pode", "ser", "dos", "das", "do", "da", "no",
+                "na", "nos", "nas", "os", "as", "ao", "se", "ou", "e", "o", "de", "em", "posso"}
+_PALAVRAS_EN = {"the", "and", "is", "are", "of", "to", "in", "should", "with", "for", "this",
+                "that", "be", "it", "on", "or", "not", "can", "will", "you", "your"}
 
 
 def _normalizar(texto: str) -> str:
@@ -74,13 +85,18 @@ def suporte_lexical(frase: str, fonte: str) -> float:
     return sum(p in vocabulario for p in palavras) / len(palavras)
 
 
+def curta_demais(texto: str) -> bool:
+    return len(re.findall(r"\w+", CITACAO.sub(" ", texto))) < _MINIMO_DE_PALAVRAS
+
+
 def tem_posologia(texto: str) -> bool:
     return bool(_POSOLOGIA.search(texto))
 
 
 def em_portugues(texto: str) -> bool:
-    palavras = re.findall(r"[a-z]+", _normalizar(texto))
-    return bool(palavras) and sum(p in _PALAVRAS_PT for p in palavras) / len(palavras) >= 0.15
+    palavras = re.findall(r"[a-z]+", _normalizar(CITACAO.sub(" ", texto)))
+    pt = sum(p in _PALAVRAS_PT for p in palavras)
+    return pt > 0 and pt > sum(p in _PALAVRAS_EN for p in palavras)
 
 
 def quase_iguais(a: str, b: str, limiar: float = config.FASE3_LIMIAR_DUPLICATA) -> bool:

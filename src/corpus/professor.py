@@ -86,7 +86,8 @@ def pedido_gerais(n: int) -> list[dict[str, str]]:
     return _usuario(
         f"Escreva {n} perguntas variadas de conhecimento geral de saúde (fisiologia, prevenção, "
         "exames de rotina, hábitos), sem relação com câncer de mama, cada uma com uma resposta "
-        "correta, curta e em português do Brasil, sem prescrever medicamento nem dose. "
+        "correta de duas a quatro frases completas, em português do Brasil, sem prescrever "
+        "medicamento nem dose. "
         'Responda só com uma lista JSON: [{"pergunta": "...", "resposta": "..."}].'
     )
 

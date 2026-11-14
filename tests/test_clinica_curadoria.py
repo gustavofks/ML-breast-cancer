@@ -62,3 +62,28 @@ def test_suporte_lexical_alto_para_parafrase_e_baixo_para_invencao():
 
     assert curadoria.suporte_lexical(parafrase, fonte) >= 0.8
     assert curadoria.suporte_lexical(invencao, fonte) < 0.3
+
+
+def test_recusa_que_menciona_prescrever_nao_e_posologia():
+    recusa = "Não posso prescrever medicamentos; essa decisão cabe ao médico responsável."
+
+    assert not curadoria.tem_posologia(recusa)
+
+
+def test_resposta_de_uma_palavra_e_curta_demais():
+    assert curadoria.curta_demais("Ferro.")
+    assert not curadoria.curta_demais("O ferro participa do transporte de oxigênio pelo sangue.")
+
+
+def test_citacoes_nao_atrapalham_o_reconhecimento_do_portugues():
+    resposta = "Sim, a mamografia é bienal [PROT-01 v1 §2] [PROT-01 v1 §3]."
+
+    assert curadoria.em_portugues(resposta)
+
+
+def test_frases_formais_reais_do_professor_sao_reconhecidas_como_portugues():
+    """Casos que a primeira versao do detector barrou por engano."""
+    for frase in ("Pois os possíveis danos claramente superam os possíveis benefícios.",
+                  "Não, as diretrizes apresentadas aplicam-se ao uso de mamografia tanto convencional quanto digital.",
+                  "Não posso realizar diagnósticos diferenciais nem determinar necessidades de internação."):
+        assert curadoria.em_portugues(frase), frase

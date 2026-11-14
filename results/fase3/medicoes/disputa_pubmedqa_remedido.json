@@ -1,0 +1,43 @@
+{
+ "Qwen/Qwen3-4B-Instruct-2507": {
+  "pubmedqa_dev": 0.58,
+  "respostas_mais_comuns": [
+   [
+    "yes",
+    98
+   ],
+   [
+    "maybe",
+    75
+   ],
+   [
+    "no",
+    27
+   ]
+  ],
+  "sem_decisao": 0
+ },
+ "Qwen/Qwen3.5-4B": {
+  "pubmedqa_dev": 0.74,
+  "respostas_mais_comuns": [
+   [
+    "yes",
+    112
+   ],
+   [
+    "no",
+    76
+   ],
+   [
+    "maybe",
+    12
+   ]
+  ],
+  "sem_decisao": 0
+ },
+ "distribuicao_do_gabarito": {
+  "yes": 99,
+  "no": 70,
+  "maybe": 31
+ }
+}

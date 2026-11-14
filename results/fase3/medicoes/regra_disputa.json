@@ -1,0 +1,9 @@
+{
+ "registrada_em": "2026-11-14",
+ "candidatos": ["Qwen/Qwen3-4B-Instruct-2507", "Qwen/Qwen3.5-4B", "google/gemma-4-E4B-it"],
+ "padrao": "Qwen/Qwen3-4B-Instruct-2507",
+ "eliminatorio": "carrega e treina 30 passos em bfloat16 sem erro, pico < 12 GB; >= 18 de 20 respostas em portugues",
+ "criterio": "maior acuracia no PubMedQA de desenvolvimento (200 perguntas, sim/nao/talvez)",
+ "empate": "diferenca <= 2 pontos percentuais fica com o padrao",
+ "pubmedqa_divisao": "pqa_labeled embaralhado com semente 42: 500 teste final (intocado), 500 desenvolvimento"
+}

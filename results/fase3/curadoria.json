@@ -1,0 +1,942 @@
+{
+ "contagens": {
+  "treino": 398,
+  "validacao": 44,
+  "teste": 118
+ },
+ "por_tipo": {
+  "treino": {
+   "fora_do_escopo": 20,
+   "geral": 102,
+   "nao_encontrado": 47,
+   "pergunta": 186,
+   "recusa": 43
+  },
+  "validacao": {
+   "fora_do_escopo": 4,
+   "geral": 9,
+   "nao_encontrado": 4,
+   "pergunta": 22,
+   "recusa": 5
+  },
+  "teste": {
+   "fora_do_escopo": 6,
+   "geral": 28,
+   "pergunta": 72,
+   "recusa": 12
+  }
+ },
+ "vazamentos_removidos": 33,
+ "descartados": [
+  {
+   "tipo": "pergunta",
+   "pergunta": "Qual é a faixa etária recomendada para mulheres submetidas ao rastreamento mamográfico?",
+   "motivo": "sem citacao valida"
+  },
+  {
+   "tipo": "pergunta",
+   "pergunta": "Por que o Ministério da Saúde recomenda contra o rastreamento em mulheres com menos de 50 anos?",
+   "motivo": "sem citacao valida"
+  },
+  {
+   "tipo": "pergunta",
+   "pergunta": "Qual é a periodicidade recomendada para o rastreamento nas faixas etárias indicadas?",
+   "motivo": "sem citacao valida"
+  },
+  {
+   "tipo": "pergunta",
+   "pergunta": "Quais são os danos associados ao rastreamento anual comparado à bienal?",
+   "motivo": "sem citacao valida"
+  },
+  {
+   "tipo": "pergunta",
+   "pergunta": "A periodicidade bienal deve ser interpretada como um intervalo rígido?",
+   "motivo": "sem citacao valida"
+  },
+  {
+   "tipo": "pergunta",
+   "pergunta": "É recomendado o rastreamento para mulheres com 75 anos ou mais?",
+   "motivo": "sem citacao valida"
+  },
+  {
+   "tipo": "pergunta",
+   "pergunta": "O que é essencial para manter o balanço entre riscos e benefícios do rastreamento?",
+   "motivo": "sem citacao valida"
+  },
+  {
+   "tipo": "pergunta",
+   "pergunta": "As diretrizes de mamografia aplicam-se apenas ao tipo digital?",
+   "motivo": "sem citacao valida"
+  },
+  {
+   "tipo": "pergunta",
+   "pergunta": "Deve-se informar às convidadas sobre os possíveis danos do rastreamento?",
+   "motivo": "sem citacao valida"
+  },
+  {
+   "tipo": "pergunta",
+   "pergunta": "O balanço entre benefícios e danos do rastreamento varia em todas as regiões do Brasil?",
+   "motivo": "sem citacao valida"
+  },
+  {
+   "tipo": "pergunta",
+   "pergunta": "Quem é o público-alvo para este procedimento?",
+   "motivo": "resposta curta demais"
+  },
+  {
+   "tipo": "pergunta",
+   "pergunta": "Quem deve decidir sobre a realização do autoexame baseado nesses protocolos?",
+   "motivo": "sem citacao valida"
+  },
+  {
+   "tipo": "pergunta",
+   "pergunta": "Quais são os passos recomendados na conduta do autoexame?",
+   "motivo": "numero sem base nos trechos"
+  },
+  {
+   "tipo": "pergunta",
+   "pergunta": "Quem é o público-alvo deste protocolo?",
+   "motivo": "resposta curta demais"
+  },
+  {
+   "tipo": "pergunta",
+   "pergunta": "Quem deve tomar a decisão final sobre a conduta?",
+   "motivo": "sem citacao valida"
+  },
+  {
+   "tipo": "pergunta",
+   "pergunta": "Qual é o objetivo principal do protocolo sobre rastreamento com RNM?",
+   "motivo": "sem citacao valida"
+  },
+  {
+   "tipo": "pergunta",
+   "pergunta": "Para qual população se destina esta recomendação?",
+   "motivo": "sem citacao valida"
+  },
+  {
+   "tipo": "pergunta",
+   "pergunta": "Qual é a recomendação conduta para o rastreamento com RNM em mulheres com risco padrão?",
+   "motivo": "sem citacao valida"
+  },
+  {
+   "tipo": "pergunta",
+   "pergunta": "Por que se recomenda contra o rastreamento nessa população?",
+   "motivo": "sem citacao valida"
+  },
+  {
+   "tipo": "pergunta",
+   "pergunta": "Existem ensaios clínicos sobre rastreamento com RNM em mulheres de risco padrão?",
+   "motivo": "sem citacao valida"
+  },
+  {
+   "tipo": "pergunta",
+   "pergunta": "Quais são os riscos associados à realização da RNM das mamas?",
+   "motivo": "sem citacao valida"
+  },
+  {
+   "tipo": "pergunta",
+   "pergunta": "Como a especificidade do método de RNM se compara ao rastreamento mamográfico?",
+   "motivo": "sem citacao valida"
+  },
+  {
+   "tipo": "pergunta",
+   "pergunta": "Quais dificuldades surgem se uma lesão for visualizada apenas na RNM?",
+   "motivo": "sem citacao valida"
+  },
+  {
+   "tipo": "pergunta",
+   "pergunta": "Como a idade afeta a sensibilidade da mamografia versus os riscos da RNM?",
+   "motivo": "sem citacao valida"
+  },
+  {
+   "tipo": "pergunta",
+   "pergunta": "A recomendação contrária é imutável?",
+   "motivo": "sem citacao valida"
+  },
+  {
+   "tipo": "pergunta",
+   "pergunta": "Qual é a recomendação sobre o uso da ultrassonografia mamária como método de rastreamento para mulheres com risco padrão?",
+   "motivo": "sem citacao valida"
+  },
+  {
+   "tipo": "pergunta",
+   "pergunta": "Por que a ultrassonografia não é recomendada para rastreamento em mulheres de risco padrão?",
+   "motivo": "sem citacao valida"
+  },
+  {
+   "tipo": "pergunta",
+   "pergunta": "Há evidências que comprovem a eficácia do rastreamento com ultrassonografia na redução da mortalidade por câncer de mama?",
+   "motivo": "sem citacao valida"
+  },
+  {
+   "tipo": "pergunta",
+   "pergunta": "Quais são as limitações conhecidas para o uso da ultrassonografia no rastreamento?",
+   "motivo": "sem citacao valida"
+  },
+  {
+   "tipo": "pergunta",
+   "pergunta": "Qual o impacto da adição da ultrassonografia ao rastreamento apenas com mamografia?",
+   "motivo": "sem citacao valida"
+  },
+  {
+   "tipo": "pergunta",
+   "pergunta": "Qual é o papel da ultrassonografia reconhecido pelas diretrizes?",
+   "motivo": "sem citacao valida"
+  },
+  {
+   "tipo": "pergunta",
+   "pergunta": "Por que os estudos observacionais sobre o uso da ultrassonografia como método de rastreamento não são válidos?",
+   "motivo": "sem citacao valida"
+  },
+  {
+   "tipo": "pergunta",
+   "pergunta": "Como se compara a proporção de resultados falso-positivos da ultrassonografia com a da mamografia?",
+   "motivo": "sem citacao valida"
+  },
+  {
+   "tipo": "pergunta",
+   "pergunta": "Quais aspectos do rastreamento com ultrassonografia mamária ainda precisam ser mais bem estudados?",
+   "motivo": "sem citacao valida"
+  },
+  {
+   "tipo": "pergunta",
+   "pergunta": "Qual é a conclusão final sobre a decisão de utilizar a ultrassonografia?",
+   "motivo": "sem citacao valida"
+  },
+  {
+   "tipo": "pergunta",
+   "pergunta": "Qual é a recomendação principal sobre o uso da ultrassonografia mamária como método de rastreamento para mulheres com risco padrão?",
+   "motivo": "sem citacao valida"
+  },
+  {
+   "tipo": "pergunta",
+   "pergunta": "Quais são os possíveis danos comparados aos benefícios do rastreamento com ultrassonografia para a população de risco padrão?",
+   "motivo": "sem citacao valida"
+  },
+  {
+   "tipo": "pergunta",
+   "pergunta": "Há evidências que comprovem a eficácia do rastreamento com ultrassonografia na redução da mortalidade geral ou por câncer de mama?",
+   "motivo": "sem citacao valida"
+  },
+  {
+   "tipo": "pergunta",
+   "pergunta": "Por que a prática clínica de uso da ultrassonografia como método de rastreamento carece de estudos robustos?",
+   "motivo": "sem citacao valida"
+  },
+  {
+   "tipo": "pergunta",
+   "pergunta": "Como a adição da ultrassonografia ao rastreamento afeta a necessidade de biópsias em comparação ao rastreamento apenas com mamografia?",
+   "motivo": "sem citacao valida"
+  },
+  {
+   "tipo": "pergunta",
+   "pergunta": "Quais são as limitações conhecidas para o uso do método no rastreamento?",
+   "motivo": "sem citacao valida"
+  },
+  {
+   "tipo": "pergunta",
+   "pergunta": "Qual é o papel reconhecido da ultrassonografia na investigação de alterações mamárias suspeitas?",
+   "motivo": "sem citacao valida"
+  },
+  {
+   "tipo": "pergunta",
+   "pergunta": "Qual é a proporção de resultados falso-positivos com a ultrassonografia comparada à mamografia para tumores sólidos?",
+   "motivo": "sem citacao valida"
+  },
+  {
+   "tipo": "pergunta",
+   "pergunta": "Quais aspectos do rastreamento com ultrassonografia mamária precisam ser mais bem estudados?",
+   "motivo": "sem citacao valida"
+  },
+  {
+   "tipo": "pergunta",
+   "pergunta": "Por que os estudos observacionais existentes sobre o uso da ultrassonografia como método de rastreamento são considerados insuficientes?",
+   "motivo": "sem citacao valida"
+  },
+  {
+   "tipo": "pergunta",
+   "pergunta": "Qual é a recomendação sobre a instituição do rastreamento com ultrassonografia mamária para mulheres com risco padrão?",
+   "motivo": "sem citacao valida"
+  },
+  {
+   "tipo": "pergunta",
+   "pergunta": "Por que a ultrassonografia não é recomendada para rastreamento em mulheres de risco padrão?",
+   "motivo": "sem citacao valida"
+  },
+  {
+   "tipo": "pergunta",
+   "pergunta": "Existem evidências que comprovem a eficácia do rastreamento com ultrassonografia na redução da mortalidade geral ou por câncer de mama?",
+   "motivo": "sem citacao valida"
+  },
+  {
+   "tipo": "pergunta",
+   "pergunta": "Quais são as limitações conhecidas do uso da ultrassonografia no rastreamento?",
+   "motivo": "sem citacao valida"
+  },
+  {
+   "tipo": "pergunta",
+   "pergunta": "Como o uso da ultrassonografia como método de rastreamento afeta a necessidade de biópsias em comparação à mamografia?",
+   "motivo": "sem citacao valida"
+  },
+  {
+   "tipo": "pergunta",
+   "pergunta": "Qual é o papel reconhecido da ultrassonografia na avaliação de alterações mamárias, diferenciando-o do rastreamento?",
+   "motivo": "sem citacao valida"
+  },
+  {
+   "tipo": "pergunta",
+   "pergunta": "O que dizem os estudos observacionais existentes sobre o uso da ultrassonografia como método de rastreamento?",
+   "motivo": "sem citacao valida"
+  },
+  {
+   "tipo": "pergunta",
+   "pergunta": "Qual é a proporção de resultados falso-positivos da ultrassonografia em comparação à mamografia?",
+   "motivo": "sem citacao valida"
+  },
+  {
+   "tipo": "pergunta",
+   "pergunta": "Quais aspectos do rastreamento com ultrassonografia mamária ainda precisam ser mais bem estudados?",
+   "motivo": "sem citacao valida"
+  },
+  {
+   "tipo": "pergunta",
+   "pergunta": "A prática clínica de uso da ultrassonografia como método de rastreamento possui suporte de ensaios clínicos randomizados?",
+   "motivo": "sem citacao valida"
+  },
+  {
+   "tipo": "pergunta",
+   "pergunta": "De acordo com os trechos, quem deve tomar a decisão final sobre a conduta?",
+   "motivo": "sem citacao valida"
+  },
+  {
+   "tipo": "pergunta",
+   "pergunta": "Como deve ser manejada uma lesão classificada nas Categorias 1 ou 2?",
+   "motivo": "fora do portugues"
+  },
+  {
+   "tipo": "pergunta",
+   "pergunta": "O que deve ser feito em casos de Categoria 1 e Categoria 2?",
+   "motivo": "fora do portugues"
+  },
+  {
+   "tipo": "pergunta",
+   "pergunta": "Como deve ser tratada uma lesão classificada como Categoria 6?",
+   "motivo": "resposta curta demais"
+  },
+  {
+   "tipo": "pergunta",
+   "pergunta": "Como deve ser conduzido um exame mamográfico classificado na Categoria 0?",
+   "motivo": "sem citacao valida"
+  },
+  {
+   "tipo": "pergunta",
+   "pergunta": "Qual é a conduta recomendada para pacientes com lesões não-palpáveis na Categoria 1?",
+   "motivo": "fora do portugues"
+  },
+  {
+   "tipo": "pergunta",
+   "pergunta": "O que deve ser feito em casos de lesão classificada como Categoria 3?",
+   "motivo": "sem citacao valida"
+  },
+  {
+   "tipo": "pergunta",
+   "pergunta": "Quais procedimentos são indicados para lesões das Categorias 4 e 5?",
+   "motivo": "sem citacao valida"
+  },
+  {
+   "tipo": "pergunta",
+   "pergunta": "Em que situações as categorias 4 e 5 podem exigir biopsia cirúrgica?",
+   "motivo": "sem citacao valida"
+  },
+  {
+   "tipo": "pergunta",
+   "pergunta": "Qual o protocolo de controle para pacientes com resultado benigno em lesões das categorias 4 e 5 após PAG ou mamotomia?",
+   "motivo": "sem citacao valida"
+  },
+  {
+   "tipo": "pergunta",
+   "pergunta": "O que significa a Categoria 6 no sistema BI-RADS® aplicado a mamografia?",
+   "motivo": "resposta curta demais"
+  },
+  {
+   "tipo": "pergunta",
+   "pergunta": "Quais fontes recomendam a conduta para lesões não-palpáveis?",
+   "motivo": "sem citacao valida"
+  },
+  {
+   "tipo": "pergunta",
+   "pergunta": "Que procedimentos complementares podem ser necessários em situações particulares fora do desenho padrão das linhas de cuidado?",
+   "motivo": "sem citacao valida"
+  },
+  {
+   "tipo": "pergunta",
+   "pergunta": "O que determina o tipo de procedimento de investigação diagnóstica complementar?",
+   "motivo": "sem citacao valida"
+  },
+  {
+   "tipo": "pergunta",
+   "pergunta": "Qual a determinação final sobre o procedimento de investigação diagnóstica complementar?",
+   "motivo": "sem citacao valida"
+  },
+  {
+   "tipo": "pergunta",
+   "pergunta": "O que significa a sigla BC?",
+   "motivo": "resposta curta demais"
+  },
+  {
+   "tipo": "pergunta",
+   "pergunta": "O que significa a sigla MT?",
+   "motivo": "resposta curta demais"
+  },
+  {
+   "tipo": "pergunta",
+   "pergunta": "Qual é o objetivo principal deste protocolo?",
+   "motivo": "sem citacao valida"
+  },
+  {
+   "tipo": "pergunta",
+   "pergunta": "Quem compõe o público-alvo definido neste protocolo?",
+   "motivo": "sem citacao valida"
+  },
+  {
+   "tipo": "pergunta",
+   "pergunta": "Como a conduta deve ser aplicada para pacientes assintomáticas?",
+   "motivo": "sem citacao valida"
+  },
+  {
+   "tipo": "pergunta",
+   "pergunta": "Qual conduta é indicada para pacientes com lesão palpável da mama?",
+   "motivo": "sem citacao valida"
+  },
+  {
+   "tipo": "pergunta",
+   "pergunta": "Como devem ser tratados os casos discordantes classificados nas Categorias 4 e 5 (BI-RADS®)?",
+   "motivo": "sem citacao valida"
+  },
+  {
+   "tipo": "pergunta",
+   "pergunta": "Para que são utilizados os fluxogramas neste protocolo?",
+   "motivo": "sem citacao valida"
+  },
+  {
+   "tipo": "pergunta",
+   "pergunta": "O que a sigla PAAF representa?",
+   "motivo": "sem citacao valida"
+  },
+  {
+   "tipo": "pergunta",
+   "pergunta": "O que a sigla PAG representa?",
+   "motivo": "sem citacao valida"
+  },
+  {
+   "tipo": "pergunta",
+   "pergunta": "O que a sigla BC representa?",
+   "motivo": "resposta curta demais"
+  },
+  {
+   "tipo": "pergunta",
+   "pergunta": "O que a sigla MT representa?",
+   "motivo": "resposta curta demais"
+  },
+  {
+   "tipo": "pergunta",
+   "pergunta": "O que representa a sigla BC?",
+   "motivo": "resposta curta demais"
+  },
+  {
+   "tipo": "pergunta",
+   "pergunta": "O que representa a sigla MT?",
+   "motivo": "resposta curta demais"
+  },
+  {
+   "tipo": "pergunta",
+   "pergunta": "Como são definidos os exames considerados pendentes neste protocolo?",
+   "motivo": "sem citacao valida"
+  },
+  {
+   "tipo": "pergunta",
+   "pergunta": "Para quem são gerados os alertas sobre exames pendentes?",
+   "motivo": "sem citacao valida"
+  },
+  {
+   "tipo": "pergunta",
+   "pergunta": "Quais informações devem constar no alerta de um exame pendente?",
+   "motivo": "sem citacao valida"
+  },
+  {
+   "tipo": "pergunta",
+   "pergunta": "Como deve ser tratada uma PAAF com laudo citopatológico pendente?",
+   "motivo": "sem citacao valida"
+  },
+  {
+   "tipo": "pergunta",
+   "pergunta": "Quando deve ser emitido um alerta de cautela mesmo sem pendência vencida?",
+   "motivo": "sem citacao valida"
+  },
+  {
+   "tipo": "pergunta",
+   "pergunta": "O resultado do modelo de triagem substitui o laudo final?",
+   "motivo": "sem citacao valida"
+  },
+  {
+   "tipo": "pergunta",
+   "pergunta": "Quem tem a autoridade para tomar a decisão final sobre o caso?",
+   "motivo": "sem citacao valida"
+  },
+  {
+   "tipo": "pergunta",
+   "pergunta": "Qual é o objetivo principal deste protocolo?",
+   "motivo": "sem citacao valida"
+  },
+  {
+   "tipo": "pergunta",
+   "pergunta": "Qual a conduta padrão para classificação de exames sem resultado?",
+   "motivo": "sem citacao valida"
+  },
+  {
+   "tipo": "pergunta",
+   "pergunta": "O que acontece sempre que há uma pendência identificada?",
+   "motivo": "sem citacao valida"
+  },
+  {
+   "tipo": "pergunta",
+   "pergunta": "Como são classificados os exames solicitados sem resultado há mais de 30 dias?",
+   "motivo": "resposta curta demais"
+  },
+  {
+   "tipo": "pergunta",
+   "pergunta": "Quando deve ser gerado o alerta para um exame?",
+   "motivo": "resposta curta demais"
+  },
+  {
+   "tipo": "pergunta",
+   "pergunta": "Como é definido um exame como pendente segundo o protocolo?",
+   "motivo": "numero sem base nos trechos"
+  },
+  {
+   "tipo": "pergunta",
+   "pergunta": "A periodicidade bienal deve ser entendida como um intervalo rígido?",
+   "motivo": "quase duplicata"
+  },
+  {
+   "tipo": "pergunta",
+   "pergunta": "O sobretratamento pode ser explicado apenas pela antecipação do diagnóstico?",
+   "motivo": "quase duplicata"
+  },
+  {
+   "tipo": "pergunta",
+   "pergunta": "Quais doenças adicionais podem resultar do excesso de radioterapia associado ao sobrediagnóstico?",
+   "motivo": "quase duplicata"
+  },
+  {
+   "tipo": "pergunta",
+   "pergunta": "Qual é o dano mais importante associado ao rastreamento mamográfico segundo o protocolo?",
+   "motivo": "quase duplicata"
+  },
+  {
+   "tipo": "pergunta",
+   "pergunta": "Qual é a probabilidade cumulativa de resultados falso-positivos após dez episódios de rastreamento mamográfico?",
+   "motivo": "quase duplicata"
+  },
+  {
+   "tipo": "pergunta",
+   "pergunta": "Qual o excesso estimado de mulheres diagnosticadas e tratadas com câncer de mama devido ao rastreamento?",
+   "motivo": "quase duplicata"
+  },
+  {
+   "tipo": "pergunta",
+   "pergunta": "Que doenças adicionais podem resultar do excesso de radioterapia associado ao sobrediagnóstico?",
+   "motivo": "quase duplicata"
+  },
+  {
+   "tipo": "pergunta",
+   "pergunta": "Qual é o dano mais importante associado ao rastreamento mamográfico segundo os protocolos?",
+   "motivo": "quase duplicata"
+  },
+  {
+   "tipo": "pergunta",
+   "pergunta": "Os estudos selecionados avaliaram os danos associados ao excesso de exames de confirmação diagnóstica?",
+   "motivo": "quase duplicata"
+  },
+  {
+   "tipo": "pergunta",
+   "pergunta": "Qual é o objetivo do procedimento de autoexame de mama?",
+   "motivo": "quase duplicata"
+  },
+  {
+   "tipo": "pergunta",
+   "pergunta": "Qual é a periodicidade recomendada para realizar o autoexame?",
+   "motivo": "quase duplicata"
+  },
+  {
+   "tipo": "pergunta",
+   "pergunta": "Qual é o valor preditivo positivo do autoexame de mama?",
+   "motivo": "quase duplicata"
+  },
+  {
+   "tipo": "pergunta",
+   "pergunta": "Qual é a sensibilidade do autoexame comparada à mamografia e ao exame clínico de mama?",
+   "motivo": "quase duplicata"
+  },
+  {
+   "tipo": "pergunta",
+   "pergunta": "Qual é o valor preditivo positivo do autoexame?",
+   "motivo": "quase duplicata"
+  },
+  {
+   "tipo": "pergunta",
+   "pergunta": "O Ministério da Saúde recomenda o ensino do autoexame como método de rastreamento?",
+   "motivo": "quase duplicata"
+  },
+  {
+   "tipo": "pergunta",
+   "pergunta": "Por que a prática do autoexame não é recomendada?",
+   "motivo": "quase duplicata"
+  },
+  {
+   "tipo": "pergunta",
+   "pergunta": "Quais são os riscos associados ao rastreamento com ECM mencionados no protocolo?",
+   "motivo": "quase duplicata"
+  },
+  {
+   "tipo": "pergunta",
+   "pergunta": "Por que não há uma recomendação formal para o rastreamento com ECM?",
+   "motivo": "quase duplicata"
+  },
+  {
+   "tipo": "pergunta",
+   "pergunta": "Qual é o objetivo do protocolo PROT-05 v1?",
+   "motivo": "quase duplicata"
+  },
+  {
+   "tipo": "pergunta",
+   "pergunta": "Qual é a recomendação conduta para rastreamento com RNM em mulheres com risco padrão?",
+   "motivo": "quase duplicata"
+  },
+  {
+   "tipo": "pergunta",
+   "pergunta": "Existem ensaios clínicos sobre rastreamento com RNM em mulheres de risco padrão?",
+   "motivo": "quase duplicata"
+  },
+  {
+   "tipo": "pergunta",
+   "pergunta": "Qual é o objetivo principal deste protocolo?",
+   "motivo": "quase duplicata"
+  },
+  {
+   "tipo": "pergunta",
+   "pergunta": "Existe evidência direta sobre a eficácia das estratégias de conscientização nos desfechos desejados?",
+   "motivo": "quase duplicata"
+  },
+  {
+   "tipo": "pergunta",
+   "pergunta": "Há evidências diretas sobre a eficácia das estratégias de conscientização nos desfechos desejados [PROT-08 v1]?",
+   "motivo": "quase duplicata"
+  },
+  {
+   "tipo": "pergunta",
+   "pergunta": "Qual a diferença entre a estratégia de conscientização e o autoexame das mamas antigo [PROT-08 v1]?",
+   "motivo": "quase duplicata"
+  },
+  {
+   "tipo": "pergunta",
+   "pergunta": "Quais mensagens devem compor as estratégias de conscientização [PROT-08 v1]?",
+   "motivo": "quase duplicata"
+  },
+  {
+   "tipo": "pergunta",
+   "pergunta": "Qual é o objetivo principal deste protocolo para a atenção primária?",
+   "motivo": "quase duplicata"
+  },
+  {
+   "tipo": "pergunta",
+   "pergunta": "Qual é o objetivo principal do protocolo?",
+   "motivo": "quase duplicata"
+  },
+  {
+   "tipo": "pergunta",
+   "pergunta": "Quem são os profissionais públicos-alvo deste protocolo?",
+   "motivo": "quase duplicata"
+  },
+  {
+   "tipo": "pergunta",
+   "pergunta": "Como a ausência de nódulo mamário afeta a probabilidade de diagnóstico?",
+   "motivo": "quase duplicata"
+  },
+  {
+   "tipo": "pergunta",
+   "pergunta": "Qual é o objetivo principal deste protocolo?",
+   "motivo": "quase duplicata"
+  },
+  {
+   "tipo": "pergunta",
+   "pergunta": "Qual é o objetivo principal deste protocolo?",
+   "motivo": "quase duplicata"
+  },
+  {
+   "tipo": "pergunta",
+   "pergunta": "Quem é o público-alvo para este protocolo?",
+   "motivo": "quase duplicata"
+  },
+  {
+   "tipo": "pergunta",
+   "pergunta": "Qual é o objetivo deste protocolo?",
+   "motivo": "quase duplicata"
+  },
+  {
+   "tipo": "pergunta",
+   "pergunta": "Quem é o público-alvo deste protocolo?",
+   "motivo": "quase duplicata"
+  },
+  {
+   "tipo": "pergunta",
+   "pergunta": "O que significa a sigla PAG?",
+   "motivo": "quase duplicata"
+  },
+  {
+   "tipo": "pergunta",
+   "pergunta": "Qual é o objetivo principal deste protocolo?",
+   "motivo": "quase duplicata"
+  },
+  {
+   "tipo": "pergunta",
+   "pergunta": "O que representa a sigla PAG?",
+   "motivo": "quase duplicata"
+  },
+  {
+   "tipo": "pergunta",
+   "pergunta": "Qual é o objetivo principal deste protocolo?",
+   "motivo": "quase duplicata"
+  },
+  {
+   "tipo": "pergunta",
+   "pergunta": "O resultado do modelo de triagem pode substituir o laudo final?",
+   "motivo": "quase duplicata"
+  },
+  {
+   "tipo": "pergunta",
+   "pergunta": "Qual é o objetivo principal do protocolo PROT-13 v1?",
+   "motivo": "quase duplicata"
+  },
+  {
+   "tipo": "pergunta",
+   "pergunta": "Quem é o público-alvo para este procedimento?",
+   "motivo": "resposta curta demais"
+  },
+  {
+   "tipo": "pergunta",
+   "pergunta": "Quais são as etapas da conduta recomendada?",
+   "motivo": "numero sem base nos trechos"
+  },
+  {
+   "tipo": "pergunta",
+   "pergunta": "Qual é a recomendação do protocolo sobre o uso da ultrassonografia mamária para rastreamento em mulheres com risco padrão?",
+   "motivo": "sem citacao valida"
+  },
+  {
+   "tipo": "pergunta",
+   "pergunta": "Existem evidências que comprovem a eficácia do rastreamento com ultrassonografia na redução da mortalidade geral ou por câncer de mama?",
+   "motivo": "sem citacao valida"
+  },
+  {
+   "tipo": "pergunta",
+   "pergunta": "Quais são as limitações conhecidas para o uso da ultrassonografia como método de rastreamento?",
+   "motivo": "sem citacao valida"
+  },
+  {
+   "tipo": "pergunta",
+   "pergunta": "O que acontece com a necessidade de biópsias adicionais quando a ultrassonografia é adicionada ao rastreamento em comparação ao uso apenas da mamografia?",
+   "motivo": "sem citacao valida"
+  },
+  {
+   "tipo": "pergunta",
+   "pergunta": "Qual é o papel reconhecido da ultrassonografia no contexto diagnóstico, diferente do seu papel no rastreamento?",
+   "motivo": "sem citacao valida"
+  },
+  {
+   "tipo": "pergunta",
+   "pergunta": "Como se caracterizam os estudos observacionais existentes sobre o uso da ultrassonografia como método de rastreamento em relação à sua validade?",
+   "motivo": "sem citacao valida"
+  },
+  {
+   "tipo": "pergunta",
+   "pergunta": "Qual é a proporção de resultados falso-positivos da ultrassonografia em comparação à mamografia para tumores sólidos?",
+   "motivo": "sem citacao valida"
+  },
+  {
+   "tipo": "pergunta",
+   "pergunta": "Quais aspectos do rastreamento com ultrassonografia mamária ainda precisam ser mais bem estudados?",
+   "motivo": "sem citacao valida"
+  },
+  {
+   "tipo": "pergunta",
+   "pergunta": "O Ministério da Saúde recomenda o uso da termografia para rastreamento do câncer de mama?",
+   "motivo": "sem citacao valida"
+  },
+  {
+   "tipo": "pergunta",
+   "pergunta": "O Ministério da Saúde recomenda o uso da tomossíntese para rastreamento do câncer de mama?",
+   "motivo": "sem citacao valida"
+  },
+  {
+   "tipo": "pergunta",
+   "pergunta": "Existe evidência científica sobre a eficácia da termografia ou tomossíntese na redução da mortalidade por câncer de mama?",
+   "motivo": "sem citacao valida"
+  },
+  {
+   "tipo": "pergunta",
+   "pergunta": "Em que contexto o uso da termografia é permitido atualmente?",
+   "motivo": "sem citacao valida"
+  },
+  {
+   "tipo": "pergunta",
+   "pergunta": "O que deve ser lembrado antes de decidir sobre a conduta clínica?",
+   "motivo": "sem citacao valida"
+  },
+  {
+   "tipo": "pergunta",
+   "pergunta": "Como deve ser a conduta para lesões nas Categorias 1 e 2?",
+   "motivo": "fora do portugues"
+  },
+  {
+   "tipo": "pergunta",
+   "pergunta": "O que a Categoria 6 representa?",
+   "motivo": "resposta curta demais"
+  },
+  {
+   "tipo": "pergunta",
+   "pergunta": "Como é definido um exame como pendente?",
+   "motivo": "sem citacao valida"
+  },
+  {
+   "tipo": "pergunta",
+   "pergunta": "A quem são enviados os alertas sobre exames pendentes?",
+   "motivo": "sem citacao valida"
+  },
+  {
+   "tipo": "pergunta",
+   "pergunta": "Quais informações constam no alerta gerado para exames pendentes?",
+   "motivo": "sem citacao valida"
+  },
+  {
+   "tipo": "pergunta",
+   "pergunta": "Como deve ser tratado o retorno de uma paciente com PAAF e laudo citopatológico pendente?",
+   "motivo": "sem citacao valida"
+  },
+  {
+   "tipo": "pergunta",
+   "pergunta": "Quando um alerta de cautela é emitido mesmo sem pendência vencida?",
+   "motivo": "sem citacao valida"
+  },
+  {
+   "tipo": "pergunta",
+   "pergunta": "O resultado do modelo de triagem substitui o laudo definitivo?",
+   "motivo": "sem citacao valida"
+  },
+  {
+   "tipo": "pergunta",
+   "pergunta": "Quem deve tomar a decisão final após o modelo de triagem?",
+   "motivo": "sem citacao valida"
+  },
+  {
+   "tipo": "pergunta",
+   "pergunta": "Qual é o objetivo principal deste protocolo?",
+   "motivo": "sem citacao valida"
+  },
+  {
+   "tipo": "pergunta",
+   "pergunta": "Quais são os critérios para um exame ser classificado como pendente?",
+   "motivo": "numero sem base nos trechos"
+  },
+  {
+   "tipo": "pergunta",
+   "pergunta": "Quando um alerta de cautela deve ser emitido, mesmo sem pendência vencida?",
+   "motivo": "numero sem base nos trechos"
+  },
+  {
+   "tipo": "pergunta",
+   "pergunta": "Qual é o objetivo deste protocolo?",
+   "motivo": "quase duplicata"
+  },
+  {
+   "tipo": "pergunta",
+   "pergunta": "Quem é o público-alvo deste protocolo?",
+   "motivo": "quase duplicata"
+  },
+  {
+   "tipo": "pergunta",
+   "pergunta": "Qual a conduta para uma lesão classificada na Categoria 3?",
+   "motivo": "quase duplicata"
+  },
+  {
+   "tipo": "pergunta",
+   "pergunta": "Qual é o objetivo deste protocolo?",
+   "motivo": "quase duplicata"
+  },
+  {
+   "tipo": "pergunta",
+   "pergunta": "Quem é o público-alvo deste protocolo?",
+   "motivo": "quase duplicata"
+  },
+  {
+   "tipo": "pergunta",
+   "pergunta": "Qual é o objetivo principal deste protocolo?",
+   "motivo": "quase duplicata"
+  },
+  {
+   "tipo": "nao_encontrado",
+   "pergunta": "O resultado do modelo de triagem substitui o laudo final?",
+   "motivo": "quase duplicata"
+  },
+  {
+   "tipo": "nao_encontrado",
+   "pergunta": "Quais são os danos associados ao rastreamento anual comparado à bienal?",
+   "motivo": "quase duplicata"
+  },
+  {
+   "tipo": "nao_encontrado",
+   "pergunta": "Qual é a recomendação conduta para rastreamento com RNM em mulheres com risco padrão?",
+   "motivo": "quase duplicata"
+  },
+  {
+   "tipo": "geral",
+   "pergunta": "Qual é a recomendação geral para o consumo de fibras alimentares e qual seu benefício principal?",
+   "motivo": "posologia"
+  },
+  {
+   "tipo": "geral",
+   "pergunta": "O que significa um resultado normal para a glicemia em jejum em adultos não diabéticos?",
+   "motivo": "posologia"
+  },
+  {
+   "tipo": "geral",
+   "pergunta": "Qual é a função principal dos glóbulos brancos no sistema imunológico humano?",
+   "motivo": "quase duplicata"
+  },
+  {
+   "tipo": "geral",
+   "pergunta": "Qual é a principal função dos glóbulos brancos no sistema imunológico humano?",
+   "motivo": "quase duplicata"
+  },
+  {
+   "tipo": "geral",
+   "pergunta": "Por que o sono de qualidade é fundamental para o sistema imunológico?",
+   "motivo": "quase duplicata"
+  },
+  {
+   "tipo": "geral",
+   "pergunta": "Como a atividade física regular influencia a saúde cardiovascular?",
+   "motivo": "quase duplicata"
+  },
+  {
+   "tipo": "geral",
+   "pergunta": "Qual é a função principal dos glóbulos brancos no sistema imunológico humano?",
+   "motivo": "quase duplicata"
+  },
+  {
+   "tipo": "geral",
+   "pergunta": "Por que a vacinação é considerada uma das intervenções de saúde pública mais eficazes?",
+   "motivo": "quase duplicata"
+  }
+ ]
+}

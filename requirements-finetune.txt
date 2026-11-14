@@ -16,3 +16,7 @@ pandas
 scikit-learn
 Faker==40.54.0
 pypdf
+# Leitura correta das fontes Type1 do PDF de parametros do INCA.
+fonttools
+# Cliente do servidor do llama.cpp, na mesma versao da imagem api.
+httpx==0.28.1

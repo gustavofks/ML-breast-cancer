@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 # Converte o modelo professor para GGUF Q8_0 (uma vez) e o serve no llama.cpp.
 # Quatro vagas paralelas: a geracao em lote manda varios pedidos de uma vez, e o
-# servidor os processa juntos.
+# servidor os processa juntos. O contexto e dividido entre as vagas: 65536 da
+# 16384 por pedido, o bastante para as 13 paginas de fonte do PROT-01 mais a
+# resposta (com 32768, o pedido de 8579 tokens foi recusado).
 #
 #   wsl -d fase3-gpu -u root -- bash /mnt/c/workspace/ML-breast-cancer/scripts/wsl/servir_professor.sh
 set -euo pipefail
@@ -18,7 +20,7 @@ if [ ! -f "$GGUF/professor-Q8_0.gguf" ]; then
 fi
 pkill -f "llama-server.*8091" || true
 nohup "$LLAMA/build/bin/llama-server" -m "$GGUF/professor-Q8_0.gguf" -ngl 99 --port 8091 \
-  --host 0.0.0.0 -c 32768 -np 4 --jinja --chat-template-kwargs '{"enable_thinking": false}' \
+  --host 0.0.0.0 -c 65536 -np 4 --jinja --chat-template-kwargs '{"enable_thinking": false}' \
   > /root/gpu/logs/professor.log 2>&1 &
 for i in $(seq 1 120); do curl -s localhost:8091/health | grep -q ok && { echo "professor pronto"; exit 0; }; sleep 2; done
 echo "professor nao subiu; ver /root/gpu/logs/professor.log" >&2; exit 1

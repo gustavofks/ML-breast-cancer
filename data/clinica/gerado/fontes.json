@@ -1,0 +1,12 @@
+{
+ "diretrizes_2015": {
+  "titulo": "Diretrizes para a detecção precoce do câncer de mama no Brasil (INCA, 2015)",
+  "url": "https://ninho.inca.gov.br/jspui/bitstream/123456789/10486/1/Diretrizes%20para%20detec%c3%a7%c3%a3o%20precoce%20do%20c%c3%a2ncer%20de%20mama%20-relat%c3%b3rio%20de%20recomenda%c3%a7%c3%a3o%20-%202015.pdf",
+  "sha256": "d7d08a54349ee2896e6e5e1642c5c2217f39e80049499f9f28597cf07a099477"
+ },
+ "parametros": {
+  "titulo": "Parâmetros técnicos para programação de ações de detecção precoce do câncer de mama (INCA)",
+  "url": "https://ninho.inca.gov.br/jspui/bitstream/123456789/12746/1/Par%c3%a2metros%20t%c3%a9cnicos%20para%20programa%c3%a7%c3%a3o%20de%20a%c3%a7%c3%b5es%20de%20detec%c3%a7%c3%a3o%20precoce%20do%20c%c3%a2ncer%20de%20mama..pdf",
+  "sha256": "6ef821d8b2d50bf17113287c4ec58785ccd22a9e2812494016395eb766627a0c"
+ }
+}

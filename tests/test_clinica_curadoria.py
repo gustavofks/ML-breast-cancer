@@ -51,3 +51,14 @@ def test_deduplicar_mantem_o_primeiro_e_registra_o_motivo():
 
     assert [i["pergunta"] for i in mantidos] == [itens[0]["pergunta"], itens[2]["pergunta"]]
     assert descartados[0]["motivo"] == "quase duplicata"
+
+
+def test_suporte_lexical_alto_para_parafrase_e_baixo_para_invencao():
+    fonte = ("O Ministério da Saúde recomenda contra o rastreamento do câncer de mama com "
+             "termografia, seja isoladamente, seja em conjunto com a mamografia.")
+
+    parafrase = "O Ministério da Saúde recomenda contra o rastreamento com termografia isolada."
+    invencao = "Pacientes com implantes devem preferir ressonância anual com contraste."
+
+    assert curadoria.suporte_lexical(parafrase, fonte) >= 0.8
+    assert curadoria.suporte_lexical(invencao, fonte) < 0.3

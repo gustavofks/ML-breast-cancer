@@ -62,7 +62,7 @@ TEMAS = (
     Tema("PROT-09", "Sinais e sintomas suspeitos e encaminhamento", "diretrizes_2015", ((112, 121),), "treino"),
     Tema("PROT-10", "Confirmação diagnóstica em um único serviço", "diretrizes_2015", ((122, 126),), "treino"),
     Tema("PROT-11", "Conduta por categoria BI-RADS", "parametros", ((10, 13), (20, 20)), "treino"),
-    Tema("PROT-12", "Lesões palpáveis e não palpáveis: PAAF e punção por agulha grossa", "parametros", ((23, 27),), "treino"),
+    Tema("PROT-12", "Lesões palpáveis e não palpáveis: PAAF e punção por agulha grossa", "parametros", ((14, 16), (23, 27)), "treino"),
     Tema("PROT-13", "Gestão de pendências de exames", "interno", (), "treino"),
 )
 

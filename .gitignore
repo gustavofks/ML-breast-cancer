@@ -248,3 +248,7 @@ data/raw/images/
 # SQLite e reconstruido por scripts/gerar_clinica.py.
 data/clinica/bruto/
 data/clinica/*.sqlite
+
+# Fase 3: PDFs do INCA (direitos reservados) e cache de pedidos ao professor.
+data/fontes/
+data/clinica/gerado/cache/

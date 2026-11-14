@@ -234,6 +234,11 @@ FASE3_FRACAO_TESTE_SEM_PROTOCOLO = 0.2
 # diferentes sobre o mesmo tema.
 FASE3_LIMIAR_DUPLICATA = 0.9
 
+# Frase apontada pelo professor como sem base so sai se menos da metade das
+# palavras dela estiver na fonte. Na primeira geracao, as 25 frases apontadas
+# tinham entre 87% e 100% das palavras na fonte: o verificador sozinho errava.
+FASE3_SUPORTE_MINIMO = 0.5
+
 # PROT-13 v2: prazo de pendencia depois da "atualizacao" do protocolo.
 CLINICA_PRAZO_PENDENCIA_DIAS_V2 = 21
 

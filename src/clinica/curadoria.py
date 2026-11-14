@@ -53,6 +53,27 @@ def numeros_sem_base(gerado: str, fonte: str) -> set[str]:
     return _numeros(gerado) - _numeros(fonte)
 
 
+def _radicais(texto: str) -> list[str]:
+    """Cinco primeiras letras das palavras com mais de tres letras: aproxima
+    "isolada" de "isoladamente" sem depender de um lematizador."""
+    return [p[:5] for p in re.findall(r"[a-z]+", _normalizar(texto)) if len(p) > 3]
+
+
+def suporte_lexical(frase: str, fonte: str) -> float:
+    """Fracao das palavras da frase que aparecem na fonte.
+
+    Existe porque a verificacao feita pelo proprio professor errou na geracao:
+    apontou como sem base frases que eram parafrase direta da fonte e esvaziou
+    a conduta do PROT-07. Frase so sai quando o professor a aponta e, alem
+    disso, quase nada dela esta na fonte.
+    """
+    palavras = _radicais(frase)
+    if not palavras:
+        return 1.0
+    vocabulario = set(_radicais(fonte))
+    return sum(p in vocabulario for p in palavras) / len(palavras)
+
+
 def tem_posologia(texto: str) -> bool:
     return bool(_POSOLOGIA.search(texto))
 

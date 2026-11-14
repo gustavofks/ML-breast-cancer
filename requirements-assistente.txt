@@ -1,0 +1,7 @@
+# Dependencias da Fase 3 que rodam no container (testes, API, fluxo).
+# Separadas do requirements-api.txt porque crescem semana a semana (LangChain,
+# LangGraph) e quem so serve a Fase 2 nao precisa delas.
+#     pip install -r requirements-assistente.txt
+
+# Identidades falsas em pt_BR para a clinica ficticia.
+Faker==40.54.0

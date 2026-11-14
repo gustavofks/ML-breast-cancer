@@ -172,6 +172,33 @@ SPACE_PACOTE_DIR = PROJECT_ROOT / "build" / "space"
 # no HTML na montagem: a pagina nao carrega nada de fora.
 VITRINE_DIR = PROJECT_ROOT / "src" / "ui" / "vitrine"
 
+# ---------------------------------------------------------------------------
+# Fase 3: clinica ficticia e medicoes
+# ---------------------------------------------------------------------------
+# "Clinica", e nao "hospital": HOSPITAL_* ja nomeia a maquete 3D da
+# apresentacao, e os dois convivem quando as branches se juntarem.
+CLINICA_NOME = "Hospital Escola Aurora"
+CLINICA_DIR = DATA_DIR / "clinica"
+CLINICA_BRUTO_DIR = CLINICA_DIR / "bruto"  # fora do Git
+CLINICA_PRONTUARIOS_FILE = CLINICA_DIR / "prontuarios.jsonl"
+CLINICA_GABARITO_FILE = CLINICA_DIR / "gabarito_paaf.json"
+CLINICA_BANCO_FILE = CLINICA_DIR / "prontuarios.sqlite"  # reconstruido, fora do Git
+
+# 114 pacientes recebem os casos de teste da Fase 2 como PAAF; as demais tem so
+# imagem, como na rotina de uma clinica de mama.
+CLINICA_N_PACIENTES = 150
+
+# "Hoje" da clinica, fixo: pendencia depende da data de hoje, e o banco
+# precisa ser o mesmo a cada execucao, pela mesma regra do metrics.json.
+CLINICA_HOJE = "2026-11-01"
+
+# Exame solicitado sem resultado ha mais que isto vira pendencia.
+CLINICA_PRAZO_PENDENCIA_DIAS = 30
+
+FASE3_DIR = RESULTS_DIR / "fase3"
+FASE3_MEDICOES_DIR = FASE3_DIR / "medicoes"
+
+
 def ensure_output_dirs() -> None:
     """Cria os diretorios de saida caso ainda nao existam."""
     for directory in (FIGURES_DIR, REPORTS_DIR):

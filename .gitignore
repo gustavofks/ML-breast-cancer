@@ -242,3 +242,9 @@ CLAUDE.md
 
 # Base de imagens da entrega extra (grande demais para o repositorio; ver README)
 data/raw/images/
+
+# Fase 3: a clinica ficticia nasce com CPFs de digito valido, que podem
+# coincidir com CPFs reais. So a versao anonimizada e versionada. O banco
+# SQLite e reconstruido por scripts/gerar_clinica.py.
+data/clinica/bruto/
+data/clinica/*.sqlite

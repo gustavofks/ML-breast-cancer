@@ -95,8 +95,8 @@ CMD ["python", "scripts/run_vision.py"]
 FROM base AS api
 
 USER root
-COPY requirements-api.txt ./
-RUN pip install --no-cache-dir -r requirements-api.txt
+COPY requirements-api.txt requirements-assistente.txt ./
+RUN pip install --no-cache-dir -r requirements-api.txt -r requirements-assistente.txt
 USER analise
 
 ARG APP_COMMIT=desconhecido

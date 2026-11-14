@@ -1,0 +1,17 @@
+# Dependencias da Fase 3 que rodam so na distro WSL `fase3-gpu`, com a GPU AMD.
+# Ficam fora do container: o Docker no Windows nao enxerga a RX 9060 XT, e
+# torch com ROCm sozinho passa de 3 GB. Instaladas por
+# scripts/wsl/preparar_ambiente.sh, depois do torch da AMD; `-c pins.txt`
+# impede que o pip troque o torch por uma versao sem ROCm.
+
+transformers==5.22.1
+peft==0.21.2
+accelerate==1.15.0
+bitsandbytes==0.50.2
+trl==1.17.1
+datasets
+sentencepiece
+py-spy
+pandas
+scikit-learn
+Faker==40.54.0

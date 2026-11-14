@@ -15,3 +15,4 @@ py-spy
 pandas
 scikit-learn
 Faker==40.54.0
+pypdf

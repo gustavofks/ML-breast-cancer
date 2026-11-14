@@ -198,6 +198,45 @@ CLINICA_PRAZO_PENDENCIA_DIAS = 30
 FASE3_DIR = RESULTS_DIR / "fase3"
 FASE3_MEDICOES_DIR = FASE3_DIR / "medicoes"
 
+# Modelos escolhidos na semana 1 (results/fase3/medicoes/).
+FASE3_MODELO_BASE = "Qwen/Qwen3.5-4B"
+FASE3_PROFESSOR = "Qwen/Qwen3.5-9B"
+FASE3_ORIGEM_PROFESSOR = f"professor:{FASE3_PROFESSOR}"
+
+# Servidor do llama.cpp no WSL, visto do Windows e do proprio WSL.
+FASE3_PROFESSOR_URL = "http://localhost:8091"
+
+# Textos da clinica: protocolos em markdown, saida bruta do professor, conjuntos.
+CLINICA_PROTOCOLOS_DIR = CLINICA_DIR / "protocolos"
+CLINICA_GERADO_DIR = CLINICA_DIR / "gerado"
+CLINICA_CONJUNTOS_DIR = CLINICA_DIR / "conjuntos"
+FASE3_CACHE_PROFESSOR_DIR = CLINICA_GERADO_DIR / "cache"
+
+# Fontes do INCA: fora do Git (direitos reservados no repositorio do INCA).
+FONTES_DIR = DATA_DIR / "fontes"
+
+# Volumes da geracao. Perguntas por protocolo: o bastante para o modelo ver o
+# formato muitas vezes, pouco o bastante para o professor gerar em uma noite.
+FASE3_PERGUNTAS_TREINO_POR_PROTOCOLO = 30
+FASE3_PERGUNTAS_TESTE_POR_PROTOCOLO = 8
+FASE3_N_RECUSAS = 60
+FASE3_N_FORA_DO_ESCOPO = 40
+FASE3_N_GERAIS = 150
+FASE3_N_NAO_ENCONTRADO = 60
+
+# Fracao do treino separada para validacao, e fracao dos exemplos sem
+# protocolo (recusas, gerais...) que vai para o teste.
+FASE3_FRACAO_VALIDACAO = 0.1
+FASE3_FRACAO_TESTE_SEM_PROTOCOLO = 0.2
+
+# Semelhanca a partir da qual duas perguntas contam como a mesma. 0,9 pega
+# reescritas leves ("Qual a idade..." / "Qual e a idade...") sem fundir perguntas
+# diferentes sobre o mesmo tema.
+FASE3_LIMIAR_DUPLICATA = 0.9
+
+# PROT-13 v2: prazo de pendencia depois da "atualizacao" do protocolo.
+CLINICA_PRAZO_PENDENCIA_DIAS_V2 = 21
+
 
 def ensure_output_dirs() -> None:
     """Cria os diretorios de saida caso ainda nao existam."""

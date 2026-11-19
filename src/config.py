@@ -239,6 +239,20 @@ FASE3_LIMIAR_DUPLICATA = 0.9
 # tinham entre 87% e 100% das palavras na fonte: o verificador sozinho errava.
 FASE3_SUPORTE_MINIMO = 0.5
 
+# Receita do fine-tuning (semana 3). LoRA r=16 em todas as camadas lineares,
+# como no teste da semana 1; taxa e epocas conservadoras porque o teste da GPU
+# mostrou o modelo esquecendo o resto depois de decorar 40 codigos. A epoca
+# servida e a de menor perda de validacao, nao a ultima.
+FASE3_LORA_R = 16
+FASE3_LORA_ALPHA = 32
+FASE3_LORA_DROPOUT = 0.05
+FASE3_TREINO_TAXA = 2e-4
+FASE3_TREINO_EPOCAS = 3
+FASE3_TREINO_ACUMULACAO = 8  # lote efetivo de 8 exemplos, um por vez na placa
+FASE3_TREINO_MAX_TOKENS = 1024  # maior exemplo medido: 989 tokens
+
+FASE3_TREINO_DIR = FASE3_DIR / "treino"
+
 # PROT-13 v2: prazo de pendencia depois da "atualizacao" do protocolo.
 CLINICA_PRAZO_PENDENCIA_DIAS_V2 = 21
 

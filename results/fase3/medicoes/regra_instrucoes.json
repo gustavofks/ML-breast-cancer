@@ -1,0 +1,6 @@
+{
+ "gravada_em": "2026-11-20",
+ "conjunto": "validacao (44 perguntas); teste intocado",
+ "medidas": ["aprovacao das guardas", "citacao nas perguntas de protocolo", "ofertas de acao nas recusas e fora do escopo"],
+ "regra": "a instrucao de sistema entra no servico do ajustado se a aprovacao das guardas nao cair e as ofertas de acao cairem; senao o ajustado roda sem instrucao, como no treino. O base e medido nos dois jeitos so como referencia para a semana 6"
+}

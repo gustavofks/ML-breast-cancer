@@ -69,15 +69,26 @@ class Assistente:
         papeis = ([("system", "{instrucoes}")] if instrucoes else []) + [("human", "{entrada}")]
         prompt = ChatPromptTemplate.from_messages(papeis)
         self._instrucoes = instrucoes
+        # As duas partes ficam expostas porque o fluxo da semana 5 as chama em nos
+        # separados, cada um com seu evento de auditoria.
+        self._recuperador = RunnableLambda(
+            lambda x: busca.recuperar(buscador, x["pergunta"], modo=modo, k=k, limiar=limiar))
+        self._redator = prompt | modelo | RunnableLambda(_texto_e_corte)
         self._cadeia = (
-            RunnablePassthrough.assign(trechos=RunnableLambda(
-                lambda x: busca.recuperar(buscador, x["pergunta"], modo=modo, k=k, limiar=limiar)))
+            RunnablePassthrough.assign(trechos=self._recuperador)
             .assign(entrada=RunnableLambda(
                 lambda x: mensagem(x["pergunta"], x["trechos"], x.get("contexto_paciente"))))
-            .assign(saida=prompt | modelo | RunnableLambda(_texto_e_corte))
+            .assign(saida=self._redator)
             .assign(verificacao=RunnableLambda(lambda x: guardas.verificar(
                 x["saida"]["texto"], x["trechos"], cortada=x["saida"]["cortada"])))
         )
+
+    def recuperar(self, pergunta: str) -> list[Trecho]:
+        return self._recuperador.invoke({"pergunta": pergunta})
+
+    def redigir(self, pergunta: str, trechos: list[Trecho], contexto_paciente: str | None = None) -> dict:
+        return self._redator.invoke({"entrada": mensagem(pergunta, trechos, contexto_paciente),
+                                     "instrucoes": self._instrucoes})
 
     def responder(self, pergunta: str, contexto_paciente: str | None = None) -> Resposta:
         x = self._cadeia.invoke({"pergunta": pergunta, "contexto_paciente": contexto_paciente,

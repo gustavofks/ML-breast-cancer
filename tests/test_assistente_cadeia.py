@@ -106,3 +106,15 @@ def test_resposta_cortada_e_retida():
     r = cadeia.Assistente(modelo, busca.indice_padrao(), limiar=0.0).responder(PERGUNTA)
 
     assert not r.verificacao.aprovado
+
+
+def test_recuperar_e_redigir_separados_dao_o_mesmo_que_responder():
+    vistos_inteiro, vistos_passos = [], []
+    inteiro = _assistente(_cita_o_primeiro, vistos_inteiro).responder(PERGUNTA)
+    passos = _assistente(_cita_o_primeiro, vistos_passos)
+    trechos = passos.recuperar(PERGUNTA)
+    saida = passos.redigir(PERGUNTA, trechos)
+
+    assert tuple(trechos) == inteiro.trechos
+    assert saida == {"texto": inteiro.texto_modelo, "cortada": False}
+    assert vistos_passos == vistos_inteiro

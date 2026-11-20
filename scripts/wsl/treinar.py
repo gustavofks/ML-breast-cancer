@@ -2,6 +2,7 @@
 
     python scripts/wsl/treinar.py --ensaio --adaptador bf16 --lote 1   # 20 passos, mede tempo
     python scripts/wsl/treinar.py --adaptador fp32            # treino completo
+    python scripts/wsl/treinar.py --adaptador fp32 --retomar /root/gpu/adaptadores/<nome>
 
 O modelo chega ao SFTTrainer ja embrulhado com LoRA e sem peft_config: com
 peft_config, o TRL chamaria prepare_model_for_kbit_training, que converte a
@@ -97,7 +98,12 @@ def main() -> None:
     parser.add_argument("--adaptador", choices=("bf16", "fp32"), required=True)
     parser.add_argument("--lote", type=int, default=4,
                         help="exemplos por passada; a acumulacao se ajusta para manter o lote efetivo")
+    parser.add_argument("--retomar", type=Path, metavar="PASTA",
+                        help="pasta de uma execucao interrompida (/root/gpu/adaptadores/<nome>): "
+                             "continua do ultimo checkpoint de epoca, com otimizador e agendador")
     args = parser.parse_args()
+    if args.retomar and (args.ensaio or not any(args.retomar.glob("checkpoint-*"))):
+        parser.error("--retomar exige treino completo e uma pasta com checkpoint-*")
 
     import torch
     from transformers import AutoTokenizer
@@ -110,8 +116,9 @@ def main() -> None:
     validacao = _dataset(config.CLINICA_CONJUNTOS_DIR / "validacao.jsonl", renderizar,
                          8 if args.ensaio else None)
 
-    nome = (time.strftime("%Y%m%d-%H%M") + f"-{args.adaptador}-lote{args.lote}"
-            + ("-ensaio" if args.ensaio else ""))
+    nome = args.retomar.name if args.retomar else (
+        time.strftime("%Y%m%d-%H%M") + f"-{args.adaptador}-lote{args.lote}"
+        + ("-ensaio" if args.ensaio else ""))
     saida = ADAPTADORES / nome
     modelo = _modelo(r, adaptador_fp32=args.adaptador == "fp32")
     cfg = SFTConfig(
@@ -140,7 +147,10 @@ def main() -> None:
     _fixar_tipo_do_adaptador(treinador.model, torch.float32 if args.adaptador == "fp32" else torch.bfloat16)
     torch.cuda.reset_peak_memory_stats()
     inicio = time.time()
-    treinador.train()
+    # Retomada: o Trainer acha o ultimo checkpoint da pasta e restaura pesos do
+    # adaptador, otimizador, agendador e sementes; os passos ja feitos nao repetem.
+    # A duracao e o s_por_passo do resumo passam a contar so o trecho retomado.
+    treinador.train(resume_from_checkpoint=bool(args.retomar))
     duracao = time.time() - inicio
 
     resumo = {

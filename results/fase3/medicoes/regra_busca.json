@@ -1,0 +1,7 @@
+{
+ "gravada_em": "2026-11-20",
+ "medida": "acerto = todas as secoes citadas na resposta de referencia estao entre os trechos recuperados (secao comparada sem versao); perguntas de protocolo de treino e validacao",
+ "bracos": ["lexical-trechos", "lexical-protocolo", "vetorial-trechos", "vetorial-protocolo"],
+ "regra": "vence o braco de maior acerto; o vetorial so vence se superar o melhor lexical em pelo menos 0.05, porque traz modelo e dependencia novos; entre os dois modos de um mesmo tipo de busca, diferenca abaixo de 0.02 fica com o modo protocolo, que e o formato do treino",
+ "limiar": "no braco vencedor, o limiar que maximiza a acuracia balanceada entre perguntas de protocolo e perguntas gerais ou fora do escopo, testando os pontos medios entre notas vizinhas"
+}

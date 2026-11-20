@@ -278,6 +278,13 @@ FASE3_BUSCA_MODO = "trechos"
 FASE3_BUSCA_K = 4
 FASE3_BUSCA_LIMIAR = 0.8954
 
+# Instrucao de sistema no servico do ajustado, pela regra de
+# results/fase3/medicoes/regra_instrucoes.json com a medicao de
+# results/fase3/cadeia/checagem_cadeia.json: com a instrucao, as ofertas de acao
+# nas recusas cairam (5 para 2), mas a aprovacao das guardas tambem (1,00 para
+# 0,95). A regra pede as duas coisas, entao o ajustado roda sem instrucao.
+FASE3_USAR_INSTRUCOES = False
+
 
 def ensure_output_dirs() -> None:
     """Cria os diretorios de saida caso ainda nao existam."""

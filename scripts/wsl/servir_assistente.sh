@@ -9,6 +9,7 @@
 # base; os dois cabem juntos na placa (cerca de 5 GB cada).
 #
 #   bash scripts/wsl/servir_assistente.sh /root/gpu/adaptadores/<nome>/melhor
+#   bash scripts/wsl/servir_assistente.sh --so-servir   # GGUF do ajustado ja pronto
 set -euo pipefail
 export HSA_ENABLE_DXG_DETECTION=1 LD_LIBRARY_PATH=/opt/rocm/lib
 . /root/gpu/venv/bin/activate
@@ -20,10 +21,13 @@ ADAPTADOR_HF="$1"
 mkdir -p /root/gpu/logs
 [ -f "$GGUF/q35-Q8_0.gguf" ] || { echo "falta o GGUF base da semana 1" >&2; exit 1; }
 
-python "$RAIZ/scripts/wsl/mesclar_adaptador.py" "$ADAPTADOR_HF" "$MESCLADO"
-python "$LLAMA/convert_hf_to_gguf.py" "$MESCLADO" --outfile "$GGUF/ajustado-f16.gguf" --outtype f16
-"$LLAMA/build/bin/llama-quantize" "$GGUF/ajustado-f16.gguf" "$GGUF/ajustado-Q8_0.gguf" Q8_0
-rm -rf "$GGUF/ajustado-f16.gguf" "$MESCLADO"
+if [ "$ADAPTADOR_HF" != "--so-servir" ]; then
+  python "$RAIZ/scripts/wsl/mesclar_adaptador.py" "$ADAPTADOR_HF" "$MESCLADO"
+  python "$LLAMA/convert_hf_to_gguf.py" "$MESCLADO" --outfile "$GGUF/ajustado-f16.gguf" --outtype f16
+  "$LLAMA/build/bin/llama-quantize" "$GGUF/ajustado-f16.gguf" "$GGUF/ajustado-Q8_0.gguf" Q8_0
+  rm -rf "$GGUF/ajustado-f16.gguf" "$MESCLADO"
+fi
+[ -f "$GGUF/ajustado-Q8_0.gguf" ] || { echo "falta o GGUF do ajustado" >&2; exit 1; }
 
 servir() {  # servir <gguf> <porta> <log>
   pkill -f "llama-server.*--port $2" || true

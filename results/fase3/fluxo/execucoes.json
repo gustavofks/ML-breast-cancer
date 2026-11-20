@@ -1,0 +1,648 @@
+[
+ {
+  "execucao": "b9ea0d65310b492a945ec70f816dd8f6",
+  "status": "concluido",
+  "paciente": "PACIENTE-0119",
+  "classificacao": {
+   "probabilidade": 1.0,
+   "limiar": 0.2274,
+   "classe": "Maligno",
+   "distancia": 0.7726
+  },
+  "pergunta": "Qual a conduta depois de uma PAAF com triagem maligno pelo classificador? Qual a conduta para exame solicitado e sem resultado além do prazo, na gestão de pendências de exames?",
+  "trechos": [
+   {
+    "id": "PROT-13 v2 §3",
+    "protocolo": "PROT-13",
+    "versao": 2,
+    "texto": "## Conduta\n1. Classificar como pendente qualquer exame solicitado sem resultado há mais de 21 dias.\n2. Gerar alerta para a equipe médica responsável pela paciente em caso de pendência.\n3. Informar no alerta o exame, a data da solicitação e o número de dias que o exame está pendente.\n4. Classificar PAAF com laudo citopatológico pendente pelo modelo de triagem antes do retorno.\n5. Emitir alerta de cautela caso o resultado do modelo de triagem esteja perto do limiar, mesmo sem pendência vencida."
+   },
+   {
+    "id": "PROT-13 v2 §1",
+    "protocolo": "PROT-13",
+    "versao": 2,
+    "texto": "## Objetivo\nEstabelecer critérios para a identificação de exames solicitados sem resultado há mais de 21 dias, considerados pendentes, e garantir o envio de alertas para a equipe médica responsável pela paciente, informando o exame, a data da solicitação e o tempo de pendência."
+   },
+   {
+    "id": "PROT-11 v1 §4",
+    "protocolo": "PROT-11",
+    "versao": 1,
+    "texto": "## Observações\n1. A conduta nas lesões não-palpáveis segue a proposta do Breast Imaging Reporting and Data System (BI-RADS®), publicado pelo Colégio Americano de Radiologia (ACR) e recomendado pelo Colégio Brasileiro de Radiologia (CBR).\n2. As categorias 4 e 5 podem exigir biopsia cirúrgica se o resultado da PAG ou mamotomia for inadequado, se houver carcinoma in situ, radial scar, hiperplasia atípica, ou se houver solicitação de mais material pelo patologista.\n3. Em casos de resultado benigno em lesões das categorias 4 e 5 após PAG ou mamotomia adequada, recomenda-se controle mamográfico no primeiro ano de 6 em 6 meses e, após, anualmente.\n4. A categoria 0 corresponde a uma avaliação incompleta.\n5. A categoria 3 tem recomendação específica de repetição da mamografia em 6 meses.\n6. A determinação do tipo de procedimento de investigação diagnóstica complementar depende do tipo de lesão encontrada nos achados clínicos ou radiológicos: lesões palpáveis e lesões não-palpáveis.\n7. Em algumas situações particulares, pode haver necessidade de procedimentos complementares, como ecografia bilateral das mamas e biopsias (punção aspirativa por agulha fina, punção por agulha grossa ou biopsia cirúrgica), que não estão previstos no desenho padrão das linhas de cuidado."
+   },
+   {
+    "id": "PROT-13 v2 §4",
+    "protocolo": "PROT-13",
+    "versao": 2,
+    "texto": "## Observações\n1. O resultado do modelo de triagem não substitui o laudo; a decisão é sempre do médico."
+   }
+  ],
+  "sugestao": "A conduta para uma PAAF com triagem maligno pelo classificador é que o exame seja classificado como pendente pelo modelo de triagem antes do retorno. Para exames solicitados e sem resultado além do prazo, deve-se classificar como pendente qualquer exame solicitado sem resultado há mais de 21 dias, gerar alerta para a equipe médica responsável, informar no alerta o exame, a data da solicitação e o número de dias que o exame está pendente. [PROT-13 v2 §4] [PROT-13 v2 §3]",
+  "verificacao": {
+   "aprovado": true,
+   "motivos": []
+  },
+  "alertas": [
+   "Pendência vencida: Mamografia solicitado em 2026-08-28"
+  ],
+  "decisao": {
+   "acao": "aprovar",
+   "medico": "verificacao-automatica-semana5",
+   "texto": null
+  },
+  "auditoria": [
+   {
+    "execucao": "b9ea0d65310b492a945ec70f816dd8f6",
+    "no": "receber",
+    "horario": "2026-11-20T03:32:32+00:00",
+    "paciente": "PACIENTE-0119",
+    "modelo": "Qwen/Qwen3.5-4B",
+    "adaptador_sha256": "ece9ac195858546d3eafe96e4b5708ec13b998f8e274cde1e7c9e0049d313d8d"
+   },
+   {
+    "execucao": "b9ea0d65310b492a945ec70f816dd8f6",
+    "no": "consultar_prontuario",
+    "horario": "2026-11-20T03:32:32+00:00",
+    "exames": 2
+   },
+   {
+    "execucao": "b9ea0d65310b492a945ec70f816dd8f6",
+    "no": "verificar_pendencias",
+    "horario": "2026-11-20T03:32:32+00:00",
+    "pendencias": 1
+   },
+   {
+    "execucao": "b9ea0d65310b492a945ec70f816dd8f6",
+    "no": "classificar",
+    "horario": "2026-11-20T03:32:32+00:00",
+    "classificado": true,
+    "probabilidade": 1.0,
+    "limiar": 0.2274,
+    "classe": "Maligno",
+    "distancia": 0.7726
+   },
+   {
+    "execucao": "b9ea0d65310b492a945ec70f816dd8f6",
+    "no": "buscar_protocolos",
+    "horario": "2026-11-20T03:32:32+00:00",
+    "trechos": [
+     "PROT-13 v2 §3",
+     "PROT-13 v2 §1",
+     "PROT-11 v1 §4",
+     "PROT-13 v2 §4"
+    ]
+   },
+   {
+    "execucao": "b9ea0d65310b492a945ec70f816dd8f6",
+    "no": "sugerir",
+    "horario": "2026-11-20T03:32:35+00:00",
+    "caracteres": 473,
+    "cortada": false
+   },
+   {
+    "execucao": "b9ea0d65310b492a945ec70f816dd8f6",
+    "no": "verificar",
+    "horario": "2026-11-20T03:32:35+00:00",
+    "aprovado": true,
+    "motivos": []
+   },
+   {
+    "execucao": "b9ea0d65310b492a945ec70f816dd8f6",
+    "no": "alertar",
+    "horario": "2026-11-20T03:32:35+00:00",
+    "alertas": [
+     "Pendência vencida: Mamografia solicitado em 2026-08-28"
+    ]
+   },
+   {
+    "execucao": "b9ea0d65310b492a945ec70f816dd8f6",
+    "no": "aprovacao_medica",
+    "horario": "2026-11-20T03:32:35+00:00",
+    "acao": "aprovar",
+    "medico": "verificacao-automatica-semana5",
+    "editada": false
+   },
+   {
+    "execucao": "b9ea0d65310b492a945ec70f816dd8f6",
+    "no": "registrar",
+    "horario": "2026-11-20T03:32:35+00:00",
+    "desfecho": "aprovar",
+    "alertas": 1
+   }
+  ]
+ },
+ {
+  "execucao": "9e1fb02d162646dc8269dea4e897767a",
+  "status": "concluido",
+  "paciente": "PACIENTE-0098",
+  "classificacao": {
+   "probabilidade": 0.3421,
+   "limiar": 0.2274,
+   "classe": "Maligno",
+   "distancia": 0.1147
+  },
+  "pergunta": "Qual a conduta depois de uma PAAF com triagem maligno pelo classificador? Qual a conduta para exame solicitado e sem resultado além do prazo, na gestão de pendências de exames?",
+  "trechos": [
+   {
+    "id": "PROT-13 v2 §3",
+    "protocolo": "PROT-13",
+    "versao": 2,
+    "texto": "## Conduta\n1. Classificar como pendente qualquer exame solicitado sem resultado há mais de 21 dias.\n2. Gerar alerta para a equipe médica responsável pela paciente em caso de pendência.\n3. Informar no alerta o exame, a data da solicitação e o número de dias que o exame está pendente.\n4. Classificar PAAF com laudo citopatológico pendente pelo modelo de triagem antes do retorno.\n5. Emitir alerta de cautela caso o resultado do modelo de triagem esteja perto do limiar, mesmo sem pendência vencida."
+   },
+   {
+    "id": "PROT-13 v2 §1",
+    "protocolo": "PROT-13",
+    "versao": 2,
+    "texto": "## Objetivo\nEstabelecer critérios para a identificação de exames solicitados sem resultado há mais de 21 dias, considerados pendentes, e garantir o envio de alertas para a equipe médica responsável pela paciente, informando o exame, a data da solicitação e o tempo de pendência."
+   },
+   {
+    "id": "PROT-11 v1 §4",
+    "protocolo": "PROT-11",
+    "versao": 1,
+    "texto": "## Observações\n1. A conduta nas lesões não-palpáveis segue a proposta do Breast Imaging Reporting and Data System (BI-RADS®), publicado pelo Colégio Americano de Radiologia (ACR) e recomendado pelo Colégio Brasileiro de Radiologia (CBR).\n2. As categorias 4 e 5 podem exigir biopsia cirúrgica se o resultado da PAG ou mamotomia for inadequado, se houver carcinoma in situ, radial scar, hiperplasia atípica, ou se houver solicitação de mais material pelo patologista.\n3. Em casos de resultado benigno em lesões das categorias 4 e 5 após PAG ou mamotomia adequada, recomenda-se controle mamográfico no primeiro ano de 6 em 6 meses e, após, anualmente.\n4. A categoria 0 corresponde a uma avaliação incompleta.\n5. A categoria 3 tem recomendação específica de repetição da mamografia em 6 meses.\n6. A determinação do tipo de procedimento de investigação diagnóstica complementar depende do tipo de lesão encontrada nos achados clínicos ou radiológicos: lesões palpáveis e lesões não-palpáveis.\n7. Em algumas situações particulares, pode haver necessidade de procedimentos complementares, como ecografia bilateral das mamas e biopsias (punção aspirativa por agulha fina, punção por agulha grossa ou biopsia cirúrgica), que não estão previstos no desenho padrão das linhas de cuidado."
+   },
+   {
+    "id": "PROT-13 v2 §4",
+    "protocolo": "PROT-13",
+    "versao": 2,
+    "texto": "## Observações\n1. O resultado do modelo de triagem não substitui o laudo; a decisão é sempre do médico."
+   }
+  ],
+  "sugestao": "A conduta após uma PAAF com triagem maligno pelo classificador segue o protocolo de investigação diagnóstica complementar, que pode incluir biopsia cirúrgica se o resultado da PAG ou mamotomia for inadequado, se houver carcinoma in situ, radial scar, hiperplasia atípica, ou se houver solicitação de mais material pelo patologista. [PROT-11 v1 §4] Para exames solicitados e sem resultado além do prazo, a conduta é classificar como pendente qualquer exame solicitado sem resultado há mais de 21 dias, gerar alerta para a equipe médica responsável pela paciente em caso de pendência, informar no alerta o exame, a data da solicitação e o número de dias que o exame está pendente, e classificar PAAF com laudo citopatológico pendente pelo modelo de triagem antes do retorno. [PROT-13 v2 §3]",
+  "verificacao": {
+   "aprovado": true,
+   "motivos": []
+  },
+  "alertas": [
+   "Pendência vencida: PAAF solicitado em 2026-09-11"
+  ],
+  "decisao": {
+   "acao": "aprovar",
+   "medico": "verificacao-automatica-semana5",
+   "texto": null
+  },
+  "auditoria": [
+   {
+    "execucao": "9e1fb02d162646dc8269dea4e897767a",
+    "no": "receber",
+    "horario": "2026-11-20T03:32:35+00:00",
+    "paciente": "PACIENTE-0098",
+    "modelo": "Qwen/Qwen3.5-4B",
+    "adaptador_sha256": "ece9ac195858546d3eafe96e4b5708ec13b998f8e274cde1e7c9e0049d313d8d"
+   },
+   {
+    "execucao": "9e1fb02d162646dc8269dea4e897767a",
+    "no": "consultar_prontuario",
+    "horario": "2026-11-20T03:32:35+00:00",
+    "exames": 3
+   },
+   {
+    "execucao": "9e1fb02d162646dc8269dea4e897767a",
+    "no": "verificar_pendencias",
+    "horario": "2026-11-20T03:32:35+00:00",
+    "pendencias": 1
+   },
+   {
+    "execucao": "9e1fb02d162646dc8269dea4e897767a",
+    "no": "classificar",
+    "horario": "2026-11-20T03:32:35+00:00",
+    "classificado": true,
+    "probabilidade": 0.3421,
+    "limiar": 0.2274,
+    "classe": "Maligno",
+    "distancia": 0.1147
+   },
+   {
+    "execucao": "9e1fb02d162646dc8269dea4e897767a",
+    "no": "buscar_protocolos",
+    "horario": "2026-11-20T03:32:35+00:00",
+    "trechos": [
+     "PROT-13 v2 §3",
+     "PROT-13 v2 §1",
+     "PROT-11 v1 §4",
+     "PROT-13 v2 §4"
+    ]
+   },
+   {
+    "execucao": "9e1fb02d162646dc8269dea4e897767a",
+    "no": "sugerir",
+    "horario": "2026-11-20T03:32:40+00:00",
+    "caracteres": 788,
+    "cortada": false
+   },
+   {
+    "execucao": "9e1fb02d162646dc8269dea4e897767a",
+    "no": "verificar",
+    "horario": "2026-11-20T03:32:40+00:00",
+    "aprovado": true,
+    "motivos": []
+   },
+   {
+    "execucao": "9e1fb02d162646dc8269dea4e897767a",
+    "no": "alertar",
+    "horario": "2026-11-20T03:32:40+00:00",
+    "alertas": [
+     "Pendência vencida: PAAF solicitado em 2026-09-11"
+    ]
+   },
+   {
+    "execucao": "9e1fb02d162646dc8269dea4e897767a",
+    "no": "aprovacao_medica",
+    "horario": "2026-11-20T03:32:40+00:00",
+    "acao": "aprovar",
+    "medico": "verificacao-automatica-semana5",
+    "editada": false
+   },
+   {
+    "execucao": "9e1fb02d162646dc8269dea4e897767a",
+    "no": "registrar",
+    "horario": "2026-11-20T03:32:40+00:00",
+    "desfecho": "aprovar",
+    "alertas": 1
+   }
+  ]
+ },
+ {
+  "execucao": "f780e6a706b34fed8faedb3f7f7bfa76",
+  "status": "concluido",
+  "paciente": "PACIENTE-0113",
+  "classificacao": {
+   "probabilidade": 0.0003,
+   "limiar": 0.2274,
+   "classe": "Benigno",
+   "distancia": -0.2271
+  },
+  "pergunta": "Qual a conduta depois de uma PAAF com triagem benigno pelo classificador? Qual a conduta para exame solicitado e sem resultado além do prazo, na gestão de pendências de exames?",
+  "trechos": [
+   {
+    "id": "PROT-13 v2 §3",
+    "protocolo": "PROT-13",
+    "versao": 2,
+    "texto": "## Conduta\n1. Classificar como pendente qualquer exame solicitado sem resultado há mais de 21 dias.\n2. Gerar alerta para a equipe médica responsável pela paciente em caso de pendência.\n3. Informar no alerta o exame, a data da solicitação e o número de dias que o exame está pendente.\n4. Classificar PAAF com laudo citopatológico pendente pelo modelo de triagem antes do retorno.\n5. Emitir alerta de cautela caso o resultado do modelo de triagem esteja perto do limiar, mesmo sem pendência vencida."
+   },
+   {
+    "id": "PROT-13 v2 §1",
+    "protocolo": "PROT-13",
+    "versao": 2,
+    "texto": "## Objetivo\nEstabelecer critérios para a identificação de exames solicitados sem resultado há mais de 21 dias, considerados pendentes, e garantir o envio de alertas para a equipe médica responsável pela paciente, informando o exame, a data da solicitação e o tempo de pendência."
+   },
+   {
+    "id": "PROT-11 v1 §4",
+    "protocolo": "PROT-11",
+    "versao": 1,
+    "texto": "## Observações\n1. A conduta nas lesões não-palpáveis segue a proposta do Breast Imaging Reporting and Data System (BI-RADS®), publicado pelo Colégio Americano de Radiologia (ACR) e recomendado pelo Colégio Brasileiro de Radiologia (CBR).\n2. As categorias 4 e 5 podem exigir biopsia cirúrgica se o resultado da PAG ou mamotomia for inadequado, se houver carcinoma in situ, radial scar, hiperplasia atípica, ou se houver solicitação de mais material pelo patologista.\n3. Em casos de resultado benigno em lesões das categorias 4 e 5 após PAG ou mamotomia adequada, recomenda-se controle mamográfico no primeiro ano de 6 em 6 meses e, após, anualmente.\n4. A categoria 0 corresponde a uma avaliação incompleta.\n5. A categoria 3 tem recomendação específica de repetição da mamografia em 6 meses.\n6. A determinação do tipo de procedimento de investigação diagnóstica complementar depende do tipo de lesão encontrada nos achados clínicos ou radiológicos: lesões palpáveis e lesões não-palpáveis.\n7. Em algumas situações particulares, pode haver necessidade de procedimentos complementares, como ecografia bilateral das mamas e biopsias (punção aspirativa por agulha fina, punção por agulha grossa ou biopsia cirúrgica), que não estão previstos no desenho padrão das linhas de cuidado."
+   },
+   {
+    "id": "PROT-13 v2 §4",
+    "protocolo": "PROT-13",
+    "versao": 2,
+    "texto": "## Observações\n1. O resultado do modelo de triagem não substitui o laudo; a decisão é sempre do médico."
+   }
+  ],
+  "sugestao": "A conduta após uma PAAF com triagem benigno pelo classificador é que o resultado não substitui o laudo; a decisão é sempre do médico. [PROT-13 v2 §4] Para exames solicitados e sem resultado além do prazo, deve-se classificar como pendente qualquer exame solicitado sem resultado há mais de 21 dias. [PROT-13 v2 §3]",
+  "verificacao": {
+   "aprovado": true,
+   "motivos": []
+  },
+  "alertas": [
+   "Pendência vencida: PAAF solicitado em 2026-09-14",
+   "Pendência vencida: Ultrassonografia mamaria solicitado em 2026-09-15"
+  ],
+  "decisao": {
+   "acao": "aprovar",
+   "medico": "verificacao-automatica-semana5",
+   "texto": null
+  },
+  "auditoria": [
+   {
+    "execucao": "f780e6a706b34fed8faedb3f7f7bfa76",
+    "no": "receber",
+    "horario": "2026-11-20T03:32:40+00:00",
+    "paciente": "PACIENTE-0113",
+    "modelo": "Qwen/Qwen3.5-4B",
+    "adaptador_sha256": "ece9ac195858546d3eafe96e4b5708ec13b998f8e274cde1e7c9e0049d313d8d"
+   },
+   {
+    "execucao": "f780e6a706b34fed8faedb3f7f7bfa76",
+    "no": "consultar_prontuario",
+    "horario": "2026-11-20T03:32:40+00:00",
+    "exames": 3
+   },
+   {
+    "execucao": "f780e6a706b34fed8faedb3f7f7bfa76",
+    "no": "verificar_pendencias",
+    "horario": "2026-11-20T03:32:40+00:00",
+    "pendencias": 2
+   },
+   {
+    "execucao": "f780e6a706b34fed8faedb3f7f7bfa76",
+    "no": "classificar",
+    "horario": "2026-11-20T03:32:40+00:00",
+    "classificado": true,
+    "probabilidade": 0.0003,
+    "limiar": 0.2274,
+    "classe": "Benigno",
+    "distancia": -0.2271
+   },
+   {
+    "execucao": "f780e6a706b34fed8faedb3f7f7bfa76",
+    "no": "buscar_protocolos",
+    "horario": "2026-11-20T03:32:40+00:00",
+    "trechos": [
+     "PROT-13 v2 §3",
+     "PROT-13 v2 §1",
+     "PROT-11 v1 §4",
+     "PROT-13 v2 §4"
+    ]
+   },
+   {
+    "execucao": "f780e6a706b34fed8faedb3f7f7bfa76",
+    "no": "sugerir",
+    "horario": "2026-11-20T03:32:43+00:00",
+    "caracteres": 314,
+    "cortada": false
+   },
+   {
+    "execucao": "f780e6a706b34fed8faedb3f7f7bfa76",
+    "no": "verificar",
+    "horario": "2026-11-20T03:32:43+00:00",
+    "aprovado": true,
+    "motivos": []
+   },
+   {
+    "execucao": "f780e6a706b34fed8faedb3f7f7bfa76",
+    "no": "alertar",
+    "horario": "2026-11-20T03:32:43+00:00",
+    "alertas": [
+     "Pendência vencida: PAAF solicitado em 2026-09-14",
+     "Pendência vencida: Ultrassonografia mamaria solicitado em 2026-09-15"
+    ]
+   },
+   {
+    "execucao": "f780e6a706b34fed8faedb3f7f7bfa76",
+    "no": "aprovacao_medica",
+    "horario": "2026-11-20T03:32:43+00:00",
+    "acao": "aprovar",
+    "medico": "verificacao-automatica-semana5",
+    "editada": false
+   },
+   {
+    "execucao": "f780e6a706b34fed8faedb3f7f7bfa76",
+    "no": "registrar",
+    "horario": "2026-11-20T03:32:43+00:00",
+    "desfecho": "aprovar",
+    "alertas": 2
+   }
+  ]
+ },
+ {
+  "execucao": "47f3d696cedf4b6db8a2d8a5061b7113",
+  "status": "concluido",
+  "paciente": "PACIENTE-0073",
+  "classificacao": {
+   "probabilidade": 0.0111,
+   "limiar": 0.2274,
+   "classe": "Benigno",
+   "distancia": -0.2163
+  },
+  "pergunta": "Qual a conduta depois de uma PAAF com triagem benigno pelo classificador? Qual a conduta para exame solicitado e sem resultado além do prazo, na gestão de pendências de exames?",
+  "trechos": [
+   {
+    "id": "PROT-13 v2 §3",
+    "protocolo": "PROT-13",
+    "versao": 2,
+    "texto": "## Conduta\n1. Classificar como pendente qualquer exame solicitado sem resultado há mais de 21 dias.\n2. Gerar alerta para a equipe médica responsável pela paciente em caso de pendência.\n3. Informar no alerta o exame, a data da solicitação e o número de dias que o exame está pendente.\n4. Classificar PAAF com laudo citopatológico pendente pelo modelo de triagem antes do retorno.\n5. Emitir alerta de cautela caso o resultado do modelo de triagem esteja perto do limiar, mesmo sem pendência vencida."
+   },
+   {
+    "id": "PROT-13 v2 §1",
+    "protocolo": "PROT-13",
+    "versao": 2,
+    "texto": "## Objetivo\nEstabelecer critérios para a identificação de exames solicitados sem resultado há mais de 21 dias, considerados pendentes, e garantir o envio de alertas para a equipe médica responsável pela paciente, informando o exame, a data da solicitação e o tempo de pendência."
+   },
+   {
+    "id": "PROT-11 v1 §4",
+    "protocolo": "PROT-11",
+    "versao": 1,
+    "texto": "## Observações\n1. A conduta nas lesões não-palpáveis segue a proposta do Breast Imaging Reporting and Data System (BI-RADS®), publicado pelo Colégio Americano de Radiologia (ACR) e recomendado pelo Colégio Brasileiro de Radiologia (CBR).\n2. As categorias 4 e 5 podem exigir biopsia cirúrgica se o resultado da PAG ou mamotomia for inadequado, se houver carcinoma in situ, radial scar, hiperplasia atípica, ou se houver solicitação de mais material pelo patologista.\n3. Em casos de resultado benigno em lesões das categorias 4 e 5 após PAG ou mamotomia adequada, recomenda-se controle mamográfico no primeiro ano de 6 em 6 meses e, após, anualmente.\n4. A categoria 0 corresponde a uma avaliação incompleta.\n5. A categoria 3 tem recomendação específica de repetição da mamografia em 6 meses.\n6. A determinação do tipo de procedimento de investigação diagnóstica complementar depende do tipo de lesão encontrada nos achados clínicos ou radiológicos: lesões palpáveis e lesões não-palpáveis.\n7. Em algumas situações particulares, pode haver necessidade de procedimentos complementares, como ecografia bilateral das mamas e biopsias (punção aspirativa por agulha fina, punção por agulha grossa ou biopsia cirúrgica), que não estão previstos no desenho padrão das linhas de cuidado."
+   },
+   {
+    "id": "PROT-13 v2 §4",
+    "protocolo": "PROT-13",
+    "versao": 2,
+    "texto": "## Observações\n1. O resultado do modelo de triagem não substitui o laudo; a decisão é sempre do médico."
+   }
+  ],
+  "sugestao": "A conduta para exame solicitado e sem resultado além do prazo é classificar como pendente qualquer exame solicitado sem resultado há mais de 21 dias, gerar alerta para a equipe médica responsável pela paciente em caso de pendência, informar no alerta o exame, a data da solicitação e o número de dias que o exame está pendente, e classificar PAAF com laudo citopatológico pendente pelo modelo de triagem antes do retorno. [PROT-13 v2 §3]",
+  "verificacao": {
+   "aprovado": true,
+   "motivos": []
+  },
+  "alertas": [
+   "Pendência vencida: Mamografia solicitado em 2026-09-29",
+   "Pendência vencida: PAAF solicitado em 2026-10-09"
+  ],
+  "decisao": {
+   "acao": "aprovar",
+   "medico": "verificacao-automatica-semana5",
+   "texto": null
+  },
+  "auditoria": [
+   {
+    "execucao": "47f3d696cedf4b6db8a2d8a5061b7113",
+    "no": "receber",
+    "horario": "2026-11-20T03:32:43+00:00",
+    "paciente": "PACIENTE-0073",
+    "modelo": "Qwen/Qwen3.5-4B",
+    "adaptador_sha256": "ece9ac195858546d3eafe96e4b5708ec13b998f8e274cde1e7c9e0049d313d8d"
+   },
+   {
+    "execucao": "47f3d696cedf4b6db8a2d8a5061b7113",
+    "no": "consultar_prontuario",
+    "horario": "2026-11-20T03:32:43+00:00",
+    "exames": 2
+   },
+   {
+    "execucao": "47f3d696cedf4b6db8a2d8a5061b7113",
+    "no": "verificar_pendencias",
+    "horario": "2026-11-20T03:32:43+00:00",
+    "pendencias": 2
+   },
+   {
+    "execucao": "47f3d696cedf4b6db8a2d8a5061b7113",
+    "no": "classificar",
+    "horario": "2026-11-20T03:32:43+00:00",
+    "classificado": true,
+    "probabilidade": 0.0111,
+    "limiar": 0.2274,
+    "classe": "Benigno",
+    "distancia": -0.2163
+   },
+   {
+    "execucao": "47f3d696cedf4b6db8a2d8a5061b7113",
+    "no": "buscar_protocolos",
+    "horario": "2026-11-20T03:32:43+00:00",
+    "trechos": [
+     "PROT-13 v2 §3",
+     "PROT-13 v2 §1",
+     "PROT-11 v1 §4",
+     "PROT-13 v2 §4"
+    ]
+   },
+   {
+    "execucao": "47f3d696cedf4b6db8a2d8a5061b7113",
+    "no": "sugerir",
+    "horario": "2026-11-20T03:32:43+00:00",
+    "caracteres": 437,
+    "cortada": false
+   },
+   {
+    "execucao": "47f3d696cedf4b6db8a2d8a5061b7113",
+    "no": "verificar",
+    "horario": "2026-11-20T03:32:43+00:00",
+    "aprovado": true,
+    "motivos": []
+   },
+   {
+    "execucao": "47f3d696cedf4b6db8a2d8a5061b7113",
+    "no": "alertar",
+    "horario": "2026-11-20T03:32:43+00:00",
+    "alertas": [
+     "Pendência vencida: Mamografia solicitado em 2026-09-29",
+     "Pendência vencida: PAAF solicitado em 2026-10-09"
+    ]
+   },
+   {
+    "execucao": "47f3d696cedf4b6db8a2d8a5061b7113",
+    "no": "aprovacao_medica",
+    "horario": "2026-11-20T03:32:43+00:00",
+    "acao": "aprovar",
+    "medico": "verificacao-automatica-semana5",
+    "editada": false
+   },
+   {
+    "execucao": "47f3d696cedf4b6db8a2d8a5061b7113",
+    "no": "registrar",
+    "horario": "2026-11-20T03:32:43+00:00",
+    "desfecho": "aprovar",
+    "alertas": 2
+   }
+  ]
+ },
+ {
+  "execucao": "49f31a3acaa144ae8158bfc749c75c03",
+  "status": "concluido",
+  "paciente": "PACIENTE-0049",
+  "classificacao": null,
+  "pergunta": "Qual a conduta de seguimento para esta paciente?",
+  "trechos": [
+   {
+    "id": "PROT-12 v1 §3",
+    "protocolo": "PROT-12",
+    "versao": 1,
+    "texto": "## Conduta\n1. Para pacientes assintomáticas, aplicar as recomendações de conduta conforme a faixa etária (35 anos ou mais; 40 a 49 anos; 50 a 69 anos) utilizando os fluxogramas específicos.\n2. Para pacientes com lesão palpável da mama, seguir as recomendações de conduta divididas por grupo etário.\n3. Para casos discordantes classificados nas Categorias 4 e 5 (BI-RADS®), seguir as recomendações de conduta específicas para essas categorias.\n4. Utilizar os fluxogramas para rastreamento de mulheres assintomáticas, para conduta frente a mulheres sintomáticas e casos discordantes, e para o seguimento das mulheres com câncer da mama."
+   },
+   {
+    "id": "PROT-12 v1 §1",
+    "protocolo": "PROT-12",
+    "versao": 1,
+    "texto": "## Objetivo\nEstabelecer as recomendações para condutas frente a pacientes com lesões palpáveis e não palpáveis da mama, incluindo casos discordantes, baseando-se nas categorias BI-RADS® e nos fluxogramas de rastreamento e seguimento."
+   },
+   {
+    "id": "PROT-13 v2 §3",
+    "protocolo": "PROT-13",
+    "versao": 2,
+    "texto": "## Conduta\n1. Classificar como pendente qualquer exame solicitado sem resultado há mais de 21 dias.\n2. Gerar alerta para a equipe médica responsável pela paciente em caso de pendência.\n3. Informar no alerta o exame, a data da solicitação e o número de dias que o exame está pendente.\n4. Classificar PAAF com laudo citopatológico pendente pelo modelo de triagem antes do retorno.\n5. Emitir alerta de cautela caso o resultado do modelo de triagem esteja perto do limiar, mesmo sem pendência vencida."
+   },
+   {
+    "id": "PROT-09 v1 §3",
+    "protocolo": "PROT-09",
+    "versao": 1,
+    "texto": "## Conduta\n1. A avaliação de sinais e sintomas suspeitos de câncer de mama na atenção primária visa à correta classificação de risco de câncer para que a investigação diagnóstica possa prosseguir corretamente, não visando ao diagnóstico final de neoplasia maligna nem à instituição do tratamento oncológico.\n2. O encaminhamento de casos com baixo risco de câncer para serviços especializados pode resultar no atraso de pacientes sintomáticos com maior probabilidade de serem diagnosticados com câncer de mama, o que pode ter impacto no seu prognóstico.\n3. A retenção na atenção primária de pacientes com sinais e sintomas de alto risco para câncer de mama, com pedidos de exames e realização de consultas de seguimento, também pode ter repercussões negativas no prognóstico desses indivíduos.\n4. Pacientes com sinais e sintomas definidos na recomendação devem ser referenciados para centros de diagnóstico mamário de forma urgente, tendo prioridade em relação às mulheres com mamografias de rastreamento alteradas ou com sinais e sintomas não sugestivos de câncer de mama.\n5. É fundamental que os serviços de atenção primária possibilitem consultas de urgência para mulheres e homens sintomáticos sem a necessidade de agendamento prévio, inserindo-os imediatamente em agenda de demanda espontânea, encaixe ou espaços de acolhimento.\n6. Os serviços de diagnóstico mamário devem ter autonomia para esgotar a investigação diagnóstica de cada caso."
+   }
+  ],
+  "sugestao": "Seguir as recomendações de conduta divididas por grupo etário para pacientes com lesão palpável da mama. [PROT-12 v1 §3]",
+  "verificacao": {
+   "aprovado": true,
+   "motivos": []
+  },
+  "alertas": [],
+  "decisao": {
+   "acao": "aprovar",
+   "medico": "verificacao-automatica-semana5",
+   "texto": null
+  },
+  "auditoria": [
+   {
+    "execucao": "49f31a3acaa144ae8158bfc749c75c03",
+    "no": "receber",
+    "horario": "2026-11-20T03:32:43+00:00",
+    "paciente": "PACIENTE-0049",
+    "modelo": "Qwen/Qwen3.5-4B",
+    "adaptador_sha256": "ece9ac195858546d3eafe96e4b5708ec13b998f8e274cde1e7c9e0049d313d8d"
+   },
+   {
+    "execucao": "49f31a3acaa144ae8158bfc749c75c03",
+    "no": "consultar_prontuario",
+    "horario": "2026-11-20T03:32:43+00:00",
+    "exames": 2
+   },
+   {
+    "execucao": "49f31a3acaa144ae8158bfc749c75c03",
+    "no": "verificar_pendencias",
+    "horario": "2026-11-20T03:32:43+00:00",
+    "pendencias": 0
+   },
+   {
+    "execucao": "49f31a3acaa144ae8158bfc749c75c03",
+    "no": "classificar",
+    "horario": "2026-11-20T03:32:43+00:00",
+    "classificado": false
+   },
+   {
+    "execucao": "49f31a3acaa144ae8158bfc749c75c03",
+    "no": "buscar_protocolos",
+    "horario": "2026-11-20T03:32:43+00:00",
+    "trechos": [
+     "PROT-12 v1 §3",
+     "PROT-12 v1 §1",
+     "PROT-13 v2 §3",
+     "PROT-09 v1 §3"
+    ]
+   },
+   {
+    "execucao": "49f31a3acaa144ae8158bfc749c75c03",
+    "no": "sugerir",
+    "horario": "2026-11-20T03:32:45+00:00",
+    "caracteres": 120,
+    "cortada": false
+   },
+   {
+    "execucao": "49f31a3acaa144ae8158bfc749c75c03",
+    "no": "verificar",
+    "horario": "2026-11-20T03:32:45+00:00",
+    "aprovado": true,
+    "motivos": []
+   },
+   {
+    "execucao": "49f31a3acaa144ae8158bfc749c75c03",
+    "no": "alertar",
+    "horario": "2026-11-20T03:32:45+00:00",
+    "alertas": []
+   },
+   {
+    "execucao": "49f31a3acaa144ae8158bfc749c75c03",
+    "no": "aprovacao_medica",
+    "horario": "2026-11-20T03:32:45+00:00",
+    "acao": "aprovar",
+    "medico": "verificacao-automatica-semana5",
+    "editada": false
+   },
+   {
+    "execucao": "49f31a3acaa144ae8158bfc749c75c03",
+    "no": "registrar",
+    "horario": "2026-11-20T03:32:45+00:00",
+    "desfecho": "aprovar",
+    "alertas": 0
+   }
+  ]
+ }
+]

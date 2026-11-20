@@ -270,6 +270,14 @@ FASE3_AVISO_GERAL = ("Nenhum protocolo do hospital trata desta pergunta: respost
                      "geral do modelo, a conferir.")
 FASE3_CADEIA_DIR = FASE3_DIR / "cadeia"
 
+# Busca (semana 4), escolhida pela regra de results/fase3/medicoes/regra_busca.json
+# com a medicao de busca.json: o BM25 nos 4 melhores trechos acertou 0,885 das
+# perguntas de protocolo, contra 0,769 do protocolo inteiro e 0,870 do e5-small.
+# Abaixo do limiar, a pergunta e tratada como geral e vai sem trechos.
+FASE3_BUSCA_MODO = "trechos"
+FASE3_BUSCA_K = 4
+FASE3_BUSCA_LIMIAR = 0.8954
+
 
 def ensure_output_dirs() -> None:
     """Cria os diretorios de saida caso ainda nao existam."""

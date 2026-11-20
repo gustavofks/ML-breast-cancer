@@ -1,0 +1,43 @@
+{
+ "n_perguntas_protocolo": 208,
+ "n_perguntas_gerais": 135,
+ "k": 4,
+ "bracos": {
+  "lexical-trechos": {
+   "acerto": 0.8846,
+   "limiar": {
+    "limiar": 0.8954,
+    "acuracia_balanceada": 0.9033,
+    "protocolo_reconhecida": 0.851,
+    "geral_reconhecida": 0.9556
+   }
+  },
+  "lexical-protocolo": {
+   "acerto": 0.7692,
+   "limiar": {
+    "limiar": 0.8954,
+    "acuracia_balanceada": 0.9033,
+    "protocolo_reconhecida": 0.851,
+    "geral_reconhecida": 0.9556
+   }
+  },
+  "vetorial-trechos": {
+   "acerto": 0.8702,
+   "limiar": {
+    "limiar": 0.8678,
+    "acuracia_balanceada": 0.8513,
+    "protocolo_reconhecida": 0.7692,
+    "geral_reconhecida": 0.9333
+   }
+  },
+  "vetorial-protocolo": {
+   "acerto": 0.7692,
+   "limiar": {
+    "limiar": 0.8678,
+    "acuracia_balanceada": 0.8513,
+    "protocolo_reconhecida": 0.7692,
+    "geral_reconhecida": 0.9333
+   }
+  }
+ }
+}

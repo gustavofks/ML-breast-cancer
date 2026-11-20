@@ -5,3 +5,8 @@
 
 # Identidades falsas em pt_BR para a clinica ficticia.
 Faker==40.54.0
+
+# Cadeia do assistente (semana 4). langchain-openai fala com o llama.cpp pela
+# API compativel com a OpenAI, com base_url local; nenhuma chamada sai da maquina.
+langchain-core==1.8.4
+langchain-openai==1.8.5

@@ -4,6 +4,7 @@ Fonte unica de caminhos, constantes e parametros de reprodutibilidade.
 Nenhum outro modulo deve escrever caminhos literais.
 """
 
+import os
 from pathlib import Path
 
 # ---------------------------------------------------------------------------
@@ -255,6 +256,19 @@ FASE3_TREINO_DIR = FASE3_DIR / "treino"
 
 # PROT-13 v2: prazo de pendencia depois da "atualizacao" do protocolo.
 CLINICA_PRAZO_PENDENCIA_DIAS_V2 = 21
+
+# Assistente (semana 4). Os dois servidores do llama.cpp sobem com
+# scripts/wsl/servir_assistente.sh; no container, a variavel de ambiente aponta
+# para host.docker.internal.
+FASE3_AJUSTADO_URL = os.environ.get("FASE3_AJUSTADO_URL", "http://localhost:8092")
+FASE3_BASE_URL = os.environ.get("FASE3_BASE_URL", "http://localhost:8093")
+FASE3_RESPOSTA_MAX_TOKENS = 600  # a maior resposta do ajustado na semana 3 usou bem menos
+# Texto fixo anexado pela cadeia, e nao pedido ao modelo: na semana 3 nenhuma
+# resposta do ajustado fechou com a decisao do medico.
+FASE3_FECHO = "A decisão final é do médico responsável."
+FASE3_AVISO_GERAL = ("Nenhum protocolo do hospital trata desta pergunta: resposta de conhecimento "
+                     "geral do modelo, a conferir.")
+FASE3_CADEIA_DIR = FASE3_DIR / "cadeia"
 
 
 def ensure_output_dirs() -> None:

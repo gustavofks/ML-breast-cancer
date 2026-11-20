@@ -64,7 +64,7 @@ def numeros_sem_base(gerado: str, fonte: str) -> set[str]:
     return _numeros(gerado) - _numeros(fonte)
 
 
-def _radicais(texto: str) -> list[str]:
+def radicais(texto: str) -> list[str]:
     """Cinco primeiras letras das palavras com mais de tres letras: aproxima
     "isolada" de "isoladamente" sem depender de um lematizador."""
     return [p[:5] for p in re.findall(r"[a-z]+", _normalizar(texto)) if len(p) > 3]
@@ -78,10 +78,10 @@ def suporte_lexical(frase: str, fonte: str) -> float:
     a conduta do PROT-07. Frase so sai quando o professor a aponta e, alem
     disso, quase nada dela esta na fonte.
     """
-    palavras = _radicais(frase)
+    palavras = radicais(frase)
     if not palavras:
         return 1.0
-    vocabulario = set(_radicais(fonte))
+    vocabulario = set(radicais(fonte))
     return sum(p in vocabulario for p in palavras) / len(palavras)
 
 

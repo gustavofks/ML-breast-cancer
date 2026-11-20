@@ -186,6 +186,12 @@ def criar_app_com_painel(servico=None, *, url_da_api: str | None = None, **opcoe
     from src.ui import vitrine
 
     servico = servico or Servico.construir(carregar_especificacao())
+    # Assistente da Fase 3 so com a variavel ligada: o Space e a imagem da Fase 2
+    # seguem sem as rotas novas e sem depender do servidor do modelo.
+    if os.environ.get(config.FASE3_VARIAVEL_ASSISTENTE) == "1" and "assistente" not in opcoes:
+        from src.api.assistente import ServicoAssistente
+
+        opcoes["assistente"] = ServicoAssistente.construir(servico.prever)
     app = criar_app(servico, **opcoes)
     trava = threading.Lock()
     pronta: dict[str, str] = {}

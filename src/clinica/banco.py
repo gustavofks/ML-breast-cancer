@@ -54,7 +54,15 @@ def criar(caminho: Path, registros: list[dict]) -> None:
 
 
 def conectar(caminho: Path) -> sqlite3.Connection:
-    con = sqlite3.connect(f"file:{Path(caminho).as_posix()}?mode=ro", uri=True)
+    """Conexao so de leitura, compartilhavel entre threads.
+
+    A API atende cada rota numa thread do pool e o LangGraph roda os nos em
+    threads proprias, entao a conexao aberta na montagem e usada em outra
+    thread. Sem escrita, compartilhar e seguro: o modulo sqlite3 serializa as
+    chamadas, e nada muda o banco por esta conexao.
+    """
+    con = sqlite3.connect(f"file:{Path(caminho).as_posix()}?mode=ro", uri=True,
+                          check_same_thread=False)
     con.row_factory = sqlite3.Row
     return con
 

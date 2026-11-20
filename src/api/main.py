@@ -49,6 +49,7 @@ def criar_app(
     *,
     diretorio_cache: Path = config.LLM_CACHE_DIR,
     logger: logging.Logger | None = None,
+    assistente=None,
 ) -> FastAPI:
     """Monta a API em torno de um modelo ja treinado, ou treina o especificado.
 
@@ -56,6 +57,9 @@ def criar_app(
     vitrine: com o logger padrao, as duas escreveriam no mesmo log e na mesma
     memoria de eventos, e as chamadas da montagem apareceriam no monitoramento
     da API servida.
+
+    `assistente` (um `src.api.assistente.ServicoAssistente`) liga as rotas da
+    Fase 3. Sem ele, a API e exatamente a da Fase 2.
     """
     modelo = servico or dominio.Servico.construir(dominio.carregar_especificacao())
     sentinela = monitoring.Sentinela.de_treino(modelo.X_train, k=config.API_LIMIAR_DE_DESVIO)
@@ -206,4 +210,8 @@ def criar_app(
             return None, f"texto reprovado nas verificações: {', '.join(reprovadas)}"
         return narrativa.texto, None
 
+    if assistente is not None:
+        from src.api.assistente import rotas
+
+        app.include_router(rotas(assistente))
     return app

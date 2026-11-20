@@ -10,3 +10,8 @@ Faker==40.54.0
 # API compativel com a OpenAI, com base_url local; nenhuma chamada sai da maquina.
 langchain-core==1.8.4
 langchain-openai==1.8.5
+
+# Fluxo do assistente (semana 5): grafo com pausa para o medico, e o estado da
+# pausa em SQLite para sobreviver a reinicio.
+langgraph==1.2.24
+langgraph-checkpoint-sqlite==3.1.3

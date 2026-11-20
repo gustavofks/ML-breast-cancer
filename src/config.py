@@ -285,6 +285,18 @@ FASE3_BUSCA_LIMIAR = 0.8954
 # 0,95). A regra pede as duas coisas, entao o ajustado roda sem instrucao.
 FASE3_USAR_INSTRUCOES = False
 
+# Fluxo e auditoria (semana 5). Estado de uso, fora do Git: as pausas do fluxo e
+# o registro de auditoria sao dados de execucao, nao resultado do projeto.
+FASE3_EXECUCAO_DIR = CLINICA_DIR / "execucao"
+FASE3_CHECKPOINTS_FILE = FASE3_EXECUCAO_DIR / "checkpoints.sqlite"
+FASE3_AUDITORIA_FILE = FASE3_EXECUCAO_DIR / "auditoria.jsonl"
+# Probabilidade a menos disto do limiar servido vira alerta de caso perto do
+# limiar: a Fase 2 mostrou que o ganho clinico vem de onde fica o limiar.
+FASE3_MARGEM_LIMIAR = 0.10
+# Liga as rotas do assistente na fabrica com painel; sem ela, a API da Fase 2
+# e o Space ficam como estao.
+FASE3_VARIAVEL_ASSISTENTE = "FASE3_ASSISTENTE"
+
 
 def ensure_output_dirs() -> None:
     """Cria os diretorios de saida caso ainda nao existam."""
